@@ -54,7 +54,8 @@
     box-shadow: var(--shadow); z-index: 41; transform: translateX(105%);
     transition: transform .22s ease; display: flex; flex-direction: column; }
   html[dir="rtl"] #settingsPanel { transform: translateX(-105%); }
-  #settingsPanel.open { transform: translateX(0); }
+  #settingsPanel.open,
+  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); }
   .panel-head { display: flex; align-items: center; justify-content: space-between;
     padding: 1rem; border-bottom: 1px solid var(--border); }
   .panel-head h2 { margin: 0; font-size: 1.15rem; }
