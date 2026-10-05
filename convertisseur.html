@@ -505,7 +505,7 @@ function dirMessage(dir) {
   if (settings.direction !== 'auto') return (dir === 'toFr' ? t('forcedFr') : t('forcedHe')).replace('{layout}', lbl);
   return (dir === 'toFr' ? t('detectedHe') : t('detectedFr')).replace('{layout}', lbl);
 }
-function doConvert(forced) {
+function doConvert() {
   let out, msg;
   if (settings.mode === 'latin') {
     const m = settings.latinDir === 'toAz' ? QW_TO_AZ : AZ_TO_QW;
@@ -513,7 +513,7 @@ function doConvert(forced) {
     output.setAttribute('dir', 'ltr');
     msg = t(settings.latinDir === 'toAz' ? 'dirLatinAz' : 'dirLatinQw');
   } else {
-    const dir = forced || (settings.direction !== 'auto' ? settings.direction : detectDir(input.value));
+    const dir = settings.direction !== 'auto' ? settings.direction : detectDir(input.value);
     out = convertWith(input.value, settings.layout, dir);
     output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
     msg = dirMessage(dir);
