@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Convertisseur de clavier Latin ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
+<meta name="theme-color" content="#edf0f6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⌨%3C/text%3E%3C/svg%3E">
 <title>Convertisseur Clavier Latin ⇄ Hébreu (AZERTY / QWERTY)</title>
 <style>
   :root {
@@ -141,7 +144,7 @@
     </div>
     <div class="pane-head">
       <label class="lbl" data-i18n="resultLabel">Résultat :</label>
-      <button id="copy" class="primary" data-i18n="copy">📋 Copier (Ctrl+Entrée)</button>
+      <button id="copy" class="primary" data-i18n="copy" aria-keyshortcuts="Control+Enter Meta+Enter">📋 Copier (Ctrl+Entrée)</button>
     </div>
     <div id="output" class="out" dir="auto"></div>
     <div class="row">
@@ -334,9 +337,11 @@ const MAPS = {
 };
 
 // --- i18n ---
+const APP_VERSION = '1.4.0';
 const I18N = {
   fr: { title: 'Convertisseur clavier Latin ⇄ Hébreu', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier Latin ⇄ Hébreu (AZERTY / QWERTY)',
+    docDesc: 'Convertisseur de clavier Latin ⇄ Hébreu (AZERTY / QWERTY), 100 % local.',
     subtitle: "Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.",
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
@@ -355,9 +360,10 @@ const I18N = {
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
     dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
-    copied: 'Copié !', chars: '{n} caractères', footNote: '100 % local — aucune donnée envoyée.' },
+    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', footNote: '100 % local — aucune donnée envoyée.' },
   en: { title: 'Latin ⇄ Hebrew keyboard converter', settings: 'Settings',
     docTitle: 'Latin ⇄ Hebrew Keyboard Converter (AZERTY / QWERTY)',
+    docDesc: 'Latin ⇄ Hebrew keyboard converter (AZERTY / QWERTY), 100% local.',
     subtitle: 'Paste text typed with the wrong layout, it gets converted automatically.',
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
@@ -376,9 +382,10 @@ const I18N = {
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
     dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
-    copied: 'Copied!', chars: '{n} characters', footNote: '100% local — no data sent.' },
+    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', footNote: '100% local — no data sent.' },
   he: { title: 'ממיר מקלדת לטינית ⇄ עברית', settings: 'הגדרות',
     docTitle: 'ממיר מקלדת לטינית ⇄ עברית (AZERTY / QWERTY)',
+    docDesc: 'ממיר מקלדת לטינית ⇄ עברית (AZERTY / QWERTY), 100% מקומי.',
     subtitle: 'הדביקו טקסט שהוקלד עם פריסה שגויה, והוא יומר אוטומטית.',
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
@@ -397,7 +404,7 @@ const I18N = {
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
     dirLatinAz: 'הומר QWERTY ← AZERTY.', dirLatinQw: 'הומר AZERTY ← QWERTY.',
-    copied: 'הועתק!', chars: '{n} תווים', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
+    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true };
@@ -440,17 +447,23 @@ function applyTheme() {
   let th = settings.theme;
   if (th === 'auto') th = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', th);
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute('content', th === 'dark' ? '#0e1320' : '#edf0f6');
 }
 function applySettingsToUI() {
   const L = effLang();
   document.documentElement.setAttribute('lang', L);
   document.documentElement.setAttribute('dir', L === 'he' ? 'rtl' : 'ltr');
   document.title = t('docTitle');
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', t('docDesc'));
   document.documentElement.setAttribute('data-fontsize', settings.fontsize);
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria'))); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
+  const foot = document.querySelector('[data-i18n="footNote"]');
+  if (foot) foot.textContent += ' · v' + APP_VERSION;
   document.querySelectorAll('input[name="lang"]').forEach(r => { r.checked = r.value === settings.lang; });
   document.querySelectorAll('input[name="layout"]').forEach(r => { r.checked = r.value === settings.layout; });
   document.querySelectorAll('input[name="direction"]').forEach(r => { r.checked = r.value === settings.direction; });
@@ -509,13 +522,30 @@ function doConvert(forced) {
   detect.textContent = input.value ? msg : '';
   const n = input.value.length;
   document.querySelector('#stats small').textContent = n ? t('chars').replace('{n}', n) : '';
-  if (settings.autocopy && out) navigator.clipboard.writeText(out).catch(() => {});
+  if (settings.autocopy && out) copyText(out);
   saveSettings();
+}
+async function copyText(str) {
+  try {
+    await navigator.clipboard.writeText(str);
+    return true;
+  } catch {}
+  // repli pour contextes sans API Clipboard (fichier local ancien, iframe...)
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = str;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch { return false; }
 }
 async function copyResult() {
   if (!output.textContent) return;
-  await navigator.clipboard.writeText(output.textContent);
-  detect.textContent = t('copied');
+  detect.textContent = (await copyText(output.textContent)) ? t('copied') : t('copyFail');
 }
 document.getElementById('swap').onclick = () => {
   // en mode latin, inverser = aussi basculer le sens (tables exactement inverses)
