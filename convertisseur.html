@@ -77,7 +77,7 @@
     <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages">⚙ <span data-i18n="settings">Réglages</span></button>
   </header>
   <p class="subtitle"><span data-i18n="subtitle">Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.</span><br>
-    <small>AZERTY : <code>qkuo</code> ↔ <code>שלום</code> &nbsp;|&nbsp; QWERTY : <code>akuo</code> ↔ <code>שלום</code></small>
+    <small dir="ltr">AZERTY : <code>qkuo</code> ↔ <code>שלום</code> &nbsp;|&nbsp; QWERTY : <code>akuo</code> ↔ <code>שלום</code></small>
   </p>
 
   <div class="card">
@@ -87,21 +87,21 @@
       <button id="auto" class="primary" data-i18n="auto">🔄 Auto (recommandé)</button>
       <button id="toHe" data-i18n="toHe">Latin → Hébreu</button>
       <button id="toFr" data-i18n="toFr">Hébreu → Latin</button>
-      <button id="swap" data-i18n="swap" title="Échanger entrée/sortie">⇄ Inverser</button>
-      <button id="clear" data-i18n="clear" title="Tout effacer">✕ Effacer</button>
+      <button id="swap" data-i18n="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie">⇄ Inverser</button>
+      <button id="clear" data-i18n="clear" data-i18n-title="clearTitle" title="Tout effacer">✕ Effacer</button>
       <button id="copy" data-i18n="copy">📋 Copier (Ctrl+Entrée)</button>
     </div>
     <div class="row">
       <span id="stats"><small></small></span>
     </div>
-    <p id="detect" aria-live="polite"></p>
+    <p id="detect" dir="auto" aria-live="polite"></p>
     <label class="lbl" data-i18n="resultLabel">Résultat :</label>
     <div id="output" class="out" dir="auto"></div>
   </div>
 
   <div class="card">
     <h3 style="margin-top:0" data-i18n="examples">Exemples pour tester</h3>
-    <div class="row">
+    <div class="row" dir="ltr">
       <button data-ex="qkuo" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
       <button data-ex="akuo" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
       <button data-ex="נםמחםור">נםמחםור → bonjour ?</button>
@@ -247,7 +247,7 @@ const I18N = {
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
     auto: '🔄 Auto (recommandé)', toHe: 'Latin → Hébreu', toFr: 'Hébreu → Latin',
-    swap: '⇄ Inverser', clear: '✕ Effacer', copy: '📋 Copier (Ctrl+Entrée)',
+    swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
     secLang: "Langue d'interface", secKeyboard: 'Clavier physique',
     secDirection: 'Sens de conversion par défaut', dirAuto: 'Auto-détection',
@@ -267,7 +267,7 @@ const I18N = {
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
     auto: '🔄 Auto (recommended)', toHe: 'Latin → Hebrew', toFr: 'Hebrew → Latin',
-    swap: '⇄ Swap', clear: '✕ Clear', copy: '📋 Copy (Ctrl+Enter)',
+    swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
     secLang: 'Interface language', secKeyboard: 'Physical keyboard',
     secDirection: 'Default conversion direction', dirAuto: 'Auto-detect',
@@ -287,7 +287,7 @@ const I18N = {
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
     auto: '🔄 אוטומטי (מומלץ)', toHe: 'לטינית ← עברית', toFr: 'עברית ← לטינית',
-    swap: '⇄ החלפה', clear: '✕ ניקוי', copy: '📋 העתקה (Ctrl+Enter)',
+    swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
     secLang: 'שפת ממשק', secKeyboard: 'מקלדת פיזית',
     secDirection: 'כיוון המרה ברירת מחדל', dirAuto: 'זיהוי אוטומטי',
@@ -339,6 +339,7 @@ function applySettingsToUI() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
   document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria'))); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
   document.querySelectorAll('input[name="lang"]').forEach(r => { r.checked = r.value === settings.lang; });
   document.querySelectorAll('input[name="layout"]').forEach(r => { r.checked = r.value === settings.layout; });
   document.querySelectorAll('input[name="direction"]').forEach(r => { r.checked = r.value === settings.direction; });
