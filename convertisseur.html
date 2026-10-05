@@ -24,16 +24,18 @@
     color: var(--text); margin: 0; padding: 0; line-height: 1.55; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .wrap { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
-  header.top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .25rem; }
-  .brand { display: flex; align-items: center; gap: .7rem; }
+  header.top { position: relative; display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: .45rem; margin-bottom: .25rem; padding-inline: 3rem; }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: .55rem; text-align: center; }
   .brand-mark { display: inline-flex; align-items: center; justify-content: center;
     width: 2.5rem; height: 2.5rem; border-radius: .8rem; font-size: 1.3rem;
     color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-hover));
     box-shadow: var(--card-shadow); }
   header.top h1 { font-size: 1.35rem; margin: 0; letter-spacing: -.01em; }
-  #openSettings { width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%;
+  #openSettings { position: absolute; inset-inline-end: 0; top: 0;
+    width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; }
-  .subtitle { color: var(--muted); margin: .5rem 0 1.25rem; }
+  .subtitle { color: var(--muted); margin: .5rem 0 1.25rem; text-align: center; }
   .subtitle code { background: var(--out-bg); border: 1px solid var(--border);
     border-radius: 6px; padding: 0 .35rem; font-size: .9em; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
