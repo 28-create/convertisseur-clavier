@@ -21,8 +21,8 @@ ou en local sur Windows.
 Ouvrir `convertisseur.html` dans un navigateur (double-clic suffit).
 
 - Collez le texte : détection auto du sens, conversion en direct.
-- Boutons : `Auto`, `Latin → Hébreu`, `Hébreu → Latin`, `⇄ Inverser`,
-  `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
+- Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
+  La conversion est en direct et le sens automatique (réglable dans ⚙).
 - ⚙ **Réglages** : langue d'interface (FR / EN / עברית),
   clavier physique (AZERTY / QWERTY), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion live,

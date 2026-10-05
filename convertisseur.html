@@ -84,9 +84,6 @@
     <label class="lbl" for="input" data-i18n="inputLabel">Texte à convertir :</label>
     <textarea id="input" dir="auto" data-i18n-ph="placeholder" placeholder="Collez ici... ex: qkuo  ou  נםמחםור"></textarea>
     <div class="row">
-      <button id="auto" class="primary" data-i18n="auto">🔄 Auto (recommandé)</button>
-      <button id="toHe" data-i18n="toHe">Latin → Hébreu</button>
-      <button id="toFr" data-i18n="toFr">Hébreu → Latin</button>
       <button id="swap" data-i18n="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie">⇄ Inverser</button>
       <button id="clear" data-i18n="clear" data-i18n-title="clearTitle" title="Tout effacer">✕ Effacer</button>
       <button id="copy" data-i18n="copy">📋 Copier (Ctrl+Entrée)</button>
@@ -247,7 +244,6 @@ const I18N = {
     subtitle: "Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.",
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
-    auto: '🔄 Auto (recommandé)', toHe: 'Latin → Hébreu', toFr: 'Hébreu → Latin',
     swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
     secLang: "Langue d'interface", langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
@@ -267,7 +263,6 @@ const I18N = {
     subtitle: 'Paste text typed with the wrong layout, it gets converted automatically.',
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
-    auto: '🔄 Auto (recommended)', toHe: 'Latin → Hebrew', toFr: 'Hebrew → Latin',
     swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
     secLang: 'Interface language', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
@@ -287,7 +282,6 @@ const I18N = {
     subtitle: 'הדביקו טקסט שהוקלד עם פריסה שגויה, והוא יומר אוטומטית.',
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
-    auto: '🔄 אוטומטי (מומלץ)', toHe: 'לטינית ← עברית', toFr: 'עברית ← לטינית',
     swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
     secLang: 'שפת ממשק', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
@@ -399,9 +393,6 @@ async function copyResult() {
   await navigator.clipboard.writeText(output.textContent);
   detect.textContent = t('copied');
 }
-document.getElementById('auto').onclick = () => doConvert();
-document.getElementById('toHe').onclick = () => doConvert('toHe');
-document.getElementById('toFr').onclick = () => doConvert('toFr');
 document.getElementById('swap').onclick = () => {
   input.value = output.textContent;
   doConvert();
