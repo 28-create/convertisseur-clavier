@@ -120,6 +120,7 @@
     <fieldset>
       <legend data-i18n="secLang">Langue d'interface</legend>
       <div class="radio-col" id="langGroup">
+        <label><input type="radio" name="lang" value="auto"> <span data-i18n="langAuto">Automatique (navigateur)</span></label>
         <label><input type="radio" name="lang" value="fr"> Français</label>
         <label><input type="radio" name="lang" value="en"> English</label>
         <label><input type="radio" name="lang" value="he"> עברית</label>
@@ -249,7 +250,7 @@ const I18N = {
     auto: '🔄 Auto (recommandé)', toHe: 'Latin → Hébreu', toFr: 'Hébreu → Latin',
     swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
-    secLang: "Langue d'interface", secKeyboard: 'Clavier physique',
+    secLang: "Langue d'interface", langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
     secDirection: 'Sens de conversion par défaut', dirAuto: 'Auto-détection',
     dirToHe: 'Toujours Latin → Hébreu', dirToFr: 'Toujours Hébreu → Latin',
     layoutAzerty: 'AZERTY (français)', layoutQwerty: 'QWERTY (anglais)',
@@ -269,7 +270,7 @@ const I18N = {
     auto: '🔄 Auto (recommended)', toHe: 'Latin → Hebrew', toFr: 'Hebrew → Latin',
     swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
-    secLang: 'Interface language', secKeyboard: 'Physical keyboard',
+    secLang: 'Interface language', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
     secDirection: 'Default conversion direction', dirAuto: 'Auto-detect',
     dirToHe: 'Always Latin → Hebrew', dirToFr: 'Always Hebrew → Latin',
     layoutAzerty: 'AZERTY (French)', layoutQwerty: 'QWERTY (English)',
@@ -289,7 +290,7 @@ const I18N = {
     auto: '🔄 אוטומטי (מומלץ)', toHe: 'לטינית ← עברית', toFr: 'עברית ← לטינית',
     swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
-    secLang: 'שפת ממשק', secKeyboard: 'מקלדת פיזית',
+    secLang: 'שפת ממשק', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
     secDirection: 'כיוון המרה ברירת מחדל', dirAuto: 'זיהוי אוטומטי',
     dirToHe: 'תמיד לטינית ← עברית', dirToFr: 'תמיד עברית ← לטינית',
     layoutAzerty: 'AZERTY (צרפתית)', layoutQwerty: 'QWERTY (אנגלית)',
@@ -302,12 +303,16 @@ const I18N = {
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
     copied: 'הועתק!', chars: '{n} תווים' },
 };
-const DEFAULTS = { lang: 'fr', layout: 'azerty', direction: 'auto', theme: 'light',
+const DEFAULTS = { lang: 'auto', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true };
 let settings = Object.assign({}, DEFAULTS);
 try {
   const raw = localStorage.getItem('conv-settings-v1');
   if (raw) settings = Object.assign({}, DEFAULTS, JSON.parse(raw));
+  // migration : 'fr' était l'ancien défaut forcé -> bascule vers l'auto,
+  // sauf choix explicite 'en' / 'he' qu'on respecte.
+  if (settings.lang === 'fr') settings.lang = 'auto';
+  if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) settings.lang = 'auto';
   // migration des anciennes clés
   if (!raw) {
     const l = localStorage.getItem('conv-layout');
@@ -318,7 +323,14 @@ try {
 let savedText = '';
 try { savedText = localStorage.getItem('conv-input') || ''; } catch {}
 
-function t(key) { return (I18N[settings.lang] && I18N[settings.lang][key]) || I18N.fr[key] || key; }
+function effLang() {
+  if (settings.lang && settings.lang !== 'auto') return settings.lang;
+  const nav = ((navigator.language || 'fr') + '').toLowerCase();
+  if (nav.startsWith('he')) return 'he';
+  if (nav.startsWith('en')) return 'en';
+  return 'fr';
+}
+function t(key) { const L = effLang(); return (I18N[L] && I18N[L][key]) || I18N.fr[key] || key; }
 function saveSettings() {
   try {
     localStorage.setItem('conv-settings-v1', JSON.stringify(settings));
@@ -332,8 +344,9 @@ function applyTheme() {
   document.documentElement.setAttribute('data-theme', th);
 }
 function applySettingsToUI() {
-  document.documentElement.setAttribute('lang', settings.lang);
-  document.documentElement.setAttribute('dir', settings.lang === 'he' ? 'rtl' : 'ltr');
+  const L = effLang();
+  document.documentElement.setAttribute('lang', L);
+  document.documentElement.setAttribute('dir', L === 'he' ? 'rtl' : 'ltr');
   document.title = t('docTitle');
   document.documentElement.setAttribute('data-fontsize', settings.fontsize);
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
