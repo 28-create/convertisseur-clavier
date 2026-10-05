@@ -95,6 +95,16 @@
   .panel-foot { padding: 1rem 1.1rem; border-top: 1px solid var(--border);
     display: flex; gap: .5rem; justify-content: flex-end; }
   .check { display: flex; align-items: center; gap: .55rem; margin: .4rem 0; }
+  [hidden] { display: none !important; }
+  fieldset:disabled { opacity: .45; }
+  fieldset:disabled input { cursor: not-allowed; }
+  .seg { display: flex; gap: .3rem; background: var(--out-bg);
+    border: 1px solid var(--border); border-radius: 999px; padding: .22rem; }
+  .seg button { font-size: .78rem; font-weight: 650; padding: .32rem .7rem;
+    border: 1px solid transparent; background: transparent; color: var(--muted); }
+  .seg button:hover { border-color: transparent; color: var(--text); }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--text);
+    border-color: var(--border); box-shadow: var(--card-shadow); }
   @media (prefers-reduced-motion: reduce) { * { transition: none; } }
   @media (max-width: 560px) {
     header.top h1 { font-size: 1.1rem; }
@@ -122,7 +132,13 @@
       <span id="stats"><small></small></span>
     </div>
     <textarea id="input" dir="auto" data-i18n-ph="placeholder" placeholder="Collez ici... ex: qkuo  ou  נםמחםור"></textarea>
-    <div class="converter-bar"><p id="detect" dir="auto" aria-live="polite"></p></div>
+    <div class="converter-bar">
+      <p id="detect" dir="auto" aria-live="polite"></p>
+      <div class="seg" id="latinSeg" dir="ltr" hidden>
+        <button data-latindir="toAz" aria-pressed="true">QWERTY → AZERTY</button>
+        <button data-latindir="toQw" aria-pressed="false">AZERTY → QWERTY</button>
+      </div>
+    </div>
     <div class="pane-head">
       <label class="lbl" data-i18n="resultLabel">Résultat :</label>
       <button id="copy" class="primary" data-i18n="copy">📋 Copier (Ctrl+Entrée)</button>
@@ -136,11 +152,15 @@
 
   <div class="card">
     <h3 style="margin-top:0" data-i18n="examples">Exemples pour tester</h3>
-    <div class="row chips" dir="ltr">
-      <button data-ex="qkuo" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
-      <button data-ex="akuo" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
-      <button data-ex="נםמחםור">נםמחםור → bonjour ?</button>
-      <button data-ex="Bםמחםור" data-layout="azerty">Bםמחםור → Bonjour ?</button>
+    <div class="row chips" dir="ltr" id="heExamples">
+      <button data-ex="qkuo" data-mode="hebrew" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
+      <button data-ex="akuo" data-mode="hebrew" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
+      <button data-ex="נםמחםור" data-mode="hebrew">נםמחםור → bonjour ?</button>
+      <button data-ex="Bםמחםור" data-mode="hebrew" data-layout="azerty">Bםמחםור → Bonjour ?</button>
+    </div>
+    <div class="row chips" dir="ltr" id="latinExamples" hidden>
+      <button data-ex="qwerty" data-mode="latin" data-latindir="toAz">qwerty → azerty ?</button>
+      <button data-ex="azerty" data-mode="latin" data-latindir="toQw">azerty → qwerty ?</button>
     </div>
   </div>
 
@@ -154,6 +174,13 @@
     <button id="closeSettings" class="ghost" data-i18n="close">Fermer</button>
   </div>
   <div class="panel-body">
+    <fieldset>
+      <legend data-i18n="secMode">Mode de conversion</legend>
+      <div class="radio-col" id="modeGroup">
+        <label><input type="radio" name="mode" value="hebrew"> <span data-i18n="modeHebrew">Latin ⇄ Hébreu</span></label>
+        <label><input type="radio" name="mode" value="latin"> <span data-i18n="modeLatin">QWERTY ⇄ AZERTY</span></label>
+      </div>
+    </fieldset>
     <fieldset>
       <legend data-i18n="secLang">Langue d'interface</legend>
       <div class="radio-col" id="langGroup">
@@ -272,6 +299,35 @@ const HE_TO_EN = {
   'צ': 'm', 'ת': ',', 'ץ': '.', '.': '/', ';': '`',
   ')': '(', '(': ')', '>': '<', '<': '>',
 };
+const QW_TO_AZ = {
+  'q': 'a', 'Q': 'A', 'w': 'z', 'W': 'Z',
+  'a': 'q', 'A': 'Q', 'z': 'w', 'Z': 'W',
+  'm': ',', 'M': '?',
+  ';': 'm', ':': 'M', "'": 'ù', '"': '%',
+  ',': ';', '<': '.', '.': ':', '>': '/',
+  '/': '!', '?': '§', '[': '^', '{': '¨',
+  ']': '$', '}': '£', '\\': '*', '|': 'μ', '`': '²',
+  '1': '&', '2': 'é', '3': '"', '4': "'", '5': '(',
+  '6': '-', '7': 'è', '8': '_', '9': 'ç', '0': 'à',
+  '-': ')', '!': '1', '@': '2', '#': '3', '$': '4',
+  '%': '5', '^': '6', '&': '7', '*': '8', '(': '9',
+  ')': '0', '_': '°',
+};
+const AZ_TO_QW = {
+  'a': 'q', 'A': 'Q', 'z': 'w', 'Z': 'W',
+  'q': 'a', 'Q': 'A', 'w': 'z', 'W': 'Z',
+  ',': 'm', '?': 'M',
+  'm': ';', 'M': ':', 'ù': "'", '%': '"',
+  ';': ',', '.': '<', ':': '.', '/': '>',
+  '!': '/', '§': '?', '^': '[', '¨': '{',
+  '$': ']', '£': '}', '*': '\\', 'μ': '|', '²': '`',
+  '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5',
+  '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0',
+  ')': '-', '1': '!', '2': '@', '3': '#', '4': '$',
+  '5': '%', '6': '^', '7': '&', '8': '*', '9': '(',
+  '0': ')', '°': '_',
+};
+
 const MAPS = {
   azerty: { toHe: FR_TO_HE, toFr: HE_TO_FR, label: 'AZERTY' },
   qwerty: { toHe: EN_TO_HE, toFr: HE_TO_EN, label: 'QWERTY' },
@@ -286,7 +342,8 @@ const I18N = {
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
     swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
-    secLang: "Langue d'interface", langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
+    secLang: "Langue d'interface", secMode: 'Mode de conversion',
+    modeHebrew: 'Latin ⇄ Hébreu', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
     secDirection: 'Sens de conversion par défaut', dirAuto: 'Auto-détection',
     dirToHe: 'Toujours Latin → Hébreu', dirToFr: 'Toujours Hébreu → Latin',
     layoutAzerty: 'AZERTY (français)', layoutQwerty: 'QWERTY (anglais)',
@@ -297,6 +354,7 @@ const I18N = {
     reset: 'Réinitialiser', detectedHe: 'Détecté : texte hébreu → converti vers {layout}.',
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
+    dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
     copied: 'Copié !', chars: '{n} caractères', footNote: '100 % local — aucune donnée envoyée.' },
   en: { title: 'Latin ⇄ Hebrew keyboard converter', settings: 'Settings',
     docTitle: 'Latin ⇄ Hebrew Keyboard Converter (AZERTY / QWERTY)',
@@ -305,7 +363,8 @@ const I18N = {
     placeholder: 'Paste here... e.g. akuo or שלום',
     swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
-    secLang: 'Interface language', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
+    secLang: 'Interface language', secMode: 'Conversion mode',
+    modeHebrew: 'Latin ⇄ Hebrew', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
     secDirection: 'Default conversion direction', dirAuto: 'Auto-detect',
     dirToHe: 'Always Latin → Hebrew', dirToFr: 'Always Hebrew → Latin',
     layoutAzerty: 'AZERTY (French)', layoutQwerty: 'QWERTY (English)',
@@ -316,6 +375,7 @@ const I18N = {
     reset: 'Reset', detectedHe: 'Detected: Hebrew text → converted to {layout}.',
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
+    dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
     copied: 'Copied!', chars: '{n} characters', footNote: '100% local — no data sent.' },
   he: { title: 'ממיר מקלדת לטינית ⇄ עברית', settings: 'הגדרות',
     docTitle: 'ממיר מקלדת לטינית ⇄ עברית (AZERTY / QWERTY)',
@@ -324,7 +384,8 @@ const I18N = {
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
     swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
-    secLang: 'שפת ממשק', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
+    secLang: 'שפת ממשק', secMode: 'מצב המרה',
+    modeHebrew: 'לטינית ⇄ עברית', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
     secDirection: 'כיוון המרה ברירת מחדל', dirAuto: 'זיהוי אוטומטי',
     dirToHe: 'תמיד לטינית ← עברית', dirToFr: 'תמיד עברית ← לטינית',
     layoutAzerty: 'AZERTY (צרפתית)', layoutQwerty: 'QWERTY (אנגלית)',
@@ -335,9 +396,10 @@ const I18N = {
     reset: 'איפוס', detectedHe: 'זוהה: טקסט עברי ← הומר ל-{layout}.',
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
+    dirLatinAz: 'הומר QWERTY ← AZERTY.', dirLatinQw: 'הומר AZERTY ← QWERTY.',
     copied: 'הועתק!', chars: '{n} תווים', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
-const DEFAULTS = { lang: 'auto', layout: 'azerty', direction: 'auto', theme: 'light',
+const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true };
 let settings = Object.assign({}, DEFAULTS);
 try {
@@ -347,6 +409,8 @@ try {
   // sauf choix explicite 'en' / 'he' qu'on respecte.
   if (settings.lang === 'fr') settings.lang = 'auto';
   if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) settings.lang = 'auto';
+  if (!['hebrew', 'latin'].includes(settings.mode)) settings.mode = 'hebrew';
+  if (!['toAz', 'toQw'].includes(settings.latinDir)) settings.latinDir = 'toAz';
   // migration des anciennes clés
   if (!raw) {
     const l = localStorage.getItem('conv-layout');
@@ -390,6 +454,17 @@ function applySettingsToUI() {
   document.querySelectorAll('input[name="lang"]').forEach(r => { r.checked = r.value === settings.lang; });
   document.querySelectorAll('input[name="layout"]').forEach(r => { r.checked = r.value === settings.layout; });
   document.querySelectorAll('input[name="direction"]').forEach(r => { r.checked = r.value === settings.direction; });
+  document.querySelectorAll('input[name="mode"]').forEach(r => { r.checked = r.value === settings.mode; });
+  document.getElementById('heExamples').hidden = settings.mode !== 'hebrew';
+  document.getElementById('latinExamples').hidden = settings.mode !== 'latin';
+  document.getElementById('latinSeg').hidden = settings.mode !== 'latin';
+  document.querySelectorAll('#latinSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.getAttribute('data-latindir') === settings.latinDir));
+  });
+  // en mode latin, clavier physique + sens hébreu sont sans objet
+  const lat = settings.mode === 'latin';
+  document.querySelector('input[name="layout"]').closest('fieldset').disabled = lat;
+  document.querySelector('input[name="direction"]').closest('fieldset').disabled = lat;
   document.querySelectorAll('input[name="theme"]').forEach(r => { r.checked = r.value === settings.theme; });
   document.querySelectorAll('input[name="fontsize"]').forEach(r => { r.checked = r.value === settings.fontsize; });
   document.getElementById('optLive').checked = !!settings.live;
@@ -418,11 +493,20 @@ function dirMessage(dir) {
   return (dir === 'toFr' ? t('detectedHe') : t('detectedFr')).replace('{layout}', lbl);
 }
 function doConvert(forced) {
-  const dir = forced || (settings.direction !== 'auto' ? settings.direction : detectDir(input.value));
-  const out = convertWith(input.value, settings.layout, dir);
+  let out, msg;
+  if (settings.mode === 'latin') {
+    const m = settings.latinDir === 'toAz' ? QW_TO_AZ : AZ_TO_QW;
+    out = [...input.value].map(ch => (ch in m ? m[ch] : ch)).join('');
+    output.setAttribute('dir', 'ltr');
+    msg = t(settings.latinDir === 'toAz' ? 'dirLatinAz' : 'dirLatinQw');
+  } else {
+    const dir = forced || (settings.direction !== 'auto' ? settings.direction : detectDir(input.value));
+    out = convertWith(input.value, settings.layout, dir);
+    output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
+    msg = dirMessage(dir);
+  }
   output.textContent = out;
-  output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
-  detect.textContent = input.value ? dirMessage(dir) : '';
+  detect.textContent = input.value ? msg : '';
   const n = input.value.length;
   document.querySelector('#stats small').textContent = n ? t('chars').replace('{n}', n) : '';
   if (settings.autocopy && out) navigator.clipboard.writeText(out).catch(() => {});
@@ -434,6 +518,11 @@ async function copyResult() {
   detect.textContent = t('copied');
 }
 document.getElementById('swap').onclick = () => {
+  // en mode latin, inverser = aussi basculer le sens (tables exactement inverses)
+  if (settings.mode === 'latin') {
+    settings.latinDir = settings.latinDir === 'toAz' ? 'toQw' : 'toAz';
+    applySettingsToUI();
+  }
   input.value = output.textContent;
   doConvert();
 };
@@ -445,8 +534,17 @@ input.addEventListener('keydown', e => {
 });
 document.querySelectorAll('[data-ex]').forEach(b => {
   b.onclick = () => {
-    if (b.getAttribute('data-layout')) { settings.layout = b.getAttribute('data-layout'); applySettingsToUI(); }
-    input.value = b.getAttribute('data-ex'); doConvert();
+    if (b.getAttribute('data-mode')) settings.mode = b.getAttribute('data-mode');
+    if (b.getAttribute('data-layout')) settings.layout = b.getAttribute('data-layout');
+    if (b.getAttribute('data-latindir')) settings.latinDir = b.getAttribute('data-latindir');
+    input.value = b.getAttribute('data-ex');
+    applySettingsToUI(); doConvert();
+  };
+});
+document.querySelectorAll('#latinSeg button').forEach(b => {
+  b.onclick = () => {
+    settings.latinDir = b.getAttribute('data-latindir');
+    applySettingsToUI(); saveSettings(); doConvert();
   };
 });
 
@@ -490,6 +588,7 @@ function bindRadio(name, key, after) {
 bindRadio('lang', 'lang', () => doConvert());
 bindRadio('layout', 'layout', () => doConvert());
 bindRadio('direction', 'direction', () => doConvert());
+bindRadio('mode', 'mode', () => doConvert());
 bindRadio('theme', 'theme');
 bindRadio('fontsize', 'fontsize');
 document.getElementById('optLive').onchange = e => { settings.live = e.target.checked; saveSettings(); if (settings.live) doConvert(); };

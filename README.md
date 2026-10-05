@@ -23,13 +23,18 @@ Ouvrir `convertisseur.html` dans un navigateur (double-clic suffit).
 - Collez le texte : détection auto du sens, conversion en direct.
 - Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
   La conversion est en direct et le sens automatique (réglable dans ⚙).
-- ⚙ **Réglages** : langue d'interface (FR / EN / עברית),
-  clavier physique (AZERTY / QWERTY), sens par défaut, thème
+- ⚙ **Réglages** : mode de conversion (**Latin ⇄ Hébreu** par défaut,
+  ou **QWERTY ⇄ AZERTY**), langue d'interface (auto : FR / EN / עברית),
+  clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion live,
   copie auto, mémorisation du texte.
 
-Exemples : `qkuo` (AZERTY) / `akuo` (QWERTY) → `שלום`,
+Exemples hébreu : `qkuo` (AZERTY) / `akuo` (QWERTY) → `שלום`,
 `נםמחםור` → `bonjour`, `Bםמחםור` → `Bonjour`.
+Exemples latin (mode QWERTY ⇄ AZERTY) : `qwerty` → `azerty` et inversement.
+En mode latin, un mini-sélecteur de sens apparaît dans la page
+(l'auto-détection étant impossible entre deux latins) et le bouton
+⇄ bascule le sens car les tables sont exactement inverses.
 
 ## 2. Usage quotidien (Windows)
 
@@ -48,8 +53,9 @@ fix-presse-papiers.bat --layout qwerty
 fix-presse-papiers.bat "texte direct" --layout azerty --direction toFr
 ```
 
-`--layout` : `azerty` (défaut) ou `qwerty`.
-`--direction` : `auto` (défaut), `toHe`, `toFr`.
+`--layout` : `azerty` (défaut) ou `qwerty` (mode hébreu).
+`--direction` : `auto` (défaut), `toHe`, `toFr` (mode hébreu).
+`--mode latin` + `--latin-dir toAz|toQw` : conversion QWERTY ⇄ AZERTY.
 Sans argument texte, le script lit et réécrit le presse-papiers.
 
 Prérequis : Python 3 (`py` ou `python` dans le PATH, `tkinter` inclus).

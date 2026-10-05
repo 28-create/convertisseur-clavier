@@ -5,6 +5,7 @@ Usage quotidien : selectionnez le texte tape avec le mauvais clavier, Ctrl+C,
 lancez ce script (ou son raccourci), puis Ctrl+V.
 
   python fix-presse-papiers.py [--layout azerty|qwerty] [--direction auto|toHe|toFr]
+  python fix-presse-papiers.py --mode latin [--latin-dir toAz|toQw]
 
 Raccourci global conseille (Windows) :
   1. Clic droit sur fix-presse-papiers.bat > Creer un raccourci
@@ -106,11 +107,45 @@ HE_TO_EN = {
     'ת': ',', 'ץ': '.', '.': '/', ';': '`',
     ')': '(', '(': ')', '>': '<', '<': '>',
 }
+QW_TO_AZ = {
+    'q': 'a', 'Q': 'A', 'w': 'z', 'W': 'Z',
+    'a': 'q', 'A': 'Q', 'z': 'w', 'Z': 'W',
+    'm': ',', 'M': '?', ';': 'm', ':': 'M',
+    "'": 'ù', '"': '%', ',': ';', '<': '.',
+    '.': ':', '>': '/', '/': '!', '?': '§',
+    '[': '^', '{': '¨', ']': '$', '}': '£',
+    '\\': '*', '|': 'μ', '`': '²', '1': '&',
+    '2': 'é', '3': '"', '4': "'", '5': '(',
+    '6': '-', '7': 'è', '8': '_', '9': 'ç',
+    '0': 'à', '-': ')', '!': '1', '@': '2',
+    '#': '3', '$': '4', '%': '5', '^': '6',
+    '&': '7', '*': '8', '(': '9', ')': '0',
+    '_': '°',
+}
+AZ_TO_QW = {
+    'a': 'q', 'A': 'Q', 'z': 'w', 'Z': 'W',
+    'q': 'a', 'Q': 'A', 'w': 'z', 'W': 'Z',
+    ',': 'm', '?': 'M', 'm': ';', 'M': ':',
+    'ù': "'", '%': '"', ';': ',', '.': '<',
+    ':': '.', '/': '>', '!': '/', '§': '?',
+    '^': '[', '¨': '{', '$': ']', '£': '}',
+    '*': '\\', 'μ': '|', '²': '`', '&': '1',
+    'é': '2', '"': '3', "'": '4', '(': '5',
+    '-': '6', 'è': '7', '_': '8', 'ç': '9',
+    'à': '0', ')': '-', '1': '!', '2': '@',
+    '3': '#', '4': '$', '5': '%', '6': '^',
+    '7': '&', '8': '*', '9': '(', '0': ')',
+    '°': '_',
+}
 # </maps:generated>
 
 MAPS = {
     'azerty': (FR_TO_HE, HE_TO_FR),
     'qwerty': (EN_TO_HE, HE_TO_EN),
+}
+LATIN_MAPS = {
+    'toAz': QW_TO_AZ,
+    'toQw': AZ_TO_QW,
 }
 
 
@@ -150,6 +185,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--layout', default='azerty', choices=['azerty', 'qwerty'])
     ap.add_argument('--direction', default='auto', choices=['auto', 'toHe', 'toFr'])
+    ap.add_argument('--mode', default='hebrew', choices=['hebrew', 'latin'],
+                    help='hebrew = Latin<->Hebreu (defaut), latin = QWERTY<->AZERTY')
+    ap.add_argument('--latin-dir', default='toAz', choices=['toAz', 'toQw'],
+                    help='sens en mode latin (pas d\'auto-detection possible)')
     ap.add_argument('text', nargs='?', help='texte direct (sinon presse-papiers)')
     args = ap.parse_args()
 
@@ -157,12 +196,18 @@ def main():
     if not src:
         print('Presse-papiers vide (ou texte manquant).')
         return 1
-    to_he, to_fr = MAPS[args.layout]
-    direction = autodir(src) if args.direction == 'auto' else args.direction
-    out = convert(src, to_fr if direction == 'toFr' else to_he)
+    if args.mode == 'latin':
+        direction = args.latin_dir
+        out = convert(src, LATIN_MAPS[direction])
+        tag = 'latin %s' % direction
+    else:
+        to_he, to_fr = MAPS[args.layout]
+        direction = autodir(src) if args.direction == 'auto' else args.direction
+        out = convert(src, to_fr if direction == 'toFr' else to_he)
+        tag = '%s %s' % (args.layout, direction)
     if args.text is None:
         set_clipboard(out)
-    msg = '[%s %s] %s' % (args.layout, direction, out)
+    msg = '[%s] %s' % (tag, out)
     try:
         print(msg)
     except UnicodeEncodeError:

@@ -10,7 +10,7 @@ import sys
 
 HTML_FILE = 'convertisseur.html'
 PY_FILE = 'fix-presse-papiers.py'
-MAP_NAMES = ['FR_TO_HE', 'HE_TO_FR', 'EN_TO_HE', 'HE_TO_EN']
+MAP_NAMES = ['FR_TO_HE', 'HE_TO_FR', 'EN_TO_HE', 'HE_TO_EN', 'QW_TO_AZ', 'AZ_TO_QW']
 BEGIN = '# <maps:generated>'
 END = '# </maps:generated>'
 
