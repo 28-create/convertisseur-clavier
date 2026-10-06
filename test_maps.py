@@ -5,6 +5,10 @@ identiques a celles de convertisseur.html (regenerer via gen_maps.py).
 Usage : python test_maps.py   (exit 0 = OK, exit 1 = derive detectee)
 """
 import importlib.util
+import json
+import re
+import shutil
+import subprocess
 import sys
 
 from gen_maps import MAP_NAMES, parse_js_maps
@@ -15,18 +19,63 @@ def _safe(o):
     return ascii(o)
 
 
-def load_py_maps():
+def load_fix():
     spec = importlib.util.spec_from_file_location(
         'fix_pp', 'fix-presse-papiers.py')
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    return {n: list(getattr(mod, n).items()) for n in MAP_NAMES}
+    return mod
+
+
+def run_js_smart(js_maps, cases):
+    """Execute convertSmart extrait du HTML sous node.
+    Rend la liste des resultats, None si node absent,
+    leve RuntimeError si l'execution echoue."""
+    if not shutil.which('node'):
+        return None
+    with open('convertisseur.html', encoding='utf-8') as f:
+        html = f.read()
+    m = re.search(r'function convertSmart\(text, fullMap, swapCaps, toFrench\) \{[\s\S]*?\n\}',
+                  html)
+    if not m:
+        raise RuntimeError('convertSmart introuvable dans convertisseur.html')
+    prog = (
+        'const MAPS = %s;\n'
+        '%s\n'
+        'const SWAP = {Q:"A",A:"Q",W:"Z",Z:"W"};\n'
+        'const cases = %s;\n'
+        'const esc = s => s.replace(/[^\\x20-\\x7e]/g, c => "\\\\u" + c.codePointAt(0).toString(16).padStart(4, "0"));\n'
+        'cases.forEach(([layout, dir, src, exp], i) => {\n'
+        '  const toHe = layout === "azerty" ? MAPS.FR_TO_HE : MAPS.EN_TO_HE;\n'
+        '  const toFr = layout === "azerty" ? MAPS.HE_TO_FR : MAPS.HE_TO_EN;\n'
+        '  const toFrench = dir === "toFr";\n'
+        '  const full = toFrench ? toFr : toHe;\n'
+        '  const swap = toFrench ? (layout === "azerty" ? SWAP : null) : full;\n'
+        '  const got = convertSmart(src, full, swap, toFrench);\n'
+        '  console.log(i + ":" + (got === exp ? "OK" : "FAIL:" + esc(got)));\n'
+        '});\n'
+    ) % (json.dumps({n: dict(js_maps[n]) for n in MAP_NAMES}, ensure_ascii=True),
+         m.group(0),
+         json.dumps([[l, d, s, e] for l, d, s, e in cases], ensure_ascii=True))
+    r = subprocess.run(['node', '-e', prog], capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
+    if r.returncode != 0:
+        raise RuntimeError('node a echoue : ' + (r.stderr or '').strip()[:200])
+    res = {}
+    for line in r.stdout.splitlines():
+        if ':' in line:
+            i, _, status = line.partition(':')
+            res[int(i)] = status
+    if len(res) != len(cases):
+        raise RuntimeError('sortie node incomplete : ' + repr(r.stdout[:200]))
+    return [res[i] for i in range(len(cases))]
 
 
 def main():
     with open('convertisseur.html', encoding='utf-8') as f:
         js_maps = parse_js_maps(f.read())
-    py_maps = load_py_maps()
+    fix_mod = load_fix()
+    py_maps = {n: list(getattr(fix_mod, n).items()) for n in MAP_NAMES}
     ok = True
     for name in MAP_NAMES:
         js_pairs, py_pairs = js_maps[name], py_maps[name]
@@ -57,9 +106,45 @@ def main():
         ('latin', 'toQw', 'azerty', 'qwerty'),
         ('latin', 'toAz', 'QM?,', 'A?§;'),
     ]
+    # batterie texte mixte : memes attendus cote JS (node) et Python (fix)
+    smart_cases = [
+        ('azerty', 'toFr', 'נםמחםור', 'bonjour'),
+        ('azerty', 'toFr', 'Bםמחםור', 'Bonjour'),
+        ('azerty', 'toFr', 'Salut, נםמחםור !', 'Salut, bonjour !'),
+        ('azerty', 'toFr', "C'est bon נםמחםור", "C'est bon bonjour"),
+        ('azerty', 'toFr', 'Appel en 2024 נםמחםור', 'Appel en 2024 bonjour'),
+        ('azerty', 'toFr', 'AQ', 'QA'),
+        ('azerty', 'toFr', 'M.', 'M.'),
+        ('azerty', 'toFr', 'abc 123', 'abc 123'),
+        ('azerty', 'toFr', 'שלום2024', 'qkuoéàé\''),
+        ('azerty', 'toHe', 'bonjour', 'נםמחםור'),
+        ('azerty', 'toHe', 'bonjour שלום', 'נםמחםור שלום'),
+        ('qwerty', 'toFr', 'Bםמחםור', 'Bonjour'),
+        ('qwerty', 'toFr', 'Hello, נםמחםור !', 'Hello, bonjour !'),
+    ]
     tables = {'azerty': (dict(js_maps['FR_TO_HE']), dict(js_maps['HE_TO_FR'])),
               'qwerty': (dict(js_maps['EN_TO_HE']), dict(js_maps['HE_TO_EN'])),
               'latin': (dict(js_maps['QW_TO_AZ']), dict(js_maps['AZ_TO_QW']))}
+    swap_az = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
+    for layout, direction, src, exp in smart_cases:
+        to_he, to_fr = tables[layout]
+        to_french = direction == 'toFr'
+        full = to_fr if to_french else to_he
+        swap = (swap_az if layout == 'azerty' else None) if to_french else full
+        got_py = fix_mod.convert_smart(src, full, swap, to_french)
+        if got_py != exp:
+            ok = False
+            print('SMART-PY %s %s %s -> %s (attendu %s)'
+                  % (layout, direction, _safe(src), _safe(got_py), _safe(exp)))
+    got_js = run_js_smart(js_maps, smart_cases)
+    if got_js is None:
+        print('SMART-JS ignore (node indisponible)')
+    else:
+        for (layout, direction, src, exp), status in zip(smart_cases, got_js):
+            if status != 'OK':
+                ok = False
+                print('SMART-JS %s %s %s -> %s (attendu %s)'
+                      % (layout, direction, _safe(src), _safe(status), _safe(exp)))
     for layout, direction, src, exp in cases:
         to_he, to_fr = tables[layout]
         if layout == 'latin':

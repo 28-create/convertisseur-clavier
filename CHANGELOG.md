@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## v1.5.2 — 7 oct. 2026
+- Texte mixte : en sens hébreu→français, seuls les segments contenant de
+  l'hébreu sont convertis ; le reste est préservé (mots, chiffres,
+  ponctuation, `M`). Capitales Q/A/W/Z traitées (AZERTY).
+
 ## v1.5.1 — 6 oct. 2026
 - « Latin » remplacé par « Français » / « Anglais » selon le clavier,
   dans les 3 langues (page, script, docs).

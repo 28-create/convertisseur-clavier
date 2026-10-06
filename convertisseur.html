@@ -336,9 +336,12 @@ const MAPS = {
   azerty: { toHe: FR_TO_HE, toFr: HE_TO_FR, label: 'AZERTY' },
   qwerty: { toHe: EN_TO_HE, toFr: HE_TO_EN, label: 'QWERTY' },
 };
+// Capitales isolées : seules Q/A/W/Z changent de touche AZERTY/QWERTY.
+// Le reste (dont M, chiffres, ponctuation) est préservé tel quel.
+const CAPS_SWAP = { Q: 'A', A: 'Q', W: 'Z', Z: 'W' };
 
 // --- i18n ---
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const I18N = {
   fr: { title: 'Convertisseur clavier {la} ⇄ {he}', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier {la} ⇄ {he} (AZERTY / QWERTY)',
@@ -507,6 +510,29 @@ function convertWith(text, layout, dir) {
   const m = dir === 'toFr' ? MAPS[layout].toFr : MAPS[layout].toHe;
   return [...text].map(ch => (ch in m ? m[ch] : ch)).join('');
 }
+// Texte mixte : seuls les segments contenant de l'hébreu sont convertis
+// (sens hébreu→français). Un segment latin à casse mixte ne peut pas venir
+// d'une frappe en hébreu (chaque touche shiftée donne une capitale) : il est
+// toujours préservé tel quel. Segments tout en capitales (ambigu : sigle
+// ou frappe shiftée ?) : seules Q/A/W/Z commutent (AZERTY).
+// Pure (sans JS) : extraction par test_maps.py pour exécution sous node.
+function convertSmart(text, fullMap, swapCaps, toFrench) {
+  return text.split(/(\s+)/).map(tok => {
+    if (!tok || /^\s+$/.test(tok)) return tok;
+    const hasHe = /[\u0590-\u05FF]/.test(tok);
+    if (hasHe) {
+      if (!toFrench) return tok;
+    } else if (toFrench) {
+      if (!swapCaps) return tok;
+      const letters = tok.replace(/[^A-Za-z]/g, '');
+      if (letters.length && letters === letters.toUpperCase()) {
+        return [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('');
+      }
+      return tok;
+    }
+    return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
+  }).join('');
+}
 function detectDir(text) {
   const h = (text.match(/[\u0590-\u05FF]/g) || []).length;
   const l = (text.match(/[A-Za-zéèêëàâäçîïôöùûüÉÈÀÇÙ]/g) || []).length;
@@ -530,7 +556,10 @@ function doConvert() {
     msg = t(settings.latinDir === 'toAz' ? 'dirLatinAz' : 'dirLatinQw');
   } else {
     const dir = settings.direction !== 'auto' ? settings.direction : detectDir(input.value);
-    out = convertWith(input.value, settings.layout, dir);
+    const toFrench = dir === 'toFr';
+    const full = toFrench ? MAPS[settings.layout].toFr : MAPS[settings.layout].toHe;
+    const swap = settings.layout === 'azerty' ? CAPS_SWAP : null;
+    out = convertSmart(input.value, full, swap, toFrench);
     output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
     msg = dirMessage(dir);
   }

@@ -43,6 +43,9 @@ ou sur votre machine Windows.
 Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
 
 - Collez le texte : le sens est détecté et la conversion est immédiate.
+- Texte mixte : en sens hébreu→français, seuls les mots contenant de
+  l'hébreu sont convertis ; le français (mots, chiffres, ponctuation)
+  est préservé. Mots tout en capitales : seules Q/A/W/Z commutent.
 - Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
 - ⚙ **Réglages** : mode de conversion (**Français/Anglais ⇄ Hébreu** par défaut,
   ou **QWERTY ⇄ AZERTY**), langue d'interface (auto : FR / EN / עברית),

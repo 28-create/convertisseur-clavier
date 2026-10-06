@@ -148,6 +148,37 @@ LATIN_MAPS = {
     'toAz': QW_TO_AZ,
     'toQw': AZ_TO_QW,
 }
+# Capitales isolees : seules Q/A/W/Z changent de touche (miroir JS CAPS_SWAP).
+CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
+
+_HE_RE = re.compile(r'[\u0590-\u05FF]')
+
+
+def convert_smart(text, full_map, swap_caps, to_french):
+    """Texte mixte : voir convertSmart dans convertisseur.html (miroir exact)."""
+    parts = re.split(r'(\s+)', text)
+    out = []
+    for tok in parts:
+        if not tok or tok.isspace():
+            out.append(tok)
+            continue
+        has_he = bool(_HE_RE.search(tok))
+        if has_he:
+            if not to_french:
+                out.append(tok)
+                continue
+        elif to_french:
+            if not swap_caps:
+                out.append(tok)
+                continue
+            letters = re.sub(r'[^A-Za-z]', '', tok)
+            if letters and letters == letters.upper():
+                out.append(''.join(swap_caps.get(ch, ch) for ch in tok))
+            else:
+                out.append(tok)
+            continue
+        out.append(''.join(full_map.get(ch, ch) for ch in tok))
+    return ''.join(out)
 
 
 def convert(text, mapping):
@@ -204,7 +235,10 @@ def main():
     else:
         to_he, to_fr = MAPS[args.layout]
         direction = autodir(src) if args.direction == 'auto' else args.direction
-        out = convert(src, to_fr if direction == 'toFr' else to_he)
+        to_french = direction == 'toFr'
+        full = to_fr if to_french else to_he
+        swap = CAPS_SWAP if args.layout == 'azerty' else None
+        out = convert_smart(src, full, swap, to_french)
         langue = {'azerty': 'francais', 'qwerty': 'anglais'}[args.layout]
         tag = '%s %s' % (langue, direction)
     if args.text is None:
