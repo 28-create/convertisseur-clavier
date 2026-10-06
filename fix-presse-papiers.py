@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Convertit le presse-papiers Latin <-> Hebreu (meme mapping que convertisseur.html).
+"""Convertit le presse-papiers francais/anglais <-> hebreu
+(meme mapping que convertisseur.html).
 
 Usage quotidien : selectionnez le texte tape avec le mauvais clavier, Ctrl+C,
 lancez ce script (ou son raccourci), puis Ctrl+V.
@@ -186,7 +187,7 @@ def main():
     ap.add_argument('--layout', default='azerty', choices=['azerty', 'qwerty'])
     ap.add_argument('--direction', default='auto', choices=['auto', 'toHe', 'toFr'])
     ap.add_argument('--mode', default='hebrew', choices=['hebrew', 'latin'],
-                    help='hebrew = Latin<->Hebreu (defaut), latin = QWERTY<->AZERTY')
+                    help='hebrew = francais/anglais<->hebreu (defaut), latin = QWERTY<->AZERTY')
     ap.add_argument('--latin-dir', default='toAz', choices=['toAz', 'toQw'],
                     help='sens en mode latin (pas d\'auto-detection possible)')
     ap.add_argument('text', nargs='?', help='texte direct (sinon presse-papiers)')
@@ -204,7 +205,8 @@ def main():
         to_he, to_fr = MAPS[args.layout]
         direction = autodir(src) if args.direction == 'auto' else args.direction
         out = convert(src, to_fr if direction == 'toFr' else to_he)
-        tag = '%s %s' % (args.layout, direction)
+        langue = {'azerty': 'francais', 'qwerty': 'anglais'}[args.layout]
+        tag = '%s %s' % (langue, direction)
     if args.text is None:
         set_clipboard(out)
     msg = '[%s] %s' % (tag, out)

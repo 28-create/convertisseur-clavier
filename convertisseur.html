@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Convertisseur de clavier Latin ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
+<meta name="description" content="Convertisseur de clavier Français ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
 <meta name="theme-color" content="#edf0f6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⌨%3C/text%3E%3C/svg%3E">
-<title>Convertisseur Clavier Latin ⇄ Hébreu (AZERTY / QWERTY)</title>
+<title>Convertisseur Clavier Français ⇄ Hébreu (AZERTY / QWERTY)</title>
 <style>
   :root {
     --bg: #edf0f6; --card: #ffffff; --text: #17233a; --muted: #5d6c84;
@@ -122,7 +122,7 @@
   <header class="top">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">⌨</span>
-      <h1 data-i18n="title">Convertisseur clavier Latin ⇄ Hébreu</h1>
+      <h1 data-i18n="title">Convertisseur clavier Français ⇄ Hébreu</h1>
     </div>
     <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages">⚙</button>
   </header>
@@ -181,7 +181,7 @@
     <fieldset>
       <legend data-i18n="secMode">Mode de conversion</legend>
       <div class="radio-col" id="modeGroup">
-        <label><input type="radio" name="mode" value="hebrew"> <span data-i18n="modeHebrew">Latin ⇄ Hébreu</span></label>
+        <label><input type="radio" name="mode" value="hebrew"> <span data-i18n="modeHebrew">Français ⇄ Hébreu</span></label>
         <label><input type="radio" name="mode" value="latin"> <span data-i18n="modeLatin">QWERTY ⇄ AZERTY</span></label>
       </div>
     </fieldset>
@@ -205,8 +205,8 @@
       <legend data-i18n="secDirection">Sens de conversion par défaut</legend>
       <div class="radio-col" id="dirGroup">
         <label><input type="radio" name="direction" value="auto"> <span data-i18n="dirAuto">Auto-détection</span></label>
-        <label><input type="radio" name="direction" value="toHe"> <span data-i18n="dirToHe">Toujours Latin → Hébreu</span></label>
-        <label><input type="radio" name="direction" value="toFr"> <span data-i18n="dirToFr">Toujours Hébreu → Latin</span></label>
+        <label><input type="radio" name="direction" value="toHe"> <span data-i18n="dirToHe">Toujours Français → Hébreu</span></label>
+        <label><input type="radio" name="direction" value="toFr"> <span data-i18n="dirToFr">Toujours Hébreu → Français</span></label>
       </div>
     </fieldset>
     <fieldset>
@@ -340,18 +340,19 @@ const MAPS = {
 // --- i18n ---
 const APP_VERSION = '1.5.0';
 const I18N = {
-  fr: { title: 'Convertisseur clavier Latin ⇄ Hébreu', settings: 'Réglages',
-    docTitle: 'Convertisseur Clavier Latin ⇄ Hébreu (AZERTY / QWERTY)',
-    docDesc: 'Convertisseur de clavier Latin ⇄ Hébreu (AZERTY / QWERTY), 100 % local.',
+  fr: { title: 'Convertisseur clavier {la} ⇄ {he}', settings: 'Réglages',
+    docTitle: 'Convertisseur Clavier {la} ⇄ {he} (AZERTY / QWERTY)',
+    docDesc: 'Convertisseur de clavier {la} ⇄ {he} (AZERTY / QWERTY), 100 % local.',
     subtitle: "Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.",
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
     swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
     secLang: "Langue d'interface", secMode: 'Mode de conversion',
-    modeHebrew: 'Latin ⇄ Hébreu', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
+    langFr: 'Français', langEn: 'Anglais', langHe: 'Hébreu',
+    modeHebrew: '{la} ⇄ {he}', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatique (navigateur)', secKeyboard: 'Clavier physique',
     secDirection: 'Sens de conversion par défaut', dirAuto: 'Auto-détection',
-    dirToHe: 'Toujours Latin → Hébreu', dirToFr: 'Toujours Hébreu → Latin',
+    dirToHe: 'Toujours {la} → {he}', dirToFr: 'Toujours {he} → {la}',
     layoutAzerty: 'AZERTY (français)', layoutQwerty: 'QWERTY (anglais)',
     secTheme: 'Thème', themeLight: 'Clair', themeDark: 'Sombre', themeAuto: 'Automatique (système)',
     secFont: 'Taille du texte', fontSmall: 'Petit', fontMedium: 'Moyen', fontLarge: 'Grand',
@@ -362,18 +363,19 @@ const I18N = {
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
     dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
     copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', footNote: '100 % local — aucune donnée envoyée.' },
-  en: { title: 'Latin ⇄ Hebrew keyboard converter', settings: 'Settings',
-    docTitle: 'Latin ⇄ Hebrew Keyboard Converter (AZERTY / QWERTY)',
-    docDesc: 'Latin ⇄ Hebrew keyboard converter (AZERTY / QWERTY), 100% local.',
+  en: { title: '{la} ⇄ {he} keyboard converter', settings: 'Settings',
+    docTitle: '{la} ⇄ {he} Keyboard Converter (AZERTY / QWERTY)',
+    docDesc: '{la} ⇄ {he} keyboard converter (AZERTY / QWERTY), 100% local.',
     subtitle: 'Paste text typed with the wrong layout, it gets converted automatically.',
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
     swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
     secLang: 'Interface language', secMode: 'Conversion mode',
-    modeHebrew: 'Latin ⇄ Hebrew', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
+    langFr: 'French', langEn: 'English', langHe: 'Hebrew',
+    modeHebrew: '{la} ⇄ {he}', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'Automatic (browser)', secKeyboard: 'Physical keyboard',
     secDirection: 'Default conversion direction', dirAuto: 'Auto-detect',
-    dirToHe: 'Always Latin → Hebrew', dirToFr: 'Always Hebrew → Latin',
+    dirToHe: 'Always {la} → {he}', dirToFr: 'Always {he} → {la}',
     layoutAzerty: 'AZERTY (French)', layoutQwerty: 'QWERTY (English)',
     secTheme: 'Theme', themeLight: 'Light', themeDark: 'Dark', themeAuto: 'Automatic (system)',
     secFont: 'Text size', fontSmall: 'Small', fontMedium: 'Medium', fontLarge: 'Large',
@@ -384,18 +386,19 @@ const I18N = {
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
     dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
     copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', footNote: '100% local — no data sent.' },
-  he: { title: 'ממיר מקלדת לטינית ⇄ עברית', settings: 'הגדרות',
-    docTitle: 'ממיר מקלדת לטינית ⇄ עברית (AZERTY / QWERTY)',
-    docDesc: 'ממיר מקלדת לטינית ⇄ עברית (AZERTY / QWERTY), 100% מקומי.',
+  he: { title: 'ממיר מקלדת {la} ⇄ {he}', settings: 'הגדרות',
+    docTitle: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY)',
+    docDesc: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY), 100% מקומי.',
     subtitle: 'הדביקו טקסט שהוקלד עם פריסה שגויה, והוא יומר אוטומטית.',
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
     swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
     secLang: 'שפת ממשק', secMode: 'מצב המרה',
-    modeHebrew: 'לטינית ⇄ עברית', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
+    langFr: 'צרפתית', langEn: 'אנגלית', langHe: 'עברית',
+    modeHebrew: '{la} ⇄ {he}', modeLatin: 'QWERTY ⇄ AZERTY', langAuto: 'אוטומטי (דפדפן)', secKeyboard: 'מקלדת פיזית',
     secDirection: 'כיוון המרה ברירת מחדל', dirAuto: 'זיהוי אוטומטי',
-    dirToHe: 'תמיד לטינית ← עברית', dirToFr: 'תמיד עברית ← לטינית',
+    dirToHe: 'תמיד {la} ← {he}', dirToFr: 'תמיד {he} ← {la}',
     layoutAzerty: 'AZERTY (צרפתית)', layoutQwerty: 'QWERTY (אנגלית)',
     secTheme: 'ערכת נושא', themeLight: 'בהיר', themeDark: 'כהה', themeAuto: 'אוטומטי (מערכת)',
     secFont: 'גודל טקסט', fontSmall: 'קטן', fontMedium: 'בינוני', fontLarge: 'גדול',
@@ -437,6 +440,20 @@ function effLang() {
   return 'fr';
 }
 function t(key) { const L = effLang(); return (I18N[L] && I18N[L][key]) || I18N.fr[key] || key; }
+function latinName() {
+  if (settings.layout === 'qwerty') return t('langEn');
+  return t('langFr');
+}
+function paintPair() {
+  const la = latinName(), he = t('langHe');
+  const fill = key => t(key).split('{la}').join(la).split('{he}').join(he);
+  document.querySelectorAll('[data-i18n="title"],[data-i18n="modeHebrew"],[data-i18n="dirToHe"],[data-i18n="dirToFr"]').forEach(el => {
+    el.textContent = fill(el.getAttribute('data-i18n'));
+  });
+  document.title = fill('docTitle');
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', fill('docDesc'));
+}
 function saveSettings() {
   try {
     localStorage.setItem('conv-settings-v1', JSON.stringify(settings));
@@ -455,9 +472,6 @@ function applySettingsToUI() {
   const L = effLang();
   document.documentElement.setAttribute('lang', L);
   document.documentElement.setAttribute('dir', L === 'he' ? 'rtl' : 'ltr');
-  document.title = t('docTitle');
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) metaDesc.setAttribute('content', t('docDesc'));
   document.documentElement.setAttribute('data-fontsize', settings.fontsize);
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
@@ -465,6 +479,7 @@ function applySettingsToUI() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
   const foot = document.querySelector('[data-i18n="footNote"]');
   if (foot) foot.textContent += ' · v' + APP_VERSION;
+  paintPair();
   document.querySelectorAll('input[name="lang"]').forEach(r => { r.checked = r.value === settings.lang; });
   document.querySelectorAll('input[name="layout"]').forEach(r => { r.checked = r.value === settings.layout; });
   document.querySelectorAll('input[name="direction"]').forEach(r => { r.checked = r.value === settings.direction; });

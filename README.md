@@ -16,7 +16,7 @@ ou sur votre machine Windows.
 
 ## Fonctionnalités
 
-- Conversion **Latin ⇄ Hébreu** (claviers physiques AZERTY et QWERTY),
+- Conversion **Français/Anglais ⇄ Hébreu** (claviers physiques AZERTY et QWERTY),
   sens détecté automatiquement, conversion en direct pendant la frappe.
 - Conversion **QWERTY ⇄ AZERTY**, avec sélecteur de sens intégré.
 - Interface en **français, anglais et hébreu** (langue détectée
@@ -44,7 +44,7 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
 
 - Collez le texte : le sens est détecté et la conversion est immédiate.
 - Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
-- ⚙ **Réglages** : mode de conversion (**Latin ⇄ Hébreu** par défaut,
+- ⚙ **Réglages** : mode de conversion (**Français/Anglais ⇄ Hébreu** par défaut,
   ou **QWERTY ⇄ AZERTY**), langue d'interface (auto : FR / EN / עברית),
   clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion en direct,
