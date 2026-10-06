@@ -5,6 +5,8 @@
 [![Tests](https://github.com/28-create/convertisseur-clavier/actions/workflows/tests.yml/badge.svg)](https://github.com/28-create/convertisseur-clavier/actions)
 ![100 % local](https://img.shields.io/badge/100%25-local-brightgreen)
 
+**Démo en ligne : https://28-create.github.io/convertisseur-clavier/**
+
 Outil **100 % local** qui récupère un texte tapé avec le mauvais clavier :
 quand on oublie de basculer entre AZERTY / QWERTY et hébreu, le texte
 est reconverti dans le bon sens, automatiquement.
