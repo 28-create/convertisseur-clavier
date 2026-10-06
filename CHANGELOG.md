@@ -1,7 +1,8 @@
 # Journal des modifications
 
-## Non publié
-- « Latin » remplacé par « Français » / « Anglais » selon le clavier (page, script, docs).
+## v1.5.1 — 6 oct. 2026
+- « Latin » remplacé par « Français » / « Anglais » selon le clavier,
+  dans les 3 langues (page, script, docs).
 
 ## v1.5.0 — 6 oct. 2026
 - Application Windows `ConvertisseurClavier.exe` : la page dans une
