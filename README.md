@@ -15,6 +15,8 @@ ou en local sur Windows.
 | `fix-presse-papiers.py` / `.bat` | Raccourci presse-papiers Windows (usage quotidien). |
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `test_maps.py` | Test anti-dérive + non-régression (à lancer après chaque modif). |
+| `test_page.py` | Test d'intégrité page : offline, ids, i18n, RTL, syntaxe JS, version. |
+| `installer-raccourci.ps1` | Crée le raccourci Bureau + touche globale (`Ctrl+Alt+H`). |
 
 ## 1. Page web
 
@@ -42,8 +44,8 @@ Sélectionnez le texte tapé avec le mauvais clavier, puis :
 
 1. `Ctrl+C`
 2. Lancez `fix-presse-papiers.bat`
-   (astuce : clic droit → *Créer un raccourci* → Propriétés →
-   *Touche de raccourci* : `Ctrl+Alt+H`)
+   (ou `installer-raccourci.ps1` : crée le raccourci Bureau
+   avec la touche globale `Ctrl+Alt+H` en une commande)
 3. `Ctrl+V`
 
 Options :
@@ -73,6 +75,7 @@ Après toute modification des mappings dans le HTML :
 ```sh
 python gen_maps.py
 python test_maps.py
+python test_page.py
 ```
 
 `test_maps.py` compare les 4 tables (ordre + valeurs), détecte les clés
