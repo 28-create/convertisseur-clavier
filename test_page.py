@@ -88,6 +88,38 @@ def main():
     except Exception as e:
         check('version == tag git (git indisponible, ignore)', True, str(e)[:80])
 
+    # 7. contrastes WCAG AA (texte normal >= 4.5, cf. audit oct. 2026)
+    css = h.split('<style>')[1].split('</style>')[0]
+
+    def _lum(hexcode):
+        hexcode = hexcode.strip().lstrip('#')
+        r, g, b = [int(hexcode[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+    def _ratio(a, b):
+        la, lb = _lum(a), _lum(b)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+    themes = {}
+    for m in re.finditer(r'(html\[data-theme="dark"\]\s*\{[^}]*\}|:root\s*\{[^}]*\})', css):
+        block = m.group(0)
+        name = 'dark' if block.lstrip().startswith('html') else 'light'
+        themes[name] = dict(re.findall(r'(--[\w-]+):\s*(#[0-9a-fA-F]{6})', block))
+    wcag_detail = []
+    for theme, vars_ in themes.items():
+        for fg, bg in [('text', 'bg'), ('muted', 'bg'), ('text', 'card')]:
+            r = _ratio(vars_['--' + fg], vars_['--' + bg])
+            if r < 4.5:
+                wcag_detail.append('%s %s/%s=%.2f' % (theme, fg, bg, r))
+    r_light = _ratio('#ffffff', themes['light']['--accent'])
+    r_dark = _ratio('#101725', themes['dark']['--accent'])
+    if r_light < 4.5 or r_dark < 4.5:
+        wcag_detail.append('bouton light=%.2f dark=%.2f' % (r_light, r_dark))
+    check('contraste WCAG AA', not wcag_detail, '; '.join(wcag_detail))
+    check('bouton primaire dark en texte sombre',
+          'html[data-theme="dark"] button.primary' in css)
+
     ok = True
     for name, passed, *rest in results:
         if not passed:

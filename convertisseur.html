@@ -72,6 +72,7 @@
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   button.primary:hover { background: var(--accent-hover); }
   button.ghost { background: transparent; }
+  html[data-theme="dark"] button.primary, html[data-theme="dark"] .brand-mark { color: #101725; }
   input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
   .chips button { font-size: .85rem; font-weight: 500; padding: .4rem .8rem; background: var(--out-bg); }
   .card h3 { margin: 0 0 .6rem; font-size: 1rem; }
@@ -337,7 +338,7 @@ const MAPS = {
 };
 
 // --- i18n ---
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 const I18N = {
   fr: { title: 'Convertisseur clavier Latin ⇄ Hébreu', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier Latin ⇄ Hébreu (AZERTY / QWERTY)',

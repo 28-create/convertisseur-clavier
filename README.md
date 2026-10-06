@@ -2,6 +2,7 @@
 
 [![Version](https://img.shields.io/github/v/tag/28-create/convertisseur-clavier?label=version)](https://github.com/28-create/convertisseur-clavier/tags)
 [![Licence](https://img.shields.io/github/license/28-create/convertisseur-clavier)](LICENSE)
+[![Tests](https://github.com/28-create/convertisseur-clavier/actions/workflows/tests.yml/badge.svg)](https://github.com/28-create/convertisseur-clavier/actions)
 ![100 % local](https://img.shields.io/badge/100%25-local-brightgreen)
 
 Outil **100 % local** qui récupère un texte tapé avec le mauvais clavier :
@@ -96,6 +97,7 @@ python test_page.py
 `test_maps.py` compare les 6 tables (ordre + valeurs), détecte les clés
 dupliquées, vérifie la réversibilité exacte et rejoue des cas connus
 (`qkuo`/`akuo` → `שלום`, etc.). Exit `0` = synchronisé, `1` = dérive.
+La CI GitHub Actions rejoue les deux suites (Ubuntu + Windows) à chaque push.
 
 ## Version et historique
 

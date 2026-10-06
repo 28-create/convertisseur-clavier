@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## v1.4.1 — 6 oct. 2026
+- Contraste AA en thème sombre : texte sombre sur boutons primaires et
+  marque (mesuré 2,98 → ≥ 6), test de contraste intégré à `test_page.py`.
+- CI GitHub Actions (Ubuntu + Windows), release GitHub, déploiement Pages.
+
 ## v1.4.0 — 6 oct. 2026
 - Mode QWERTY ⇄ AZERTY : choix du mode dans les réglages, mini-sélecteur
   de sens dans la page, exemples adaptés, ⇄ bascule le sens
