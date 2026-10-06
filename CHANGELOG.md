@@ -1,5 +1,8 @@
 # Journal des modifications
 
+## Non publié
+- Pages : `index.html` de redirection + lien démo dans le README.
+
 ## v1.4.1 — 6 oct. 2026
 - Contraste AA en thème sombre : texte sombre sur boutons primaires et
   marque (mesuré 2,98 → ≥ 6), test de contraste intégré à `test_page.py`.
