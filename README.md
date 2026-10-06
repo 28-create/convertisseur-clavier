@@ -33,6 +33,7 @@ ou sur votre machine Windows.
 | `convertisseur.html` | Page web unique (hors ligne). **Source de vérité des mappings.** |
 | `fix-presse-papiers.py` / `.bat` | Raccourci presse-papiers Windows (usage quotidien). |
 | `installer-raccourci.ps1` | Crée le raccourci Bureau + touche globale (`Ctrl+Alt+H`). |
+| `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
@@ -83,7 +84,28 @@ Si la console Windows ne peut pas afficher l'hébreu, le script affiche
 un repli ASCII `\uXXXX` au lieu de planter — le presse-papiers,
 lui, est toujours correct.
 
-## 3. Développement
+## 3. Application Windows (.exe)
+
+`ConvertisseurClavier.exe` (onglet *Releases* GitHub) : la même page dans
+une fenêtre native, sans navigateur ni Python. Nécessite le runtime
+WebView2 (présent par défaut sur Windows 11 et Windows 10 à jour).
+
+Construire soi-même :
+
+```sh
+pip install pywebview pyinstaller
+pyinstaller --noconsole --onefile --add-data "convertisseur.html;." --name ConvertisseurClavier app.py
+```
+
+Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).
+
+> Antivirus : un `.exe` PyInstaller fraîchement construit est parfois
+> bloqué à tort (faux positif de réputation, ex. Avast qui verrouille
+> ou met en quarantaine). Dans ce cas, déclarez une exception pour le
+> dossier dans l'antivirus, restaurez le fichier, puis relancez le build
+> ou l'application.
+
+## 4. Développement
 
 **Les tables JavaScript de `convertisseur.html` sont la source de vérité.
 Ne jamais éditer les tables de `fix-presse-papiers.py` à la main.**

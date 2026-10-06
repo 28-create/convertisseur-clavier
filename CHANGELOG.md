@@ -1,5 +1,9 @@
 # Journal des modifications
 
+## v1.5.0 — 6 oct. 2026
+- Application Windows `ConvertisseurClavier.exe` : la page dans une
+  fenêtre native (`app.py`, PyInstaller, runtime WebView2 requis).
+
 ## v1.4.2 — 6 oct. 2026
 - Bouton Copier déplacé après la zone de résultat.
 - Pages : `index.html` de redirection + lien démo dans le README.

@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+# Artefacts PyInstaller (build local du .exe, non versionnés)
+dist/
+build/
+*.spec
