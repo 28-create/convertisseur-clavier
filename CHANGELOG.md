@@ -1,6 +1,7 @@
 # Journal des modifications
 
-## Non publié
+## v1.4.2 — 6 oct. 2026
+- Bouton Copier déplacé après la zone de résultat.
 - Pages : `index.html` de redirection + lien démo dans le README.
 
 ## v1.4.1 — 6 oct. 2026
