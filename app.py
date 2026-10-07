@@ -2,7 +2,9 @@
 """Application Windows : la page convertisseur dans une fenetre native.
 
 Dev (fenetre) :  python app.py
-Build (.exe)   :  pyinstaller --noconsole --onefile
+Build (.exe)   :  python gen_version.py
+                  pyinstaller --noconsole --onefile
+                  --version-file version_info.txt
                   --add-data "convertisseur.html;."
                   --name ConvertisseurClavier app.py
 Le .exe se trouve ensuite dans dist\\ConvertisseurClavier.exe.

@@ -97,7 +97,8 @@ Construire soi-même :
 
 ```sh
 pip install pywebview pyinstaller
-pyinstaller --noconsole --onefile --add-data "convertisseur.html;." --name ConvertisseurClavier app.py
+python gen_version.py
+pyinstaller --noconsole --onefile --version-file version_info.txt --add-data "convertisseur.html;." --name ConvertisseurClavier app.py
 ```
 
 Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).

@@ -120,6 +120,14 @@ def main():
     check('bouton primaire dark en texte sombre',
           'html[data-theme="dark"] button.primary' in css)
 
+    # 8. version_info.txt synchronise avec APP_VERSION (pour --version-file)
+    import gen_version
+    mver = re.search(r"const APP_VERSION = '([^']+)'", h)
+    expect = gen_version.build_info(mver.group(1))
+    with open('version_info.txt', encoding='utf-8') as f:
+        actual = f.read()
+    check('version_info.txt a jour', actual == expect)
+
     ok = True
     for name, passed, *rest in results:
         if not passed:
