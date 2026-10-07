@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Application Windows : la page convertisseur dans une fenetre native.
+r"""Application Windows : la page convertisseur dans une fenetre native.
 
 Dev (fenetre) :  python app.py
 Build (.exe)   :  python build_exe.py  (nom versionne : dist\ConvertisseurClavier-X.Y.Z.exe)
