@@ -21,9 +21,12 @@ $ok = ($sc.TargetPath -eq (Join-Path $tmp 'App\ConvertisseurClavier.exe')) -and 
 Write-Host ('cible=' + $sc.TargetPath)
 Write-Host ('touche=' + $sc.Hotkey)
 $rk = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$reg"
-$ok = $ok -and ((Get-ItemProperty $rk).DisplayVersion -eq '9.9.9') -and ((Get-ItemProperty $rk).DisplayName -eq $nom)
+$props = Get-ItemProperty $rk
+$ok = $ok -and ($props.DisplayVersion -eq '9.9.9') -and ($props.DisplayName -eq $nom)
 $ok = $ok -and (Test-Path (Join-Path $tmp 'App\desinstaller.ps1'))
-Write-Host ('registre=' + (Get-ItemProperty $rk).DisplayVersion)
+Write-Host ('registre=' + $props.DisplayVersion + '/' + $props.DisplayName)
+Write-Host ('desinst-copie=' + (Test-Path (Join-Path $tmp 'App\desinstaller.ps1')))
+Write-Host ('checks-install=' + $ok)
 
 & (Join-Path $tmp 'App\desinstaller.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom
 $restes = @()
