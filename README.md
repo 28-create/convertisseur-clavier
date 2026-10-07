@@ -1,4 +1,6 @@
-# Convertisseur Clavier Latin ⇄ Hébreu
+<p align="center"><img src="logo.svg" width="96" alt="Logo Convertisseur Clavier"></p>
+
+# Convertisseur Clavier Français/Anglais ⇄ Hébreu
 
 [![Version](https://img.shields.io/github/v/tag/28-create/convertisseur-clavier?label=version)](https://github.com/28-create/convertisseur-clavier/tags)
 [![Licence](https://img.shields.io/github/license/28-create/convertisseur-clavier)](LICENSE)

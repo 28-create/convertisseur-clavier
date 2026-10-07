@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Convertisseur de clavier Français ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
 <meta name="theme-color" content="#edf0f6">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⌨%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E  %3Cdefs%3E    %3ClinearGradient id=%22ckg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E      %3Cstop offset=%220%22 stop-color=%22%234F46E5%22/%3E      %3Cstop offset=%221%22 stop-color=%22%237C3AED%22/%3E    %3C/linearGradient%3E  %3C/defs%3E  %3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22url(%23ckg)%22/%3E  %3Crect x=%2212%22 y=%2216%22 width=%2240%22 height=%2232%22 rx=%227%22 fill=%22%23FFFFFF%22/%3E  %3Ctext x=%2232%22 y=%2239%22 text-anchor=%22middle%22 font-family=%22system-ui,'Segoe UI',Arial,sans-serif%22 font-size=%2221%22 font-weight=%22bold%22 fill=%22%234F46E5%22%3EAא%3C/text%3E%3C/svg%3E">
 <title>Convertisseur Clavier Français ⇄ Hébreu (AZERTY / QWERTY)</title>
 <style>
   :root {
@@ -30,10 +30,9 @@
   header.top { position: relative; display: flex; flex-direction: column; align-items: center;
     text-align: center; gap: .45rem; margin-bottom: .25rem; padding-inline: 3rem; }
   .brand { display: flex; flex-direction: column; align-items: center; gap: .55rem; text-align: center; }
-  .brand-mark { display: inline-flex; align-items: center; justify-content: center;
-    width: 2.5rem; height: 2.5rem; border-radius: .8rem; font-size: 1.3rem;
-    color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    box-shadow: var(--card-shadow); }
+  .brand-mark { display: inline-flex; width: 2.5rem; height: 2.5rem;
+    border-radius: .8rem; overflow: hidden; box-shadow: var(--card-shadow); }
+  .brand-mark svg { width: 100%; height: 100%; display: block; }
   header.top h1 { font-size: 1.35rem; margin: 0; letter-spacing: -.01em; }
   #openSettings { position: absolute; inset-inline-end: 0; top: 0;
     width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%;
@@ -72,7 +71,7 @@
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   button.primary:hover { background: var(--accent-hover); }
   button.ghost { background: transparent; }
-  html[data-theme="dark"] button.primary, html[data-theme="dark"] .brand-mark { color: #101725; }
+  html[data-theme="dark"] button.primary { color: #101725; }
   input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
   .chips button { font-size: .85rem; font-weight: 500; padding: .4rem .8rem; background: var(--out-bg); }
   .card h3 { margin: 0 0 .6rem; font-size: 1rem; }
@@ -102,7 +101,6 @@
   .sec-ico { margin-inline-end: .15rem; }
   .ico { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .brand-mark svg { width: 1.35rem; height: 1.35rem; }
   #openSettings svg { width: 1.2rem; height: 1.2rem; }
   .flag { width: 1.2em; height: 1.2em; border-radius: 50%; vertical-align: -0.22em;
     margin-inline-end: .3rem; box-shadow: 0 0 0 1px var(--border); }
@@ -128,7 +126,7 @@
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="10.2" r="1" fill="currentColor" stroke="none"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/></svg></span>
+      <span class="brand-mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ckg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ckg)"/><rect x="12" y="16" width="40" height="32" rx="7" fill="#FFFFFF"/><text x="32" y="39" text-anchor="middle" font-family="system-ui,'Segoe UI',Arial,sans-serif" font-size="21" font-weight="bold" fill="#4F46E5">Aא</text></svg></span>
       <h1 data-i18n="title">Convertisseur clavier Français ⇄ Hébreu</h1>
     </div>
     <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><line x1="12" y1="4" x2="12" y2="6.4"/><line x1="12" y1="17.6" x2="12" y2="20"/><line x1="4" y1="12" x2="6.4" y2="12"/><line x1="17.6" y1="12" x2="20" y2="12"/><line x1="6.3" y1="6.3" x2="8" y2="8"/><line x1="16" y1="16" x2="17.7" y2="17.7"/><line x1="6.3" y1="17.7" x2="8" y2="16"/><line x1="16" y1="8" x2="17.7" y2="6.3"/></svg></button>

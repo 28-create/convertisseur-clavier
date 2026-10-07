@@ -1,5 +1,8 @@
 # Journal des modifications
 
+## Non publié
+- Véritable logo « touche bilingue Aא » : marque, favicon, README.
+
 ## v1.5.4 — 7 oct. 2026
 - Version intégrée à l'exécutable (`gen_version.py` + `version_info.txt`,
   Propriétés > Détails) et exe à jour.
