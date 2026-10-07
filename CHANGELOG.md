@@ -1,5 +1,9 @@
 # Journal des modifications
 
+## v1.5.4 — 7 oct. 2026
+- Version intégrée à l'exécutable (`gen_version.py` + `version_info.txt`,
+  Propriétés > Détails) et exe à jour.
+
 ## v1.5.3 — 7 oct. 2026
 - Icones SVG dessinées + mini-drapeaux FR/GB/IL (plus d'emoji).
 - Exe Windows à jour.
