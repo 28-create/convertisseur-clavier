@@ -98,12 +98,11 @@ lui, est toujours correct.
 une fenêtre native, sans navigateur ni Python. Nécessite le runtime
 WebView2 (présent par défaut sur Windows 11 et Windows 10 à jour).
 
-Construire soi-même :
+Construire soi-même (nom versionné automatiquement) :
 
 ```sh
 pip install pywebview pyinstaller
-python gen_version.py
-pyinstaller --noconsole --onefile --version-file version_info.txt --add-data "convertisseur.html;." --name ConvertisseurClavier app.py
+python build_exe.py
 ```
 
 Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).

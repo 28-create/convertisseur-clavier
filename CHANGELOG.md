@@ -1,11 +1,10 @@
 # Journal des modifications
 
-## Non publié
+## v1.6.0 — 7 oct. 2026
 - Historique local des conversions (copies explicites), restauration
   au clic, désactivable.
-
-## Non publié
 - Véritable logo « touche bilingue Aא » : marque, favicon, README.
+- Exe Windows à jour.
 
 ## v1.5.4 — 7 oct. 2026
 - Version intégrée à l'exécutable (`gen_version.py` + `version_info.txt`,
