@@ -99,6 +99,11 @@
   .panel-foot { padding: 1rem 1.1rem; border-top: 1px solid var(--border);
     display: flex; gap: .5rem; justify-content: flex-end; }
   .check { display: flex; align-items: center; gap: .55rem; margin: .4rem 0; }
+  .langtag { display: inline-block; min-width: 2em; text-align: center;
+    font-size: .72rem; font-weight: 800; letter-spacing: .03em;
+    padding: .12rem .4rem; border-radius: 6px; margin-inline-end: .2rem;
+    background: var(--accent-soft); color: var(--accent); vertical-align: baseline; }
+  .sec-ico { margin-inline-end: .15rem; }
   [hidden] { display: none !important; }
   fieldset:disabled { opacity: .45; }
   fieldset:disabled input { cursor: not-allowed; }
@@ -179,30 +184,30 @@
   </div>
   <div class="panel-body">
     <fieldset>
-      <legend data-i18n="secMode">Mode de conversion</legend>
+      <legend><span class="sec-ico" aria-hidden="true">🔀</span> <span data-i18n="secMode">Mode de conversion</span></legend>
       <div class="radio-col" id="modeGroup">
         <label><input type="radio" name="mode" value="hebrew"> <span data-i18n="modeHebrew">Français ⇄ Hébreu</span></label>
         <label><input type="radio" name="mode" value="latin"> <span data-i18n="modeLatin">QWERTY ⇄ AZERTY</span></label>
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secLang">Langue d'interface</legend>
+      <legend><span class="sec-ico" aria-hidden="true">🌐</span> <span data-i18n="secLang">Langue d'interface</span></legend>
       <div class="radio-col" id="langGroup">
         <label><input type="radio" name="lang" value="auto"> <span data-i18n="langAuto">Automatique (navigateur)</span></label>
-        <label><input type="radio" name="lang" value="fr"> Français</label>
-        <label><input type="radio" name="lang" value="en"> English</label>
-        <label><input type="radio" name="lang" value="he"> עברית</label>
+        <label><input type="radio" name="lang" value="fr"> <span class="langtag" aria-hidden="true">FR</span> Français</label>
+        <label><input type="radio" name="lang" value="en"> <span class="langtag" aria-hidden="true">EN</span> English</label>
+        <label><input type="radio" name="lang" value="he"> <span class="langtag" aria-hidden="true">עב</span> עברית</label>
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secKeyboard">Clavier physique</legend>
+      <legend><span class="sec-ico" aria-hidden="true">⌨️</span> <span data-i18n="secKeyboard">Clavier physique</span></legend>
       <div class="radio-col" id="layoutGroup">
         <label><input type="radio" name="layout" value="azerty"> <span data-i18n="layoutAzerty">AZERTY (français)</span></label>
         <label><input type="radio" name="layout" value="qwerty"> <span data-i18n="layoutQwerty">QWERTY (anglais)</span></label>
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secDirection">Sens de conversion par défaut</legend>
+      <legend><span class="sec-ico" aria-hidden="true">↔️</span> <span data-i18n="secDirection">Sens de conversion par défaut</span></legend>
       <div class="radio-col" id="dirGroup">
         <label><input type="radio" name="direction" value="auto"> <span data-i18n="dirAuto">Auto-détection</span></label>
         <label><input type="radio" name="direction" value="toHe"> <span data-i18n="dirToHe">Toujours Français → Hébreu</span></label>
@@ -210,7 +215,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secTheme">Thème</legend>
+      <legend><span class="sec-ico" aria-hidden="true">🎨</span> <span data-i18n="secTheme">Thème</span></legend>
       <div class="radio-col" id="themeGroup">
         <label><input type="radio" name="theme" value="light"> <span data-i18n="themeLight">Clair</span></label>
         <label><input type="radio" name="theme" value="dark"> <span data-i18n="themeDark">Sombre</span></label>
@@ -218,7 +223,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secFont">Taille du texte</legend>
+      <legend><span class="sec-ico" aria-hidden="true">🔠</span> <span data-i18n="secFont">Taille du texte</span></legend>
       <div class="radio-col" id="fontGroup">
         <label><input type="radio" name="fontsize" value="small"> <span data-i18n="fontSmall">Petit</span></label>
         <label><input type="radio" name="fontsize" value="medium"> <span data-i18n="fontMedium">Moyen</span></label>
@@ -226,7 +231,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend data-i18n="secBehavior">Comportement</legend>
+      <legend><span class="sec-ico" aria-hidden="true">⚙️</span> <span data-i18n="secBehavior">Comportement</span></legend>
       <label class="check"><input type="checkbox" id="optLive"> <span data-i18n="liveConvert">Conversion en direct pendant la frappe</span></label>
       <label class="check"><input type="checkbox" id="optAutocopy"> <span data-i18n="autocopy">Copie auto du résultat</span></label>
       <label class="check"><input type="checkbox" id="optRemember"> <span data-i18n="remember">Mémoriser le texte saisi</span></label>
