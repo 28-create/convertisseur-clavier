@@ -2,6 +2,8 @@
 
 ## Non publié
 - Réglages plus visuels : badges de langue (FR/EN/עב) et icônes par section.
+- Icones SVG dessinées (sections, marque, roue) et mini-drapeaux
+  FR/GB/IL à la place des emojis.
 
 ## v1.5.2 — 7 oct. 2026
 - Texte mixte : en sens hébreu→français, seuls les segments contenant de

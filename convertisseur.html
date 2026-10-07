@@ -99,11 +99,13 @@
   .panel-foot { padding: 1rem 1.1rem; border-top: 1px solid var(--border);
     display: flex; gap: .5rem; justify-content: flex-end; }
   .check { display: flex; align-items: center; gap: .55rem; margin: .4rem 0; }
-  .langtag { display: inline-block; min-width: 2em; text-align: center;
-    font-size: .72rem; font-weight: 800; letter-spacing: .03em;
-    padding: .12rem .4rem; border-radius: 6px; margin-inline-end: .2rem;
-    background: var(--accent-soft); color: var(--accent); vertical-align: baseline; }
   .sec-ico { margin-inline-end: .15rem; }
+  .ico { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .brand-mark svg { width: 1.35rem; height: 1.35rem; }
+  #openSettings svg { width: 1.2rem; height: 1.2rem; }
+  .flag { width: 1.2em; height: 1.2em; border-radius: 50%; vertical-align: -0.22em;
+    margin-inline-end: .3rem; box-shadow: 0 0 0 1px var(--border); }
   [hidden] { display: none !important; }
   fieldset:disabled { opacity: .45; }
   fieldset:disabled input { cursor: not-allowed; }
@@ -126,10 +128,10 @@
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">⌨</span>
+      <span class="brand-mark" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="10.2" r="1" fill="currentColor" stroke="none"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/></svg></span>
       <h1 data-i18n="title">Convertisseur clavier Français ⇄ Hébreu</h1>
     </div>
-    <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages">⚙</button>
+    <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><line x1="12" y1="4" x2="12" y2="6.4"/><line x1="12" y1="17.6" x2="12" y2="20"/><line x1="4" y1="12" x2="6.4" y2="12"/><line x1="17.6" y1="12" x2="20" y2="12"/><line x1="6.3" y1="6.3" x2="8" y2="8"/><line x1="16" y1="16" x2="17.7" y2="17.7"/><line x1="6.3" y1="17.7" x2="8" y2="16"/><line x1="16" y1="8" x2="17.7" y2="6.3"/></svg></button>
   </header>
   <p class="subtitle"><span data-i18n="subtitle">Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.</span><br>
     <small dir="ltr">AZERTY : <code>qkuo</code> ↔ <code>שלום</code> &nbsp;|&nbsp; QWERTY : <code>akuo</code> ↔ <code>שלום</code></small>
@@ -184,30 +186,30 @@
   </div>
   <div class="panel-body">
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">🔀</span> <span data-i18n="secMode">Mode de conversion</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></span> <span data-i18n="secMode">Mode de conversion</span></legend>
       <div class="radio-col" id="modeGroup">
         <label><input type="radio" name="mode" value="hebrew"> <span data-i18n="modeHebrew">Français ⇄ Hébreu</span></label>
         <label><input type="radio" name="mode" value="latin"> <span data-i18n="modeLatin">QWERTY ⇄ AZERTY</span></label>
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">🌐</span> <span data-i18n="secLang">Langue d'interface</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> <span data-i18n="secLang">Langue d'interface</span></legend>
       <div class="radio-col" id="langGroup">
         <label><input type="radio" name="lang" value="auto"> <span data-i18n="langAuto">Automatique (navigateur)</span></label>
-        <label><input type="radio" name="lang" value="fr"> <span class="langtag" aria-hidden="true">FR</span> Français</label>
-        <label><input type="radio" name="lang" value="en"> <span class="langtag" aria-hidden="true">EN</span> English</label>
-        <label><input type="radio" name="lang" value="he"> <span class="langtag" aria-hidden="true">עב</span> עברית</label>
+        <label><input type="radio" name="lang" value="fr"> <svg class="flag" viewBox="0 0 18 18" aria-hidden="true"><clipPath id="fFR"><circle cx="9" cy="9" r="9"/></clipPath><g clip-path="url(#fFR)"><rect width="6" height="18" fill="#0055A4"/><rect x="6" width="6" height="18" fill="#FFFFFF"/><rect x="12" width="6" height="18" fill="#EF4135"/></g></svg>Français</label>
+        <label><input type="radio" name="lang" value="en"> <svg class="flag" viewBox="0 0 18 18" aria-hidden="true"><clipPath id="fGB"><circle cx="9" cy="9" r="9"/></clipPath><g clip-path="url(#fGB)"><rect width="18" height="18" fill="#012169"/><path d="M0 0L18 18M18 0L0 18" stroke="#FFFFFF" stroke-width="3.5" fill="none"/><path d="M0 0L18 18M18 0L0 18" stroke="#C8102E" stroke-width="1.2" fill="none"/><path d="M9 0V18M0 9H18" stroke="#FFFFFF" stroke-width="5.5" fill="none"/><path d="M9 0V18M0 9H18" stroke="#C8102E" stroke-width="3" fill="none"/></g></svg>English</label>
+        <label><input type="radio" name="lang" value="he"> <svg class="flag" viewBox="0 0 18 18" aria-hidden="true"><clipPath id="fIL"><circle cx="9" cy="9" r="9"/></clipPath><g clip-path="url(#fIL)"><rect width="18" height="18" fill="#FFFFFF"/><rect y="2.2" width="18" height="2.6" fill="#0038B8"/><rect y="13.2" width="18" height="2.6" fill="#0038B8"/><path d="M9 5.6 L11.9 10.7 L6.1 10.7 Z M9 12.4 L11.9 7.3 L6.1 7.3 Z" stroke="#0038B8" stroke-width="1.1" fill="none"/></g></svg>עברית</label>
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">⌨️</span> <span data-i18n="secKeyboard">Clavier physique</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10.2" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="10.2" r="1" fill="currentColor" stroke="none"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/></svg></span> <span data-i18n="secKeyboard">Clavier physique</span></legend>
       <div class="radio-col" id="layoutGroup">
         <label><input type="radio" name="layout" value="azerty"> <span data-i18n="layoutAzerty">AZERTY (français)</span></label>
         <label><input type="radio" name="layout" value="qwerty"> <span data-i18n="layoutQwerty">QWERTY (anglais)</span></label>
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">↔️</span> <span data-i18n="secDirection">Sens de conversion par défaut</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><polyline points="16 4 20 8 16 12"/><line x1="20" y1="16" x2="4" y2="16"/><polyline points="8 12 4 16 8 20"/></svg></span> <span data-i18n="secDirection">Sens de conversion par défaut</span></legend>
       <div class="radio-col" id="dirGroup">
         <label><input type="radio" name="direction" value="auto"> <span data-i18n="dirAuto">Auto-détection</span></label>
         <label><input type="radio" name="direction" value="toHe"> <span data-i18n="dirToHe">Toujours Français → Hébreu</span></label>
@@ -215,7 +217,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">🎨</span> <span data-i18n="secTheme">Thème</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></span> <span data-i18n="secTheme">Thème</span></legend>
       <div class="radio-col" id="themeGroup">
         <label><input type="radio" name="theme" value="light"> <span data-i18n="themeLight">Clair</span></label>
         <label><input type="radio" name="theme" value="dark"> <span data-i18n="themeDark">Sombre</span></label>
@@ -223,7 +225,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">🔠</span> <span data-i18n="secFont">Taille du texte</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><text x="2.5" y="17" font-size="13" font-weight="bold" fill="currentColor" stroke="none" font-family="system-ui,sans-serif">A</text><text x="15" y="17" font-size="9" font-weight="bold" fill="currentColor" stroke="none" font-family="system-ui,sans-serif">A</text></svg></span> <span data-i18n="secFont">Taille du texte</span></legend>
       <div class="radio-col" id="fontGroup">
         <label><input type="radio" name="fontsize" value="small"> <span data-i18n="fontSmall">Petit</span></label>
         <label><input type="radio" name="fontsize" value="medium"> <span data-i18n="fontMedium">Moyen</span></label>
@@ -231,7 +233,7 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend><span class="sec-ico" aria-hidden="true">⚙️</span> <span data-i18n="secBehavior">Comportement</span></legend>
+      <legend><span class="sec-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" style="fill:var(--card)"/><circle cx="15" cy="12" r="2.3" style="fill:var(--card)"/><circle cx="7" cy="18" r="2.3" style="fill:var(--card)"/></svg></span> <span data-i18n="secBehavior">Comportement</span></legend>
       <label class="check"><input type="checkbox" id="optLive"> <span data-i18n="liveConvert">Conversion en direct pendant la frappe</span></label>
       <label class="check"><input type="checkbox" id="optAutocopy"> <span data-i18n="autocopy">Copie auto du résultat</span></label>
       <label class="check"><input type="checkbox" id="optRemember"> <span data-i18n="remember">Mémoriser le texte saisi</span></label>
