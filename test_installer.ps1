@@ -3,7 +3,9 @@
 # puis desinstalle via la copie installee et verifie le menage.
 # Usage : powershell -ExecutionPolicy Bypass -File test_installer.ps1
 $ErrorActionPreference = 'Stop'
-$tmp = Join-Path $env:TEMP 'TestInstallConv'
+# $env:TEMP peut contenir un nom court 8.3 (ex. RUNNER~1) alors que COM
+# enregistre le nom long : on canonise pour comparer des chaines egales.
+$tmp = Join-Path (Get-Item $env:TEMP).FullName 'TestInstallConv'
 $reg = 'ConvertisseurClavier-Test'
 $nom = 'Convertisseur Clavier Test'
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
