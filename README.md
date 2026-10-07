@@ -35,10 +35,14 @@ ou sur votre machine Windows.
 | `convertisseur.html` | Page web unique (hors ligne). **Source de vérité des mappings.** |
 | `fix-presse-papiers.py` / `.bat` | Raccourci presse-papiers Windows (usage quotidien). |
 | `installer-raccourci.ps1` | Crée le raccourci Bureau + touche globale (`Ctrl+Alt+H`). |
+| `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + désinstallation). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
+| `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné). |
+| `gen_version.py` | Régénère `version_info.txt` (tampon de version de l'exe). |
+| `test_installer.ps1` | Test bout-en-bout de l'installeur (bac à sable). |
 
 ## 1. Page web
 

@@ -20,3 +20,6 @@ jobs:
         run: python test_maps.py
       - name: Page (integrite, i18n, RTL, JS, contraste, version)
         run: python test_page.py
+      - name: Installeur (Windows uniquement)
+        if: runner.os == 'Windows'
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1

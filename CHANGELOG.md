@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## v1.7.0 — 7 oct. 2026
+- Vrai programme installable : menu Démarrer (recherche), touche globale
+  `Ctrl+Alt+K`, entrée de désinstallation (`installer.ps1`).
+- Exe nommé avec sa version (`build_exe.py`).
+
 ## v1.6.0 — 7 oct. 2026
 - Historique local des conversions (copies explicites), restauration
   au clic, désactivable.
