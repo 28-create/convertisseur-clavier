@@ -26,7 +26,11 @@ $ok = $ok -and (Test-Path (Join-Path $tmp 'App\desinstaller.ps1'))
 Write-Host ('registre=' + (Get-ItemProperty $rk).DisplayVersion)
 
 & (Join-Path $tmp 'App\desinstaller.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom
-$ok = $ok -and (-not (Test-Path $lnk)) -and (-not (Test-Path (Join-Path $tmp 'App'))) -and (-not (Test-Path $rk))
+$restes = @()
+if (Test-Path $lnk) { $restes += "lnk:$lnk" }
+if (Test-Path (Join-Path $tmp 'App')) { $restes += 'App' }
+if (Test-Path $rk) { $restes += "reg:$rk" }
+$ok = $ok -and ($restes.Count -eq 0)
 Remove-Item $tmp -Recurse -Force
-if (-not $ok) { Write-Host 'ECHEC : verification'; exit 1 }
+if (-not $ok) { Write-Host ('ECHEC : verification, restes=' + ($restes -join ' | ')); exit 1 }
 Write-Host 'INSTALL-OK'
