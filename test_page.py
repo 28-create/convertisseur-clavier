@@ -13,7 +13,8 @@ import os
 REQUIRED_IDS = ['input', 'output', 'detect', 'stats', 'swap', 'clear', 'copy',
                 'openSettings', 'closeSettings', 'doneSettings', 'resetSettings',
                 'settingsPanel', 'settingsOverlay', 'optLive', 'optAutocopy',
-                'optRemember', 'heExamples', 'latinExamples', 'latinSeg']
+                'optRemember', 'optHistory', 'heExamples', 'latinExamples', 'latinSeg',
+                'historyBox', 'historyList', 'historyClear', 'historyEmpty']
 
 results = []
 

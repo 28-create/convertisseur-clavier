@@ -49,6 +49,9 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
   l'hébreu sont convertis ; le français (mots, chiffres, ponctuation)
   est préservé. Mots tout en capitales : seules Q/A/W/Z commutent.
 - Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
+- **Historique** (replié sous le résultat) : chaque copie explicite y est
+  mémorisée localement ; clic pour restaurer, tout effacer disponible,
+  désactivable dans ⚙ (rien ne quitte l'appareil).
 - ⚙ **Réglages** : mode de conversion (**Français/Anglais ⇄ Hébreu** par défaut,
   ou **QWERTY ⇄ AZERTY**), langue d'interface (auto : FR / EN / עברית),
   clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème

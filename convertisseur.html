@@ -98,6 +98,13 @@
   .panel-foot { padding: 1rem 1.1rem; border-top: 1px solid var(--border);
     display: flex; gap: .5rem; justify-content: flex-end; }
   .check { display: flex; align-items: center; gap: .55rem; margin: .4rem 0; }
+  details summary { cursor: pointer; font-weight: 650; }
+  details[open] summary { margin-bottom: .6rem; }
+  .hist { display: block; width: 100%; text-align: start; margin-bottom: .4rem;
+    font-weight: 400; background: var(--out-bg); }
+  .hist-dir { font-size: .75rem; font-weight: 700; color: var(--accent); }
+  .hist-time { font-size: .75rem; color: var(--muted); margin-inline-start: .5rem; }
+  .hist-io { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sec-ico { margin-inline-end: .15rem; }
   .ico { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -157,6 +164,15 @@
       <button id="swap" data-i18n="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie">⇄ Inverser</button>
       <button id="clear" data-i18n="clear" data-i18n-title="clearTitle" title="Tout effacer">✕ Effacer</button>
     </div>
+  </div>
+
+  <div class="card">
+    <details id="historyBox">
+      <summary data-i18n="history">Historique</summary>
+      <p id="historyEmpty" data-i18n="historyEmpty">Aucun élément — copiez un résultat pour le mémoriser.</p>
+      <div id="historyList"></div>
+      <div class="row"><button id="historyClear" data-i18n="historyClear">Tout effacer</button></div>
+    </details>
   </div>
 
   <div class="card">
@@ -235,6 +251,7 @@
       <label class="check"><input type="checkbox" id="optLive"> <span data-i18n="liveConvert">Conversion en direct pendant la frappe</span></label>
       <label class="check"><input type="checkbox" id="optAutocopy"> <span data-i18n="autocopy">Copie auto du résultat</span></label>
       <label class="check"><input type="checkbox" id="optRemember"> <span data-i18n="remember">Mémoriser le texte saisi</span></label>
+      <label class="check"><input type="checkbox" id="optHistory"> <span data-i18n="keepHistory">Conserver l'historique des conversions</span></label>
     </fieldset>
   </div>
   <div class="panel-foot">
@@ -366,6 +383,9 @@ const I18N = {
     secFont: 'Taille du texte', fontSmall: 'Petit', fontMedium: 'Moyen', fontLarge: 'Grand',
     secBehavior: 'Comportement', liveConvert: 'Conversion en direct pendant la frappe',
     autocopy: 'Copie auto du résultat', remember: 'Mémoriser le texte saisi',
+    keepHistory: 'Conserver l’historique des conversions',
+    history: 'Historique', historyEmpty: 'Aucun élément — copiez un résultat pour le mémoriser.',
+    historyClear: 'Tout effacer',
     reset: 'Réinitialiser', detectedHe: 'Détecté : texte hébreu → converti vers {layout}.',
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
@@ -389,6 +409,9 @@ const I18N = {
     secFont: 'Text size', fontSmall: 'Small', fontMedium: 'Medium', fontLarge: 'Large',
     secBehavior: 'Behavior', liveConvert: 'Convert live while typing',
     autocopy: 'Auto-copy the result', remember: 'Remember typed text',
+    keepHistory: 'Keep conversion history',
+    history: 'History', historyEmpty: 'Nothing yet — copy a result to save it here.',
+    historyClear: 'Clear all',
     reset: 'Reset', detectedHe: 'Detected: Hebrew text → converted to {layout}.',
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
@@ -412,6 +435,9 @@ const I18N = {
     secFont: 'גודל טקסט', fontSmall: 'קטן', fontMedium: 'בינוני', fontLarge: 'גדול',
     secBehavior: 'התנהגות', liveConvert: 'המרה חיה בזמן ההקלדה',
     autocopy: 'העתקה אוטומטית של התוצאה', remember: 'זכירת הטקסט שהוקלד',
+    keepHistory: 'שמירת היסטוריית ההמרות',
+    history: 'היסטוריה', historyEmpty: 'אין פריטים — העתיקו תוצאה כדי לשמור אותה.',
+    historyClear: 'ניקוי הכל',
     reset: 'איפוס', detectedHe: 'זוהה: טקסט עברי ← הומר ל-{layout}.',
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
@@ -419,7 +445,7 @@ const I18N = {
     copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
-  fontsize: 'medium', live: true, autocopy: false, remember: true };
+  fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
 let settings = Object.assign({}, DEFAULTS);
 try {
   const raw = localStorage.getItem('conv-settings-v1');
@@ -507,6 +533,7 @@ function applySettingsToUI() {
   document.getElementById('optLive').checked = !!settings.live;
   document.getElementById('optAutocopy').checked = !!settings.autocopy;
   document.getElementById('optRemember').checked = !!settings.remember;
+  document.getElementById('optHistory').checked = !!settings.history;
   applyTheme();
 }
 
@@ -559,6 +586,7 @@ function doConvert() {
     out = [...input.value].map(ch => (ch in m ? m[ch] : ch)).join('');
     output.setAttribute('dir', 'ltr');
     msg = t(settings.latinDir === 'toAz' ? 'dirLatinAz' : 'dirLatinQw');
+    lastConv = { mode: 'latin', latinDir: settings.latinDir };
   } else {
     const dir = settings.direction !== 'auto' ? settings.direction : detectDir(input.value);
     const toFrench = dir === 'toFr';
@@ -567,6 +595,7 @@ function doConvert() {
     out = convertSmart(input.value, full, swap, toFrench);
     output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
     msg = dirMessage(dir);
+    lastConv = { mode: 'hebrew', layout: settings.layout, dir };
   }
   output.textContent = out;
   detect.textContent = input.value ? msg : '';
@@ -595,7 +624,60 @@ async function copyText(str) {
 }
 async function copyResult() {
   if (!output.textContent) return;
-  detect.textContent = (await copyText(output.textContent)) ? t('copied') : t('copyFail');
+  const ok = await copyText(output.textContent);
+  detect.textContent = ok ? t('copied') : t('copyFail');
+  if (ok && settings.history && lastConv) {
+    if (!history.length || history[0].i !== input.value) {
+      history.unshift(Object.assign({ i: input.value.slice(0, HIST_CUT),
+        o: output.textContent.slice(0, HIST_CUT), t: Date.now() }, lastConv));
+      if (history.length > HIST_MAX) history.length = HIST_MAX;
+      saveHistory();
+    }
+    renderHistory();
+  }
+}
+const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 300;
+let history = [];
+try { const rawH = localStorage.getItem(HIST_KEY); history = rawH ? JSON.parse(rawH) : []; if (!Array.isArray(history)) history = []; } catch { history = []; }
+let lastConv = null;
+function saveHistory() { try { localStorage.setItem(HIST_KEY, JSON.stringify(history)); } catch {} }
+function histLabel(e) {
+  if (e.mode === 'latin') return e.latinDir === 'toAz' ? 'QWERTY → AZERTY' : 'AZERTY → QWERTY';
+  const lbl = (MAPS[e.layout] || MAPS.azerty).label;
+  return e.dir === 'toFr' ? (t('langHe') + ' → ' + lbl) : (lbl + ' → ' + t('langHe'));
+}
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.textContent = '';
+  const empty = !history.length;
+  document.getElementById('historyEmpty').style.display = empty ? '' : 'none';
+  document.getElementById('historyClear').style.display = empty ? 'none' : '';
+  history.forEach((e, idx) => {
+    const b = document.createElement('button');
+    b.className = 'hist'; b.type = 'button';
+    const head = document.createElement('span');
+    head.className = 'hist-dir'; head.textContent = histLabel(e);
+    const time = document.createElement('span');
+    time.className = 'hist-time';
+    try { time.textContent = new Date(e.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { time.textContent = ''; }
+    const io = document.createElement('span');
+    io.className = 'hist-io';
+    const bi = document.createElement('bdi'); bi.textContent = e.i;
+    const bo = document.createElement('bdi'); bo.textContent = e.o;
+    io.appendChild(bi); io.appendChild(document.createTextNode(' → ')); io.appendChild(bo);
+    b.title = e.i + ' → ' + e.o;
+    b.appendChild(head); b.appendChild(time); b.appendChild(io);
+    b.onclick = () => restoreHistory(idx);
+    list.appendChild(b);
+  });
+}
+function restoreHistory(idx) {
+  const e = history[idx]; if (!e) return;
+  settings.mode = e.mode === 'latin' ? 'latin' : 'hebrew';
+  if (e.layout) settings.layout = e.layout;
+  if (e.latinDir) settings.latinDir = e.latinDir;
+  input.value = e.i;
+  applySettingsToUI(); doConvert(); input.focus();
 }
 document.getElementById('swap').onclick = () => {
   // en mode latin, inverser = aussi basculer le sens (tables exactement inverses)
@@ -674,6 +756,8 @@ bindRadio('fontsize', 'fontsize');
 document.getElementById('optLive').onchange = e => { settings.live = e.target.checked; saveSettings(); if (settings.live) doConvert(); };
 document.getElementById('optAutocopy').onchange = e => { settings.autocopy = e.target.checked; saveSettings(); };
 document.getElementById('optRemember').onchange = e => { settings.remember = e.target.checked; saveSettings(); };
+document.getElementById('optHistory').onchange = e => { settings.history = e.target.checked; saveSettings(); };
+document.getElementById('historyClear').onclick = () => { history = []; saveHistory(); renderHistory(); };
 document.getElementById('resetSettings').onclick = () => {
   settings = Object.assign({}, DEFAULTS);
   applySettingsToUI(); saveSettings(); doConvert();
@@ -687,6 +771,7 @@ if (window.matchMedia) {
 if (settings.remember && savedText) input.value = savedText;
 applySettingsToUI();
 doConvert();
+renderHistory();
 </script>
 </body>
 </html>

@@ -1,6 +1,10 @@
 # Journal des modifications
 
 ## Non publié
+- Historique local des conversions (copies explicites), restauration
+  au clic, désactivable.
+
+## Non publié
 - Véritable logo « touche bilingue Aא » : marque, favicon, README.
 
 ## v1.5.4 — 7 oct. 2026
