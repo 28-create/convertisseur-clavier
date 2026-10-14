@@ -186,8 +186,10 @@ def convert(text, mapping):
 
 
 def autodir(text):
+    # Doit rester identique a detectDir() dans convertisseur.html
+    # (meme classe latine accentuee, meme seuil 0.2).
     h = len(re.findall(r'[\u0590-\u05FF]', text))
-    l = len(re.findall(r'[A-Za-z]', text))
+    l = len(re.findall(r'[A-Za-zéèêëàâäçîïôöùûüÉÈÀÇÙ]', text))
     return 'toFr' if (h > 0 and h >= l * 0.2) else 'toHe'
 
 

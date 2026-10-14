@@ -1,5 +1,8 @@
 # Journal des modifications
 
+## Non publié
+- Tests : parité de détection auto page/script (accents), diagnostics CI.
+
 ## v1.7.0 — 7 oct. 2026
 - Vrai programme installable : menu Démarrer (recherche), touche globale
   `Ctrl+Alt+K`, entrée de désinstallation (`installer.ps1`).

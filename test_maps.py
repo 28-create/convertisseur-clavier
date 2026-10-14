@@ -71,6 +71,33 @@ def run_js_smart(js_maps, cases):
     return [res[i] for i in range(len(cases))]
 
 
+def run_js_autodir(cases):
+    """Execute detectDir extrait du HTML sous node (parite avec autodir).
+    Rend la liste des directions, None si node absent."""
+    if not shutil.which('node'):
+        return None
+    with open('convertisseur.html', encoding='utf-8') as f:
+        html = f.read()
+    m = re.search(r'function detectDir\(text\) \{[\s\S]*?\n\}', html)
+    if not m:
+        raise RuntimeError('detectDir introuvable dans convertisseur.html')
+    prog = ('%s\nconst cases = %s;\n'
+            'cases.forEach((t, i) => console.log(i + ":" + detectDir(t)));\n'
+            ) % (m.group(0), json.dumps(cases, ensure_ascii=True))
+    r = subprocess.run(['node', '-e', prog], capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
+    if r.returncode != 0:
+        raise RuntimeError('node a echoue : ' + (r.stderr or '').strip()[:200])
+    res = {}
+    for line in r.stdout.splitlines():
+        if ':' in line:
+            i, _, status = line.partition(':')
+            res[int(i)] = status.strip()
+    if len(res) != len(cases) or any(v not in ('toHe', 'toFr') for v in res.values()):
+        raise RuntimeError('sortie node incomplete : ' + repr(r.stdout[:200]))
+    return [res[i] for i in range(len(cases))]
+
+
 def main():
     with open('convertisseur.html', encoding='utf-8') as f:
         js_maps = parse_js_maps(f.read())
@@ -145,6 +172,25 @@ def main():
                 ok = False
                 print('SMART-JS %s %s %s -> %s (attendu %s)'
                       % (layout, direction, _safe(src), _safe(status), _safe(exp)))
+    # parite de detection : page et script doivent choisir le meme sens,
+    # y compris avec accents (non-regression : 'abcdéèב' divergeait avant)
+    auto_cases = ['abcdéèב', 'café שלום', 'àב', 'שלום', 'bonjour',
+                  'BONJOUR שלום', '123 שלום', 'שלום!', 'qkuo', 'שלום2024']
+    try:
+        got_js_dir = run_js_autodir(auto_cases)
+    except RuntimeError as e:
+        ok = False
+        print('AUTODIR-JS ' + str(e))
+        got_js_dir = []
+    if got_js_dir is None:
+        print('AUTODIR-JS ignore (node indisponible)')
+    else:
+        for src, js_dir in zip(auto_cases, got_js_dir):
+            py_dir = fix_mod.autodir(src)
+            if py_dir != js_dir:
+                ok = False
+                print('DIVERGENCE %s : PY=%s JS=%s'
+                      % (_safe(src), py_dir, js_dir))
     for layout, direction, src, exp in cases:
         to_he, to_fr = tables[layout]
         if layout == 'latin':

@@ -169,7 +169,7 @@
   <div class="card">
     <details id="historyBox">
       <summary data-i18n="history">Historique</summary>
-      <p id="historyEmpty" data-i18n="historyEmpty">Aucun élément — copiez un résultat pour le mémoriser.</p>
+      <p id="historyEmpty" data-i18n="historyEmpty">Aucun élément — copiez un résultat pour le mémoriser (stockage local uniquement).</p>
       <div id="historyList"></div>
       <div class="row"><button id="historyClear" data-i18n="historyClear">Tout effacer</button></div>
     </details>
@@ -384,7 +384,7 @@ const I18N = {
     secBehavior: 'Comportement', liveConvert: 'Conversion en direct pendant la frappe',
     autocopy: 'Copie auto du résultat', remember: 'Mémoriser le texte saisi',
     keepHistory: 'Conserver l’historique des conversions',
-    history: 'Historique', historyEmpty: 'Aucun élément — copiez un résultat pour le mémoriser.',
+    history: 'Historique', historyEmpty: 'Aucun élément — copiez un résultat pour le mémoriser (stockage local uniquement).',
     historyClear: 'Tout effacer',
     reset: 'Réinitialiser', detectedHe: 'Détecté : texte hébreu → converti vers {layout}.',
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
@@ -410,7 +410,7 @@ const I18N = {
     secBehavior: 'Behavior', liveConvert: 'Convert live while typing',
     autocopy: 'Auto-copy the result', remember: 'Remember typed text',
     keepHistory: 'Keep conversion history',
-    history: 'History', historyEmpty: 'Nothing yet — copy a result to save it here.',
+    history: 'History', historyEmpty: 'Nothing yet — copy a result to save it here (local storage only).',
     historyClear: 'Clear all',
     reset: 'Reset', detectedHe: 'Detected: Hebrew text → converted to {layout}.',
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
@@ -436,7 +436,7 @@ const I18N = {
     secBehavior: 'התנהגות', liveConvert: 'המרה חיה בזמן ההקלדה',
     autocopy: 'העתקה אוטומטית של התוצאה', remember: 'זכירת הטקסט שהוקלד',
     keepHistory: 'שמירת היסטוריית ההמרות',
-    history: 'היסטוריה', historyEmpty: 'אין פריטים — העתיקו תוצאה כדי לשמור אותה.',
+    history: 'היסטוריה', historyEmpty: 'אין פריטים — העתיקו תוצאה כדי לשמור אותה (אחסון מקומי בלבד).',
     historyClear: 'ניקוי הכל',
     reset: 'איפוס', detectedHe: 'זוהה: טקסט עברי ← הומר ל-{layout}.',
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
@@ -566,6 +566,8 @@ function convertSmart(text, fullMap, swapCaps, toFrench) {
   }).join('');
 }
 function detectDir(text) {
+  // Doit rester identique a autodir() dans fix-presse-papiers.py
+  // (meme classe latine accentuee, meme seuil 0.2).
   const h = (text.match(/[\u0590-\u05FF]/g) || []).length;
   const l = (text.match(/[A-Za-zéèêëàâäçîïôöùûüÉÈÀÇÙ]/g) || []).length;
   return (h > 0 && h >= l * 0.2) ? 'toFr' : 'toHe';
