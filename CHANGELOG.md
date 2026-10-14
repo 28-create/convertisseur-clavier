@@ -1,7 +1,9 @@
 # Journal des modifications
 
-## Non publié
-- Tests : parité de détection auto page/script (accents), diagnostics CI.
+## v1.7.1 — 14 oct. 2026
+- Parité de détection auto page/script (accents), `.bat` avec message
+  guidé si Python absent, CI en Python 3.14, installation documentée.
+- Tests : diagnostics CI de l'installeur, noms courts 8.3.
 
 ## v1.7.0 — 7 oct. 2026
 - Vrai programme installable : menu Démarrer (recherche), touche globale

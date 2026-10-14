@@ -117,6 +117,21 @@ Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).
 > dossier dans l'antivirus, restaurez le fichier, puis relancez le build
 > ou l'application.
 
+### Installation (menu Démarrer + touche globale)
+
+Téléchargez `ConvertisseurClavier-X.Y.Z.exe`, `installer.ps1` et
+`desinstaller.ps1` depuis l'onglet *Releases*, placez les trois fichiers
+dans un même dossier, puis :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File installer.ps1
+```
+
+Le programme devient cherchable dans le menu Démarrer et s'ouvre depuis
+n'importe où avec `Ctrl+Alt+K` (si cette combinaison est déjà prise par
+une autre application, relancez avec `-Raccourci 'CTRL+ALT+J'` par exemple).
+Désinstallation : Paramètres Windows → Applications, ou `desinstaller.ps1`.
+
 ## 4. Développement
 
 **Les tables JavaScript de `convertisseur.html` sont la source de vérité.
