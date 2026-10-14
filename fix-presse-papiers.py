@@ -188,6 +188,10 @@ def convert(text, mapping):
 def autodir(text):
     # Doit rester identique a detectDir() dans convertisseur.html
     # (meme classe latine accentuee, meme seuil 0.2).
+    # Heuristique : du francais normal ne contient aucun hebreu ; si au
+    # moins 20 % des lettres latines sont en fait de l'hebreu, c'est une
+    # frappe en clavier hebreu a reconvertir. En dessous, l'hebreu present
+    # est preserve tel quel (melange avec du vrai hebreu).
     h = len(re.findall(r'[\u0590-\u05FF]', text))
     l = len(re.findall(r'[A-Za-zéèêëàâäçîïôöùûüÉÈÀÇÙ]', text))
     return 'toFr' if (h > 0 and h >= l * 0.2) else 'toHe'

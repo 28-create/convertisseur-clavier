@@ -568,6 +568,10 @@ function convertSmart(text, fullMap, swapCaps, toFrench) {
 function detectDir(text) {
   // Doit rester identique a autodir() dans fix-presse-papiers.py
   // (meme classe latine accentuee, meme seuil 0.2).
+  // Heuristique : du francais normal ne contient aucun hebreu ; si au
+  // moins 20 % des lettres latines sont en fait de l'hebreu, c'est une
+  // frappe en clavier hebreu a reconvertir. En dessous, l'hebreu present
+  // est preserve tel quel (melange avec du vrai hebreu).
   const h = (text.match(/[\u0590-\u05FF]/g) || []).length;
   const l = (text.match(/[A-Za-zéèêëàâäçîïôöùûüÉÈÀÇÙ]/g) || []).length;
   return (h > 0 && h >= l * 0.2) ? 'toFr' : 'toHe';
