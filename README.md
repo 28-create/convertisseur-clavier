@@ -38,6 +38,7 @@ ou sur votre machine Windows.
 | `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + désinstallation). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
+| `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
 | `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
@@ -62,6 +63,9 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
   clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion en direct,
   copie automatique, mémorisation du texte.
+- **Suggestion de lecture** : si un texte hébreu (≥ 15 lettres) se lit
+  nettement mieux avec l'autre disposition, un bandeau en propose un aperçu
+  (« Afficher cette lecture ») — jamais appliqué automatiquement.
 
 Exemples hébreu : `qkuo` (AZERTY) / `akuo` (QWERTY) → `שלום`,
 `נםמחםור` → `bonjour`, `Bםמחםור` → `Bonjour`.
@@ -153,6 +157,12 @@ cas connus (`qkuo`/`akuo` → `שלום`, etc.) puis confronte le JS au Python
 sur 1200 textes aléatoires. Exit `0` = synchronisé, `1` = dérive.
 La CI GitHub Actions rejoue les deux suites (Ubuntu + Windows,
 Python 3.11 à 3.14) à chaque push.
+
+`gen_ngrams.py` régénère les modèles de bigrammes (textes du domaine public,
+vérifiés par SHA-256) qui alimentent la suggestion de lecture :
+`python gen_ngrams.py` (téléchargement, ou `--corpus-dir` pour réutiliser
+des fichiers locaux). Ajouter une langue de détection = une entrée dans
+`LANGS`, puis relancer.
 
 ## Version et historique
 
