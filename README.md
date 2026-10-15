@@ -63,9 +63,10 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
   clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion en direct,
   copie automatique, mémorisation du texte.
-- **Suggestion de lecture** : si un texte hébreu (≥ 15 lettres) se lit
-  nettement mieux avec l'autre disposition, un bandeau en propose un aperçu
-  (« Afficher cette lecture ») — jamais appliqué automatiquement.
+- **Suggestion de lecture** : si un texte hébreu (≥ 11 lettres, marge de
+  confiance renforcée entre 11 et 14) se lit nettement mieux avec l'autre
+  disposition, un bandeau en propose un aperçu (« Afficher cette lecture »)
+  — jamais appliqué automatiquement.
 
 Exemples hébreu : `qkuo` (AZERTY) / `akuo` (QWERTY) → `שלום`,
 `נםמחםור` → `bonjour`, `Bםמחםור` → `Bonjour`.
