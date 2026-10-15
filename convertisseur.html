@@ -75,7 +75,7 @@
   html[data-theme="dark"] button.primary { color: #101725; }
   input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
   .chips button { font-size: .85rem; font-weight: 500; padding: .4rem .8rem; background: var(--out-bg); }
-  .card h3 { margin: 0 0 .6rem; font-size: 1rem; }
+  .card h2 { margin: 0 0 .6rem; font-size: 1rem; }
   footer.foot { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 1.5rem; }
   /* Settings panel */
   #settingsOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.45);
@@ -128,12 +128,16 @@
   @media (max-width: 560px) {
     header.top h1 { font-size: 1.1rem; }
     .card { padding: .9rem .9rem .85rem; }
+    .converter-bar { flex-wrap: wrap; }
+    .converter-bar::before, .converter-bar::after { display: none; }
+    #detect { white-space: normal; text-align: center; }
+    .seg { flex-wrap: wrap; max-width: 100%; }
   }
 </style>
 </head>
 <body>
 <noscript><div class="wrap"><p class="card">JavaScript est requis / JavaScript is required / נדרש JavaScript.</p></div></noscript>
-<div class="wrap">
+<main class="wrap">
   <header class="top">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ckg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ckg)"/><rect x="12" y="16" width="40" height="32" rx="7" fill="#FFFFFF"/><text x="32" y="39" text-anchor="middle" font-family="system-ui,'Segoe UI',Arial,sans-serif" font-size="21" font-weight="bold" fill="#4F46E5">Aא</text></svg></span>
@@ -179,7 +183,7 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0" data-i18n="examples">Exemples pour tester</h3>
+    <h2 style="margin-top:0" data-i18n="examples">Exemples pour tester</h2>
     <div class="row chips" dir="ltr" id="heExamples">
       <button data-ex="qkuo" data-mode="hebrew" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
       <button data-ex="akuo" data-mode="hebrew" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
@@ -193,7 +197,7 @@
   </div>
 
   <footer class="foot"><small data-i18n="footNote">100 % local — aucune donnée envoyée.</small></footer>
-</div>
+</main>
 
 <div id="settingsOverlay"></div>
 <aside id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" inert>
@@ -366,7 +370,7 @@ const MAPS = {
 const CAPS_SWAP = { Q: 'A', A: 'Q', W: 'Z', Z: 'W' };
 
 // --- i18n ---
-const APP_VERSION = '1.7.2';
+const APP_VERSION = '1.7.3';
 const I18N = {
   fr: { title: 'Convertisseur clavier {la} ⇄ {he}', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier {la} ⇄ {he} (AZERTY / QWERTY)',
@@ -615,7 +619,7 @@ const output = document.getElementById('output');
 const detect = document.getElementById('detect');
 
 function dirMessage(dir) {
-  const lbl = MAPS[settings.layout].label;
+  const lbl = latinName();
   if (settings.direction !== 'auto') return (dir === 'toFr' ? t('forcedFr') : t('forcedHe')).replace('{layout}', lbl);
   return (dir === 'toFr' ? t('detectedHe') : t('detectedFr')).replace('{layout}', lbl);
 }

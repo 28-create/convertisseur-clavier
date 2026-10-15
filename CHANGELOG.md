@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## v1.7.3 — 15 oct. 2026
+- Cohérence : badge « converti vers Français/Anglais » (fini « vers AZERTY »).
+- Accessibilité Lighthouse 1.0 : repère `<main>`, titres h1→h2 sans saut.
+- Mobile <560px : barre centrale et sélecteur en retour à la ligne.
+
 ## v1.7.2 — 15 oct. 2026
 - Performance : conversion ~6x plus rapide (tables C, court-circuit et
   substitutions sans segmentation), sémantique prouvée identique
