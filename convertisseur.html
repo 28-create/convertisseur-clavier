@@ -168,9 +168,8 @@
         <button data-latindir="toQw" aria-pressed="false">AZERTY → QWERTY</button>
       </div>
     </div>
-    <div id="layoutSuggest" class="row chips" role="status" hidden>
-      <span id="suggestText"></span>
-      <bdi id="suggestPreview"></bdi>
+    <div id="layoutSuggest" class="row chips" hidden>
+      <span role="status"><span id="suggestText"></span> <bdi id="suggestPreview"></bdi></span>
       <button id="suggestApply" class="primary" data-i18n="suggestApply">Afficher cette lecture</button>
       <button id="suggestDismiss" class="ghost" data-i18n-aria="suggestDismiss" aria-label="Ignorer pour ce texte">✕</button>
     </div>
@@ -831,7 +830,7 @@ document.getElementById('swap').onclick = () => {
 };
 document.getElementById('clear').onclick = () => { input.value = ''; doConvert(); input.focus(); };
 document.getElementById('copy').onclick = copyResult;
-input.addEventListener('input', () => { if (settings.live) doConvert(); else scheduleSave(); });
+input.addEventListener('input', () => { if (settings.live) doConvert(); else { scheduleSave(); scheduleSuggestion(); } });
 input.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyResult(); }
 });
@@ -862,9 +861,9 @@ function updateSuggestion() {
   if (dir !== 'toFr' || input.value === suggestDismissed) { suggestBox.hidden = true; return; }
   const s = suggestReading(input.value, settings.layout);
   if (!s) { suggestBox.hidden = true; return; }
+  suggestBox.hidden = false;  // demasquer AVANT d'ecrire : annonce lecteur d'ecran
   suggestText.textContent = t('suggestRead').replace('{layout}', MAPS[s.layout].label);
   suggestPreview.textContent = '\u00ab ' + s.preview + ' \u00bb';
-  suggestBox.hidden = false;
 }
 function scheduleSuggestion() {
   clearTimeout(suggestTimer);
@@ -883,6 +882,7 @@ document.getElementById('suggestApply').onclick = () => {
 document.getElementById('suggestDismiss').onclick = () => {
   suggestDismissed = input.value;
   suggestBox.hidden = true;
+  input.focus();
 };
 
 // --- panneau réglages ---

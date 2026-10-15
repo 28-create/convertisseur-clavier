@@ -23,7 +23,6 @@ import math
 import os
 import re
 import sys
-import tempfile
 import urllib.request
 
 HTML_FILE = 'convertisseur.html'
@@ -61,8 +60,12 @@ def strip_gutenberg(raw):
 def fetch_source(name, url, sha, corpus_dir):
     if corpus_dir:
         path = os.path.join(corpus_dir, name)
-        with open(path, 'rb') as f:
-            data = f.read()
+        try:
+            with open(path, 'rb') as f:
+                data = f.read()
+        except OSError as e:
+            raise SystemExit('fichier introuvable ou illisible : %s (%s)'
+                             % (path, e.strerror or e))
         origin = path
     else:
         with urllib.request.urlopen(url, timeout=60) as r:

@@ -85,7 +85,8 @@ def main():
     check('panneau inerte quand ferme',
           bool(mpanel) and ' inert' in mpanel.group(0)
           and 'panel.inert = false' in h and 'panel.inert = true' in h)
-    check('bouton du bandeau visible hors survol', '.chips button.primary' in h)
+    check('bouton du bandeau visible hors survol',
+          '.chips button.primary { background: var(--accent);' in h)
     ids = re.findall(r'\bid="([^"]+)"', h)
     dupes = sorted({i for i in ids if ids.count(i) > 1})
     check('ids uniques', not dupes, str(dupes))
@@ -205,6 +206,11 @@ def main():
             cases = [
                 [ex, 'azerty', 'qwerty'],
                 ['חק מ,קמ פקוס פךוד', 'azerty', 'qwerty'],
+                # 11 lettres, marge mesuree ~0.36 (< seuil court 0.5) :
+                # la bonne lecture (azerty) ne doit PAS etre suggeree depuis
+                # l'autre clavier — c'est la tranche courte qui decide ici.
+                ['\u05e7\u05d0 \u05df\u05da \u05d3\u20192\u05da\u05dd\u05df\u05e2\u05de/\u05ea',
+                 'qwerty', None],
                 [ex, 'qwerty', None],
                 ['שלום', 'azerty', None],
                 ['qkuo', 'azerty', None],
@@ -228,13 +234,22 @@ def main():
             else:
                 got = json.loads(out_s.split('SUGGEST:', 1)[1])
                 mrg = float(re.search(r'SUGGEST_MARGIN = ([\d.]+)', h).group(1))
+                minh = int(re.search(r'SUGGEST_MIN_HEB = (\d+)', h).group(1))
+                shortm = float(re.search(r'SUGGEST_SHORT_MARGIN = ([\d.]+)',
+                                         h).group(1))
                 bad = []
                 for (src, cur, exp), g in zip(cases, got):
                     gl = g['layout'] if g else None
                     if gl != exp:
                         bad.append('attendu=%s obtenu=%s' % (exp, gl))
-                    elif g and g['margin'] < mrg:
-                        bad.append('marge faible %.3f' % g['margin'])
+                        continue
+                    if not g:
+                        continue
+                    # seuil par cas : marge normale, ou renforcee sous 15 lettres
+                    heb = len(re.findall(r'[\u0590-\u05FF]', src))
+                    need = mrg if heb >= minh else shortm
+                    if g['margin'] < need:
+                        bad.append('marge %.3f < seuil %.2f' % (g['margin'], need))
                 if got[0] and not got[0]['preview'].startswith('vraiment'):
                     bad.append('apercu=' + str(got[0]['preview'])[:40])
                 check('suggestion lecture (node)', not bad, '; '.join(bad)[:140])
@@ -267,6 +282,23 @@ def main():
             except Exception as e:
                 detail = str(e)[:140]
             check('normalisation page/script identique', norm_ok, detail)
+            # integrite du bloc genere : alphabet et quantification identiques
+            # au generateur, et tables decodables en len(ALPHA)^2.
+            import base64 as _b64
+            blk = mblk.group(0)
+            m_alpha = re.search(r'const MODEL_ALPHA = "([^"]*)";', blk)
+            m_scale = re.search(r'const MODEL_SCALE = (\d+), MODEL_OFFSET = (\d+);',
+                                blk)
+            m_b64 = dict(re.findall(r"^  (\w+): '([A-Za-z0-9+/=]+)'", blk, re.M))
+            integ = bool(m_alpha and m_scale and m_b64)
+            if integ:
+                integ = (m_alpha.group(1) == gen_ngrams.ALPHA
+                         and int(m_scale.group(1)) == gen_ngrams.SCALE
+                         and int(m_scale.group(2)) == gen_ngrams.OFFSET
+                         and all(len(_b64.b64decode(v)) == len(gen_ngrams.ALPHA) ** 2
+                                 for v in m_b64.values()))
+            check('bloc de modeles coherent avec gen_ngrams', bool(integ),
+                  '' if integ else str(sorted(m_b64) + [bool(m_alpha), bool(m_scale)]))
     else:
         check('normalisation (node absent, ignore)', True, 'sans node')
 
