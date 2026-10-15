@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """Construit dist\\ConvertisseurClavier-<version>.exe (nom versionne).
 
-Usage : python build_exe.py
+Usage : python build_exe.py [--dist DOSSIER]
 Etapes : gen_version.py -> PyInstaller (noconsole, onefile, version-file,
 page embarquee). Le nom du .exe reprend toujours APP_VERSION :
 impossible de publier un exe sans version dans son nom.
+--dist cible un autre dossier de sortie (utile si l'antivirus
+surveille le dossier du projet) ; le fichier est ensuite a
+copier dans dist\\.
 Necessite : pip install pywebview pyinstaller (+ WebView2 sur la machine).
 """
 import os
@@ -24,7 +27,16 @@ def read_version(html_path=HTML):
     return m.group(1)
 
 
-def main():
+def main(argv=None):
+    outdir = 'dist'
+    args = list(argv if argv is not None else sys.argv[1:])
+    while args and args[0] == '--dist':
+        args.pop(0)
+        if not args:
+            raise SystemExit('il manque le dossier apres --dist')
+        outdir = args.pop(0)
+    if args:
+        raise SystemExit('argument inconnu : %s' % ' '.join(args))
     ver = read_version()
     import gen_version
     if gen_version.main() != 0:
@@ -32,13 +44,14 @@ def main():
     name = 'ConvertisseurClavier-%s' % ver
     cmd = [sys.executable, '-m', 'PyInstaller', '--noconsole', '--onefile',
            '--version-file', 'version_info.txt',
+           '--distpath', outdir,
            '--add-data', 'convertisseur.html;.',
            '--name', name, APP]
     print('+ ' + ' '.join(cmd))
     r = subprocess.run(cmd)
     if r.returncode != 0:
         raise SystemExit('build echoue (%d)' % r.returncode)
-    exe = os.path.join('dist', name + '.exe')
+    exe = os.path.join(outdir, name + '.exe')
     if not os.path.exists(exe):
         raise SystemExit('introuvable apres build : %s' % exe)
     print('OK : %s (%.1f Mo)' % (exe, os.path.getsize(exe) / 1048576))
