@@ -2,6 +2,7 @@
 <html lang="fr" dir="ltr" data-theme="light" data-fontsize="medium">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Convertisseur de clavier Français ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
 <meta name="theme-color" content="#edf0f6">
@@ -513,6 +514,13 @@ function saveSettings() {
     else localStorage.removeItem('conv-input');
   } catch {}
 }
+// Sauvegarde différée pendant la frappe (flush sur pagehide) : évite une
+// écriture localStorage à chaque caractère quand la conversion est en direct.
+let saveTimer = 0;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveSettings, 300);
+}
 function applyTheme() {
   let th = settings.theme;
   if (th === 'auto') th = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
@@ -553,6 +561,7 @@ function applySettingsToUI() {
   document.getElementById('optRemember').checked = !!settings.remember;
   document.getElementById('optHistory').checked = !!settings.history;
   applyTheme();
+  renderHistory();
 }
 
 // --- conversion ---
@@ -633,7 +642,7 @@ function doConvert() {
   const n = input.value.length;
   document.querySelector('#stats small').textContent = n ? t('chars').replace('{n}', n) : '';
   if (settings.autocopy && out) copyText(out);
-  saveSettings();
+  scheduleSave();
 }
 async function copyText(str) {
   try {
@@ -725,7 +734,7 @@ document.getElementById('swap').onclick = () => {
 };
 document.getElementById('clear').onclick = () => { input.value = ''; doConvert(); input.focus(); };
 document.getElementById('copy').onclick = copyResult;
-input.addEventListener('input', () => { if (settings.live) doConvert(); else saveSettings(); });
+input.addEventListener('input', () => { if (settings.live) doConvert(); else scheduleSave(); });
 input.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyResult(); }
 });
@@ -803,6 +812,9 @@ if (window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   if (mq.addEventListener) mq.addEventListener('change', () => { if (settings.theme === 'auto') applyTheme(); });
 }
+
+// Flush de la sauvegarde différée si la page disparaît avant le délai.
+window.addEventListener('pagehide', () => { clearTimeout(saveTimer); saveSettings(); });
 
 // init
 if (settings.remember && savedText) input.value = savedText;

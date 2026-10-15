@@ -44,19 +44,33 @@ def main():
     js = h.split('<script>')[1]
     used |= set(re.findall(r"""\bt\('(\w+)'\)""", js))
     used -= {'fieldset', 'textarea'}  # artefacts : createElement('...'), closest('...')
-    starts = {m.group(1): m.start() for m in re.finditer(r'\n  (fr|en|he): \{', h)}
+    starts = {}
+    for m in re.finditer(r'^\s*(fr|en|he): \{', h, re.M):
+        starts.setdefault(m.group(1), m.start())
     order = ['fr', 'en', 'he']
     langs = {}
+    texts = {}
     for i, lang in enumerate(order):
         s = starts[lang]
         e = starts[order[i + 1]] if i + 1 < len(order) else len(h)
         seg = h[s:e]
         seg = seg.split('const DEFAULTS')[0]
         langs[lang] = set(re.findall(r'[{,]\s*(\w+):', seg))
+        texts[lang] = {k: (v1 or v2) for k, v1, v2 in re.findall(
+            r"([A-Za-z]\w*):\s*(?:'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\")",
+            seg)}
     check('i18n cles couvertes', all(not (used - langs[l]) for l in order),
           str({l: sorted(used - langs[l]) for l in order}))
     check('i18n jeux identiques', langs['fr'] == langs['en'] == langs['he'],
           str({l: len(langs[l]) for l in order}))
+    bad_ph = []
+    for key in sorted(texts['fr']):
+        if key not in texts['en'] or key not in texts['he']:
+            continue
+        ph = {l: set(re.findall(r'\{(\w+)\}', texts[l][key])) for l in order}
+        if not (ph['fr'] == ph['en'] == ph['he']):
+            bad_ph.append(key)
+    check('i18n placeholders identiques', not bad_ph, str(bad_ph))
 
     # 4. garde-fous structurels (non-regressions corrigees par le passe)
     check('panneau RTL ouvrable', 'html[dir="rtl"] #settingsPanel.open' in h)
@@ -69,6 +83,12 @@ def main():
     check('panneau inerte quand ferme',
           bool(mpanel) and ' inert' in mpanel.group(0)
           and 'panel.inert = false' in h and 'panel.inert = true' in h)
+    ids = re.findall(r'\bid="([^"]+)"', h)
+    dupes = sorted({i for i in ids if ids.count(i) > 1})
+    check('ids uniques', not dupes, str(dupes))
+    check('un seul bloc script',
+          h.count('<script>') == 1 and h.count('</script>') == 1)
+    check('meta CSP presente', 'http-equiv="Content-Security-Policy"' in h)
 
     # 4b. migration des reglages : fonction pure extraite, rejouee sous node
     if shutil.which('node'):
