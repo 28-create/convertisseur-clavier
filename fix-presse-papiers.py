@@ -17,7 +17,7 @@ import argparse
 import re
 import sys
 
-# Les tables ci-dessous sont GENEREES depuis convertisseur.html :
+# Les tables et constantes ci-dessous sont GENEREES depuis convertisseur.html :
 #   python gen_maps.py   (puis python test_maps.py pour verifier)
 # Ne pas les modifier a la main.
 # <maps:generated>
@@ -138,6 +138,9 @@ AZ_TO_QW = {
     '7': '&', '8': '*', '9': '(', '0': ')',
     '°': '_',
 }
+
+# Capitales isolees : seules Q/A/W/Z changent de touche.
+CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 # </maps:generated>
 
 MAPS = {
@@ -148,8 +151,6 @@ LATIN_MAPS = {
     'toAz': QW_TO_AZ,
     'toQw': AZ_TO_QW,
 }
-# Capitales isolees : seules Q/A/W/Z changent de touche (miroir JS CAPS_SWAP).
-CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 
 _HE_RE = re.compile(r'[\u0590-\u05FF]')
 _HE_TOKEN_RE = re.compile(r'[^\s]*[\u0590-\u05FF][^\s]*')
