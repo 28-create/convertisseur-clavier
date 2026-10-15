@@ -173,7 +173,8 @@ def main():
     else:
         check('syntaxe JS (node absent, ignore)', True, 'sans node')
 
-    # 6. version APP_VERSION alignee sur le tag git
+    # 6. version APP_VERSION alignee sur le tag git ; en CI (fetch-depth: 0)
+    # un echec git/tag est une vraie erreur, pas un skip silencieux.
     m = re.search(r"const APP_VERSION = '([^']+)'", h)
     try:
         tag = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
@@ -182,7 +183,12 @@ def main():
         check('version == tag git', m and m.group(1) == tag,
               'page=%s tag=%s' % (m.group(1) if m else '?', tag))
     except Exception as e:
-        check('version == tag git (git indisponible, ignore)', True, str(e)[:80])
+        if os.environ.get('GITHUB_ACTIONS'):
+            check('version == tag git (git/tag indisponible en CI)', False,
+                  str(e)[:80])
+        else:
+            check('version == tag git (git indisponible, ignore)', True,
+                  str(e)[:80])
 
     # 7. contrastes WCAG AA (texte normal >= 4.5, cf. audit oct. 2026)
     css = h.split('<style>')[1].split('</style>')[0]
