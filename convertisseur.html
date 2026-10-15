@@ -538,10 +538,6 @@ function applySettingsToUI() {
 }
 
 // --- conversion ---
-function convertWith(text, layout, dir) {
-  const m = dir === 'toFr' ? MAPS[layout].toFr : MAPS[layout].toHe;
-  return [...text].map(ch => (ch in m ? m[ch] : ch)).join('');
-}
 // Texte mixte : seuls les segments contenant de l'hébreu sont convertis
 // (sens hébreu→français). Un segment latin à casse mixte ne peut pas venir
 // d'une frappe en hébreu (chaque touche shiftée donne une capitale) : il est

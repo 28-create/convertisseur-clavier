@@ -17,7 +17,7 @@ import argparse
 import re
 import sys
 
-# Les 4 tables ci-dessous sont GENEREES depuis convertisseur.html :
+# Les tables ci-dessous sont GENEREES depuis convertisseur.html :
 #   python gen_maps.py   (puis python test_maps.py pour verifier)
 # Ne pas les modifier a la main.
 # <maps:generated>
@@ -197,8 +197,6 @@ def convert_smart(text, full_map, swap_caps, to_french):
             return text
         return _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), text)
     if not to_french:
-        if not _HE_RE.search(text):
-            return _map_with(text, full_map)
         # Avec hebreu : boucle classique — le contexte mot-entier compte
         # (ex. "abcש" reste intact : on ne convertit que les mots 100 % latins).
         out = []
