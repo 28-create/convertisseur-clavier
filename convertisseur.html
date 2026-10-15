@@ -547,34 +547,34 @@ function convertWith(text, layout, dir) {
 // d'une frappe en hébreu (chaque touche shiftée donne une capitale) : il est
 // toujours préservé tel quel. Segments tout en capitales (ambigu : sigle
 // ou frappe shiftée ?) : seules Q/A/W/Z commutent (AZERTY).
+// Sans segmentation : les substitutions préservent d'elles-mêmes les
+// séparateurs, et un mot reconverti ne peut pas devenir tout en capitales
+// (l'hébreu n'émet que des minuscules).
 // Pure (sans JS) : extraction par test_maps.py pour exécution sous node.
 function convertSmart(text, fullMap, swapCaps, toFrench) {
+  const capsTok = tok => {
+    const letters = tok.replace(/[^A-Za-z]/g, '');
+    return (letters.length && letters === letters.toUpperCase())
+      ? [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('')
+      : tok;
+  };
   if (!/[\u0590-\u05FF]/.test(text)) {
     // Sans hebreu, pas de segmentation : un seul passage.
     if (!toFrench) return [...text].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
     if (!swapCaps) return text;
-    return text.replace(/[^\s]*[A-Z][^\s]*/g, tok => {
-      const letters = tok.replace(/[^A-Za-z]/g, '');
-      return (letters.length && letters === letters.toUpperCase())
-        ? [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('')
-        : tok;
-    });
+    return text.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
   }
-  return text.split(/(\s+)/).map(tok => {
-    if (!tok || /^\s+$/.test(tok)) return tok;
-    const hasHe = /[\u0590-\u05FF]/.test(tok);
-    if (hasHe) {
-      if (!toFrench) return tok;
-    } else if (toFrench) {
-      if (!swapCaps) return tok;
-      const letters = tok.replace(/[^A-Za-z]/g, '');
-      if (letters.length && letters === letters.toUpperCase()) {
-        return [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('');
-      }
-      return tok;
-    }
-    return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
-  }).join('');
+  if (!toFrench) {
+    // Sens inverse : seuls les mots 100 % latins sont convertis
+    // ("abcש" reste intact : le contexte mot-entier compte).
+    return text.split(/(\s+)/).map(tok => {
+      if (!tok || /^\s+$/.test(tok) || /[\u0590-\u05FF]/.test(tok)) return tok;
+      return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
+    }).join('');
+  }
+  let out = text.replace(/[^\s]*[\u0590-\u05FF][^\s]*/g, tok => [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join(''));
+  if (swapCaps) out = out.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
+  return out;
 }
 function detectDir(text) {
   // Doit rester identique a autodir() dans fix-presse-papiers.py

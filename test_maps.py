@@ -147,6 +147,7 @@ def main():
         ('azerty', 'toFr', 'שלום2024', 'qkuoéàé\''),
         ('azerty', 'toHe', 'bonjour', 'נםמחםור'),
         ('azerty', 'toHe', 'bonjour שלום', 'נםמחםור שלום'),
+        ('azerty', 'toHe', 'abcש', 'abcש'),
         ('qwerty', 'toFr', 'Bםמחםור', 'Bonjour'),
         ('qwerty', 'toFr', 'Hello, נםמחםור !', 'Hello, bonjour !'),
     ]

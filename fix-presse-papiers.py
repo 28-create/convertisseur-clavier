@@ -152,6 +152,7 @@ LATIN_MAPS = {
 CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 
 _HE_RE = re.compile(r'[\u0590-\u05FF]')
+_HE_TOKEN_RE = re.compile(r'[^\s]*[\u0590-\u05FF][^\s]*')
 _CAP_TOKEN_RE = re.compile(r'[^\s]*[A-Z][^\s]*')
 
 # Tables de traduction C (str.translate), construites une fois par mapping.
@@ -180,7 +181,14 @@ def _caps_tok(tok, swap_caps):
 
 
 def convert_smart(text, full_map, swap_caps, to_french):
-    """Texte mixte : voir convertSmart dans convertisseur.html (miroir exact)."""
+    """Texte mixte : voir convertSmart dans convertisseur.html (miroir exact).
+
+    Sans segmentation : les substitutions preservent d'elles-memes les
+    separateurs. L'ordre des deux passages est sans effet : un mot
+    reconverti ne peut pas devenir "tout en capitales" (les lettres
+    hebraiques n'emettent que des minuscules), donc le second passage
+    ne retouche jamais le premier.
+    """
     if not _HE_RE.search(text):
         # Sans hebreu, pas de segmentation : un seul passage C.
         if not to_french:
@@ -188,25 +196,22 @@ def convert_smart(text, full_map, swap_caps, to_french):
         if not swap_caps:
             return text
         return _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), text)
-    parts = re.split(r'(\s+)', text)
-    out = []
-    for tok in parts:
-        if not tok or tok.isspace():
-            out.append(tok)
-            continue
-        has_he = bool(_HE_RE.search(tok))
-        if has_he:
-            if not to_french:
+    if not to_french:
+        if not _HE_RE.search(text):
+            return _map_with(text, full_map)
+        # Avec hebreu : boucle classique — le contexte mot-entier compte
+        # (ex. "abcש" reste intact : on ne convertit que les mots 100 % latins).
+        out = []
+        for tok in re.split(r'(\s+)', text):
+            if not tok or tok.isspace() or _HE_RE.search(tok):
                 out.append(tok)
-                continue
-        elif to_french:
-            if not swap_caps:
-                out.append(tok)
-                continue
-            out.append(_caps_tok(tok, swap_caps))
-            continue
-        out.append(_map_with(tok, full_map))
-    return ''.join(out)
+            else:
+                out.append(_map_with(tok, full_map))
+        return ''.join(out)
+    out = _HE_TOKEN_RE.sub(lambda m: _map_with(m.group(0), full_map), text)
+    if swap_caps:
+        out = _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), out)
+    return out
 
 
 def convert(text, mapping):
