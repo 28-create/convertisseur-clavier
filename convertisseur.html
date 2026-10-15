@@ -83,10 +83,12 @@
   #settingsPanel { position: fixed; top: 0; bottom: 0; inset-inline-end: 0; width: min(400px, 94vw);
     background: var(--card); color: var(--text); border-inline-start: 1px solid var(--border);
     box-shadow: var(--shadow); z-index: 41; transform: translateX(105%);
-    transition: transform .22s ease; display: flex; flex-direction: column; }
+    visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s;
+    display: flex; flex-direction: column; }
   html[dir="rtl"] #settingsPanel { transform: translateX(-105%); }
   #settingsPanel.open,
-  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); }
+  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); visibility: visible;
+    transition: transform .22s ease; }
   .panel-head { display: flex; align-items: center; justify-content: space-between;
     padding: 1rem 1.1rem; border-bottom: 1px solid var(--border); }
   .panel-head h2 { margin: 0; font-size: 1.1rem; }
@@ -193,7 +195,7 @@
 </div>
 
 <div id="settingsOverlay"></div>
-<aside id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+<aside id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" inert>
   <div class="panel-head">
     <h2 id="settingsTitle" data-i18n="settingsTitle">Réglages</h2>
     <button id="closeSettings" class="ghost" data-i18n="close">Fermer</button>
@@ -750,6 +752,7 @@ const openBtn = document.getElementById('openSettings');
 let lastFocus = null;
 function openPanel() {
   lastFocus = document.activeElement;
+  panel.inert = false;
   panel.classList.add('open'); overlay.classList.add('open');
   openBtn.setAttribute('aria-expanded', 'true');
   document.getElementById('closeSettings').focus();
@@ -757,6 +760,7 @@ function openPanel() {
 function closePanel() {
   if (!panel.classList.contains('open')) return;
   panel.classList.remove('open'); overlay.classList.remove('open');
+  panel.inert = true;
   openBtn.setAttribute('aria-expanded', 'false');
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
 }

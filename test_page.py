@@ -65,6 +65,10 @@ def main():
           h.count('<fieldset>') == 7 and h.count('<legend') == 7,
           '%d fieldset' % h.count('<fieldset>'))
     check('sortie hebreu alignee a droite', '.out[dir="rtl"]' in h)
+    mpanel = re.search(r'<aside id="settingsPanel"[^>]*>', h)
+    check('panneau inerte quand ferme',
+          bool(mpanel) and ' inert' in mpanel.group(0)
+          and 'panel.inert = false' in h and 'panel.inert = true' in h)
 
     # 4b. migration des reglages : fonction pure extraite, rejouee sous node
     if shutil.which('node'):
