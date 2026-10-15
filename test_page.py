@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import json
 import os
 
 REQUIRED_IDS = ['input', 'output', 'detect', 'stats', 'swap', 'clear', 'copy',
@@ -64,6 +65,46 @@ def main():
           h.count('<fieldset>') == 7 and h.count('<legend') == 7,
           '%d fieldset' % h.count('<fieldset>'))
     check('sortie hebreu alignee a droite', '.out[dir="rtl"]' in h)
+
+    # 4b. migration des reglages : fonction pure extraite, rejouee sous node
+    if shutil.which('node'):
+        mdef = re.search(r'const DEFAULTS = \{.*?\};', h, re.S)
+        mfun = re.search(
+            r'function migrateSettings\(stored, legacy\) \{[\s\S]*?\n\}', h)
+        if not (mdef and mfun):
+            check('migration reglages testable', False, 'extraction impossible')
+        else:
+            cases = [
+                [{'lang': 'fr'}, None, {'lang': 'auto', 'mig1': True}, True],
+                [{'lang': 'fr', 'mig1': True}, None, {'lang': 'fr'}, False],
+                [{'lang': 'he'}, None, {'lang': 'he', 'mig1': True}, True],
+                [{'lang': 'xx'}, None, {'lang': 'auto'}, True],
+                [{'mode': 'zzz', 'latinDir': 'nope'}, None,
+                 {'mode': 'hebrew', 'latinDir': 'toAz'}, True],
+                [None, {'layout': 'qwerty', 'autocopy': '1'},
+                 {'layout': 'qwerty', 'autocopy': True, 'mig1': True}, True],
+                [None, None, {'layout': 'azerty', 'mig1': True}, False],
+            ]
+            prog = (mdef.group(0) + '\n' + mfun.group(0) + '\n'
+                    'const cases = ' + json.dumps(cases, ensure_ascii=True) + ';\n'
+                    'let bad = 0;\n'
+                    'cases.forEach((c, i) => {\n'
+                    '  const r = migrateSettings(c[0], c[1]);\n'
+                    '  let ok = r.changed === c[3];\n'
+                    '  for (const k of Object.keys(c[2]))'
+                    ' if (r.settings[k] !== c[2][k]) ok = false;\n'
+                    '  if (!ok) { bad++; console.log("FAIL " + i + " "'
+                    ' + JSON.stringify(r)); }\n'
+                    '});\n'
+                    'console.log(bad === 0 ? "OK" : "FAIL");\n')
+            r = subprocess.run(['node', '-e', prog], capture_output=True,
+                               text=True, encoding='utf-8', errors='replace')
+            out = (r.stdout or '') + (r.stderr or '')
+            check('migration reglages (node)',
+                  r.returncode == 0 and (r.stdout or '').strip().endswith('OK'),
+                  out.strip()[:120])
+    else:
+        check('migration reglages (node absent, ignore)', True, 'sans node')
 
     # 5. syntaxe JS (si node disponible)
     if shutil.which('node'):

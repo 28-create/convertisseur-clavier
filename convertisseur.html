@@ -446,22 +446,38 @@ const I18N = {
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
+// Fusionne et valide une config stockée. Pure (sans DOM) : extraite et
+// rejouée sous node par test_page.py — garder la signature telle quelle.
+// 'fr' était l'ancien défaut forcé (avant l'auto) : la migration ne joue
+// qu'une fois (marqueur mig1), ensuite un choix 'fr' explicite est respecté.
+function migrateSettings(stored, legacy) {
+  const settings = Object.assign({}, DEFAULTS, stored || {});
+  let changed = false;
+  if (stored && !stored.mig1) {
+    if (settings.lang === 'fr') settings.lang = 'auto';
+    changed = true;
+  }
+  settings.mig1 = true;
+  if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) { settings.lang = 'auto'; changed = true; }
+  if (!['hebrew', 'latin'].includes(settings.mode)) { settings.mode = 'hebrew'; changed = true; }
+  if (!['toAz', 'toQw'].includes(settings.latinDir)) { settings.latinDir = 'toAz'; changed = true; }
+  // migration des anciennes clés (uniquement sans réglages existants)
+  if (!stored && legacy) {
+    if (legacy.layout === 'qwerty' || legacy.layout === 'azerty') { settings.layout = legacy.layout; changed = true; }
+    if (legacy.autocopy === '1') { settings.autocopy = true; changed = true; }
+  }
+  return { settings: settings, changed: changed };
+}
 let settings = Object.assign({}, DEFAULTS);
 try {
   const raw = localStorage.getItem('conv-settings-v1');
-  if (raw) settings = Object.assign({}, DEFAULTS, JSON.parse(raw));
-  // migration : 'fr' était l'ancien défaut forcé -> bascule vers l'auto,
-  // sauf choix explicite 'en' / 'he' qu'on respecte.
-  if (settings.lang === 'fr') settings.lang = 'auto';
-  if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) settings.lang = 'auto';
-  if (!['hebrew', 'latin'].includes(settings.mode)) settings.mode = 'hebrew';
-  if (!['toAz', 'toQw'].includes(settings.latinDir)) settings.latinDir = 'toAz';
-  // migration des anciennes clés
-  if (!raw) {
-    const l = localStorage.getItem('conv-layout');
-    if (l === 'qwerty' || l === 'azerty') settings.layout = l;
-    if (localStorage.getItem('conv-autocopy') === '1') settings.autocopy = true;
-  }
+  const res = migrateSettings(raw ? JSON.parse(raw) : null, {
+    layout: localStorage.getItem('conv-layout'),
+    autocopy: localStorage.getItem('conv-autocopy'),
+  });
+  settings = res.settings;
+  // migration one-shot : réécriture immédiate (saveSettings dépend de `input`)
+  if (res.changed) localStorage.setItem('conv-settings-v1', JSON.stringify(settings));
 } catch {}
 let savedText = '';
 try { savedText = localStorage.getItem('conv-input') || ''; } catch {}
