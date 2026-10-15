@@ -1,9 +1,9 @@
 # Journal des modifications
 
-## Non publié
-- Performance : conversion Python ~6x plus rapide sur textes sans
-  hébreu (tables C `str.translate` + court-circuit), sémantique
-  prouvée identique (batterie + fuzz).
+## v1.7.2 — 15 oct. 2026
+- Performance : conversion ~6x plus rapide (tables C, court-circuit et
+  substitutions sans segmentation), sémantique prouvée identique
+  (batterie + 1200 comparaisons fuzz).
 
 ## v1.7.1 — 14 oct. 2026
 - Parité de détection auto page/script (accents), `.bat` avec message
