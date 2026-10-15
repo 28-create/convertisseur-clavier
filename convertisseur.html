@@ -651,13 +651,18 @@ async function copyText(str) {
     return ok;
   } catch { return false; }
 }
+const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 1000;
+// Entrée telle que stockée et comparée dans l'historique (pure, rejouée
+// sous node par test_page.py — garder les signatures telles quelles).
+function histInput(text) { return text.slice(0, HIST_CUT); }
+function isHistDup(history, text) { return history.length > 0 && history[0].i === histInput(text); }
 async function copyResult() {
   if (!output.textContent) return;
   const ok = await copyText(output.textContent);
   detect.textContent = ok ? t('copied') : t('copyFail');
   if (ok && settings.history && lastConv) {
-    if (!history.length || history[0].i !== input.value) {
-      history.unshift(Object.assign({ i: input.value.slice(0, HIST_CUT),
+    if (!isHistDup(history, input.value)) {
+      history.unshift(Object.assign({ i: histInput(input.value),
         o: output.textContent.slice(0, HIST_CUT), t: Date.now() }, lastConv));
       if (history.length > HIST_MAX) history.length = HIST_MAX;
       saveHistory();
@@ -665,7 +670,6 @@ async function copyResult() {
     renderHistory();
   }
 }
-const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 300;
 let history = [];
 try { const rawH = localStorage.getItem(HIST_KEY); history = rawH ? JSON.parse(rawH) : []; if (!Array.isArray(history)) history = []; } catch { history = []; }
 let lastConv = null;

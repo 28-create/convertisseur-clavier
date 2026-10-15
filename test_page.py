@@ -106,6 +106,36 @@ def main():
     else:
         check('migration reglages (node absent, ignore)', True, 'sans node')
 
+    # 4c. historique : helpers purs extraits, rejoues sous node
+    if shutil.which('node'):
+        mcut = re.search(r'HIST_CUT = (\d+)', h)
+        mh1 = re.search(r'function histInput\(text\) \{[^\n]*\}', h)
+        mh2 = re.search(r'function isHistDup\(history, text\) \{[^\n]*\}', h)
+        if not (mcut and mh1 and mh2):
+            check('helpers historique testables', False, 'extraction impossible')
+        else:
+            prog = ('const HIST_CUT = ' + mcut.group(1) + ';\n'
+                    + mh1.group(0) + '\n' + mh2.group(0) + '\n'
+                    'const long = "a".repeat(HIST_CUT + 100);\n'
+                    'const head = [{ i: histInput("hello") }];\n'
+                    'const r = [\n'
+                    '  histInput("abc") === "abc",\n'
+                    '  histInput(long).length === HIST_CUT,\n'
+                    '  isHistDup(head, "hello") === true,\n'
+                    '  isHistDup(head, "hello!") === false,\n'
+                    '  isHistDup([], "x") === false,\n'
+                    '  isHistDup([{ i: histInput(long) }], long) === true\n'
+                    '];\n'
+                    'console.log(r.every(Boolean) ? "OK" : "FAIL");\n')
+            r = subprocess.run(['node', '-e', prog], capture_output=True,
+                               text=True, encoding='utf-8', errors='replace')
+            out = (r.stdout or '') + (r.stderr or '')
+            check('historique helpers (node)',
+                  r.returncode == 0 and (r.stdout or '').strip().endswith('OK'),
+                  out.strip()[:120])
+    else:
+        check('historique helpers (node absent, ignore)', True, 'sans node')
+
     # 5. syntaxe JS (si node disponible)
     if shutil.which('node'):
         m = re.findall(r'<script>(.*?)</script>', h, re.S)
