@@ -17,7 +17,7 @@ import argparse
 import re
 import sys
 
-# Les 4 tables ci-dessous sont GENEREES depuis convertisseur.html :
+# Les tables et constantes ci-dessous sont GENEREES depuis convertisseur.html :
 #   python gen_maps.py   (puis python test_maps.py pour verifier)
 # Ne pas les modifier a la main.
 # <maps:generated>
@@ -138,6 +138,9 @@ AZ_TO_QW = {
     '7': '&', '8': '*', '9': '(', '0': ')',
     '°': '_',
 }
+
+# Capitales isolees : seules Q/A/W/Z changent de touche.
+CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 # </maps:generated>
 
 MAPS = {
@@ -148,8 +151,6 @@ LATIN_MAPS = {
     'toAz': QW_TO_AZ,
     'toQw': AZ_TO_QW,
 }
-# Capitales isolees : seules Q/A/W/Z changent de touche (miroir JS CAPS_SWAP).
-CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 
 _HE_RE = re.compile(r'[\u0590-\u05FF]')
 _HE_TOKEN_RE = re.compile(r'[^\s]*[\u0590-\u05FF][^\s]*')
@@ -197,8 +198,6 @@ def convert_smart(text, full_map, swap_caps, to_french):
             return text
         return _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), text)
     if not to_french:
-        if not _HE_RE.search(text):
-            return _map_with(text, full_map)
         # Avec hebreu : boucle classique — le contexte mot-entier compte
         # (ex. "abcש" reste intact : on ne convertit que les mots 100 % latins).
         out = []

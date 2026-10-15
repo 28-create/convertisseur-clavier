@@ -3,3 +3,5 @@
 * text=auto
 *.bat text eol=crlf
 *.ps1 text eol=crlf
+# Binaire (icone du .exe)
+*.ico binary

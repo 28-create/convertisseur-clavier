@@ -40,7 +40,8 @@ ou sur votre machine Windows.
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
-| `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné). |
+| `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
+| `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
 | `gen_version.py` | Régénère `version_info.txt` (tampon de version de l'exe). |
 | `test_installer.ps1` | Test bout-en-bout de l'installeur (bac à sable). |
 
@@ -135,7 +136,8 @@ Désinstallation : Paramètres Windows → Applications, ou `desinstaller.ps1`.
 ## 4. Développement
 
 **Les tables JavaScript de `convertisseur.html` sont la source de vérité.
-Ne jamais éditer les tables de `fix-presse-papiers.py` à la main.**
+Ne jamais éditer les tables (ni `CAPS_SWAP`) de `fix-presse-papiers.py`
+à la main.**
 
 Après toute modification des mappings dans le HTML :
 
@@ -145,15 +147,20 @@ python test_maps.py
 python test_page.py
 ```
 
-`test_maps.py` compare les 6 tables (ordre + valeurs), détecte les clés
-dupliquées, vérifie la réversibilité exacte et rejoue des cas connus
-(`qkuo`/`akuo` → `שלום`, etc.). Exit `0` = synchronisé, `1` = dérive.
-La CI GitHub Actions rejoue les deux suites (Ubuntu + Windows) à chaque push.
+`test_maps.py` compare les 6 tables et `CAPS_SWAP` (ordre + valeurs),
+détecte les clés dupliquées, vérifie la réversibilité exacte, rejoue des
+cas connus (`qkuo`/`akuo` → `שלום`, etc.) puis confronte le JS au Python
+sur 1200 textes aléatoires. Exit `0` = synchronisé, `1` = dérive.
+La CI GitHub Actions rejoue les deux suites (Ubuntu + Windows,
+Python 3.11 à 3.14) à chaque push.
 
 ## Version et historique
 
 Version affichée dans le pied de page (`APP_VERSION`), alignée sur le
-tag git (`test_page.py` le vérifie). Historique : voir
+tag git (`test_page.py` le vérifie : entre un bump et la création du tag,
+le test échoue volontairement). Ordre de release : bump → `python
+gen_version.py` → entrée CHANGELOG → commit `Release vX.Y.Z` → tag.
+Historique : voir
 [CHANGELOG.md](CHANGELOG.md) et `git log`.
 
 ## Licence

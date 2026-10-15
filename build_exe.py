@@ -3,7 +3,8 @@
 
 Usage : python build_exe.py [--dist DOSSIER]
 Etapes : gen_version.py -> PyInstaller (noconsole, onefile, version-file,
-page embarquee). Le nom du .exe reprend toujours APP_VERSION :
+page embarquee, icone app.ico si presente). Cible Windows uniquement.
+Le nom du .exe reprend toujours APP_VERSION :
 impossible de publier un exe sans version dans son nom.
 --dist cible un autre dossier de sortie (utile si l'antivirus
 surveille le dossier du projet) ; le fichier est ensuite a
@@ -17,6 +18,7 @@ import sys
 
 APP = 'app.py'
 HTML = 'convertisseur.html'
+ICON = 'app.ico'
 
 
 def read_version(html_path=HTML):
@@ -28,6 +30,9 @@ def read_version(html_path=HTML):
 
 
 def main(argv=None):
+    if sys.platform != 'win32':
+        raise SystemExit('build_exe.py cible Windows uniquement '
+                         '(PyInstaller --onefile / --version-file).')
     outdir = 'dist'
     args = list(argv if argv is not None else sys.argv[1:])
     while args and args[0] == '--dist':
@@ -45,8 +50,11 @@ def main(argv=None):
     cmd = [sys.executable, '-m', 'PyInstaller', '--noconsole', '--onefile',
            '--version-file', 'version_info.txt',
            '--distpath', outdir,
-           '--add-data', 'convertisseur.html;.',
-           '--name', name, APP]
+           '--add-data', 'convertisseur.html' + os.pathsep + '.',
+           '--name', name]
+    if os.path.exists(ICON):
+        cmd += ['--icon', ICON]
+    cmd.append(APP)
     print('+ ' + ' '.join(cmd))
     r = subprocess.run(cmd)
     if r.returncode != 0:

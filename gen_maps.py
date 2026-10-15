@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Source de verite : convertisseur.html -> genere les tables de fix-presse-papiers.py.
+"""Source de verite : convertisseur.html -> genere les tables (et CAPS_SWAP)
+de fix-presse-papiers.py.
 
 Usage :
   python gen_maps.py    (met a jour le bloc <maps:generated> dans fix-presse-papiers.py)
@@ -45,7 +46,15 @@ def parse_js_maps(html_text):
     return maps
 
 
-def emit_py(maps):
+def parse_caps_swap(html_text):
+    """Rend [('Q', 'A'), ...] (CAPS_SWAP) dans l'ordre du fichier."""
+    m = re.search(r'const CAPS_SWAP = \{([^}]*)\};', html_text)
+    if not m:
+        raise ValueError('CAPS_SWAP introuvable dans %s' % HTML_FILE)
+    return re.findall(r"(\w+)\s*:\s*'([^']*)'", m.group(1))
+
+
+def emit_py(maps, caps):
     lines = []
     for name in MAP_NAMES:
         lines.append('%s = {' % name)
@@ -58,6 +67,10 @@ def emit_py(maps):
         if row:
             lines.append('    ' + ', '.join(row) + ',')
         lines.append('}')
+    lines.append('')
+    lines.append('# Capitales isolees : seules Q/A/W/Z changent de touche.')
+    lines.append('CAPS_SWAP = {%s}' % ', '.join(
+        '%r: %r' % (k, v) for k, v in caps))
     return '\n'.join(lines) + '\n'
 
 
@@ -65,7 +78,8 @@ def main():
     with open(HTML_FILE, encoding='utf-8') as f:
         html = f.read()
     maps = parse_js_maps(html)
-    block = emit_py(maps)
+    caps = parse_caps_swap(html)
+    block = emit_py(maps, caps)
     with open(PY_FILE, encoding='utf-8') as f:
         py = f.read()
     m = re.search('^%s$.*?^%s$' % (re.escape(BEGIN), re.escape(END)), py, re.S | re.M)
@@ -76,7 +90,7 @@ def main():
     with open(PY_FILE, 'w', encoding='utf-8', newline='\n') as f:
         f.write(py)
     counts = ', '.join('%s=%d' % (n, len(maps[n])) for n in MAP_NAMES)
-    print('OK, tables regenerees (%s)' % counts)
+    print('OK, tables regenerees (%s, CAPS_SWAP=%d)' % (counts, len(caps)))
     return 0
 
 

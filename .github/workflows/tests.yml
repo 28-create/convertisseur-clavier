@@ -4,15 +4,24 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.11', '3.12', '3.14']
+        python-version: ['3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -20,6 +29,6 @@ jobs:
         run: python test_maps.py
       - name: Page (integrite, i18n, RTL, JS, contraste, version)
         run: python test_page.py
-      - name: Installeur (Windows uniquement)
-        if: runner.os == 'Windows'
+      - name: Installeur (Windows, une seule fois)
+        if: runner.os == 'Windows' && matrix.python-version == '3.12'
         run: powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1

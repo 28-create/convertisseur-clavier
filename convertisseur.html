@@ -2,6 +2,7 @@
 <html lang="fr" dir="ltr" data-theme="light" data-fontsize="medium">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Convertisseur de clavier Français ⇄ Hébreu (AZERTY / QWERTY), 100 % local.">
 <meta name="theme-color" content="#edf0f6">
@@ -83,10 +84,12 @@
   #settingsPanel { position: fixed; top: 0; bottom: 0; inset-inline-end: 0; width: min(400px, 94vw);
     background: var(--card); color: var(--text); border-inline-start: 1px solid var(--border);
     box-shadow: var(--shadow); z-index: 41; transform: translateX(105%);
-    transition: transform .22s ease; display: flex; flex-direction: column; }
+    visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s;
+    display: flex; flex-direction: column; }
   html[dir="rtl"] #settingsPanel { transform: translateX(-105%); }
   #settingsPanel.open,
-  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); }
+  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); visibility: visible;
+    transition: transform .22s ease; }
   .panel-head { display: flex; align-items: center; justify-content: space-between;
     padding: 1rem 1.1rem; border-bottom: 1px solid var(--border); }
   .panel-head h2 { margin: 0; font-size: 1.1rem; }
@@ -193,7 +196,7 @@
 </div>
 
 <div id="settingsOverlay"></div>
-<aside id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+<aside id="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" inert>
   <div class="panel-head">
     <h2 id="settingsTitle" data-i18n="settingsTitle">Réglages</h2>
     <button id="closeSettings" class="ghost" data-i18n="close">Fermer</button>
@@ -446,22 +449,38 @@ const I18N = {
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
+// Fusionne et valide une config stockée. Pure (sans DOM) : extraite et
+// rejouée sous node par test_page.py — garder la signature telle quelle.
+// 'fr' était l'ancien défaut forcé (avant l'auto) : la migration ne joue
+// qu'une fois (marqueur mig1), ensuite un choix 'fr' explicite est respecté.
+function migrateSettings(stored, legacy) {
+  const settings = Object.assign({}, DEFAULTS, stored || {});
+  let changed = false;
+  if (stored && !stored.mig1) {
+    if (settings.lang === 'fr') settings.lang = 'auto';
+    changed = true;
+  }
+  settings.mig1 = true;
+  if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) { settings.lang = 'auto'; changed = true; }
+  if (!['hebrew', 'latin'].includes(settings.mode)) { settings.mode = 'hebrew'; changed = true; }
+  if (!['toAz', 'toQw'].includes(settings.latinDir)) { settings.latinDir = 'toAz'; changed = true; }
+  // migration des anciennes clés (uniquement sans réglages existants)
+  if (!stored && legacy) {
+    if (legacy.layout === 'qwerty' || legacy.layout === 'azerty') { settings.layout = legacy.layout; changed = true; }
+    if (legacy.autocopy === '1') { settings.autocopy = true; changed = true; }
+  }
+  return { settings: settings, changed: changed };
+}
 let settings = Object.assign({}, DEFAULTS);
 try {
   const raw = localStorage.getItem('conv-settings-v1');
-  if (raw) settings = Object.assign({}, DEFAULTS, JSON.parse(raw));
-  // migration : 'fr' était l'ancien défaut forcé -> bascule vers l'auto,
-  // sauf choix explicite 'en' / 'he' qu'on respecte.
-  if (settings.lang === 'fr') settings.lang = 'auto';
-  if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) settings.lang = 'auto';
-  if (!['hebrew', 'latin'].includes(settings.mode)) settings.mode = 'hebrew';
-  if (!['toAz', 'toQw'].includes(settings.latinDir)) settings.latinDir = 'toAz';
-  // migration des anciennes clés
-  if (!raw) {
-    const l = localStorage.getItem('conv-layout');
-    if (l === 'qwerty' || l === 'azerty') settings.layout = l;
-    if (localStorage.getItem('conv-autocopy') === '1') settings.autocopy = true;
-  }
+  const res = migrateSettings(raw ? JSON.parse(raw) : null, {
+    layout: localStorage.getItem('conv-layout'),
+    autocopy: localStorage.getItem('conv-autocopy'),
+  });
+  settings = res.settings;
+  // migration one-shot : réécriture immédiate (saveSettings dépend de `input`)
+  if (res.changed) localStorage.setItem('conv-settings-v1', JSON.stringify(settings));
 } catch {}
 let savedText = '';
 try { savedText = localStorage.getItem('conv-input') || ''; } catch {}
@@ -494,6 +513,13 @@ function saveSettings() {
     if (settings.remember) localStorage.setItem('conv-input', input.value);
     else localStorage.removeItem('conv-input');
   } catch {}
+}
+// Sauvegarde différée pendant la frappe (flush sur pagehide) : évite une
+// écriture localStorage à chaque caractère quand la conversion est en direct.
+let saveTimer = 0;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveSettings, 300);
 }
 function applyTheme() {
   let th = settings.theme;
@@ -535,13 +561,10 @@ function applySettingsToUI() {
   document.getElementById('optRemember').checked = !!settings.remember;
   document.getElementById('optHistory').checked = !!settings.history;
   applyTheme();
+  renderHistory();
 }
 
 // --- conversion ---
-function convertWith(text, layout, dir) {
-  const m = dir === 'toFr' ? MAPS[layout].toFr : MAPS[layout].toHe;
-  return [...text].map(ch => (ch in m ? m[ch] : ch)).join('');
-}
 // Texte mixte : seuls les segments contenant de l'hébreu sont convertis
 // (sens hébreu→français). Un segment latin à casse mixte ne peut pas venir
 // d'une frappe en hébreu (chaque touche shiftée donne une capitale) : il est
@@ -619,7 +642,7 @@ function doConvert() {
   const n = input.value.length;
   document.querySelector('#stats small').textContent = n ? t('chars').replace('{n}', n) : '';
   if (settings.autocopy && out) copyText(out);
-  saveSettings();
+  scheduleSave();
 }
 async function copyText(str) {
   try {
@@ -639,13 +662,18 @@ async function copyText(str) {
     return ok;
   } catch { return false; }
 }
+const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 1000;
+// Entrée telle que stockée et comparée dans l'historique (pure, rejouée
+// sous node par test_page.py — garder les signatures telles quelles).
+function histInput(text) { return text.slice(0, HIST_CUT); }
+function isHistDup(history, text) { return history.length > 0 && history[0].i === histInput(text); }
 async function copyResult() {
   if (!output.textContent) return;
   const ok = await copyText(output.textContent);
   detect.textContent = ok ? t('copied') : t('copyFail');
   if (ok && settings.history && lastConv) {
-    if (!history.length || history[0].i !== input.value) {
-      history.unshift(Object.assign({ i: input.value.slice(0, HIST_CUT),
+    if (!isHistDup(history, input.value)) {
+      history.unshift(Object.assign({ i: histInput(input.value),
         o: output.textContent.slice(0, HIST_CUT), t: Date.now() }, lastConv));
       if (history.length > HIST_MAX) history.length = HIST_MAX;
       saveHistory();
@@ -653,7 +681,6 @@ async function copyResult() {
     renderHistory();
   }
 }
-const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 300;
 let history = [];
 try { const rawH = localStorage.getItem(HIST_KEY); history = rawH ? JSON.parse(rawH) : []; if (!Array.isArray(history)) history = []; } catch { history = []; }
 let lastConv = null;
@@ -707,7 +734,7 @@ document.getElementById('swap').onclick = () => {
 };
 document.getElementById('clear').onclick = () => { input.value = ''; doConvert(); input.focus(); };
 document.getElementById('copy').onclick = copyResult;
-input.addEventListener('input', () => { if (settings.live) doConvert(); else saveSettings(); });
+input.addEventListener('input', () => { if (settings.live) doConvert(); else scheduleSave(); });
 input.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyResult(); }
 });
@@ -734,6 +761,7 @@ const openBtn = document.getElementById('openSettings');
 let lastFocus = null;
 function openPanel() {
   lastFocus = document.activeElement;
+  panel.inert = false;
   panel.classList.add('open'); overlay.classList.add('open');
   openBtn.setAttribute('aria-expanded', 'true');
   document.getElementById('closeSettings').focus();
@@ -741,6 +769,7 @@ function openPanel() {
 function closePanel() {
   if (!panel.classList.contains('open')) return;
   panel.classList.remove('open'); overlay.classList.remove('open');
+  panel.inert = true;
   openBtn.setAttribute('aria-expanded', 'false');
   if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
 }
@@ -783,6 +812,9 @@ if (window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   if (mq.addEventListener) mq.addEventListener('change', () => { if (settings.theme === 'auto') applyTheme(); });
 }
+
+// Flush de la sauvegarde différée si la page disparaît avant le délai.
+window.addEventListener('pagehide', () => { clearTimeout(saveTimer); saveSettings(); });
 
 // init
 if (settings.remember && savedText) input.value = savedText;

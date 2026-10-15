@@ -6,12 +6,14 @@ Usage : python test_maps.py   (exit 0 = OK, exit 1 = derive detectee)
 """
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
-from gen_maps import MAP_NAMES, parse_js_maps
+from gen_maps import MAP_NAMES, parse_js_maps, parse_caps_swap
 
 
 def _safe(o):
@@ -27,7 +29,7 @@ def load_fix():
     return mod
 
 
-def run_js_smart(js_maps, cases):
+def run_js_smart(js_maps, caps, cases):
     """Execute convertSmart extrait du HTML sous node.
     Rend la liste des resultats, None si node absent,
     leve RuntimeError si l'execution echoue."""
@@ -42,7 +44,7 @@ def run_js_smart(js_maps, cases):
     prog = (
         'const MAPS = %s;\n'
         '%s\n'
-        'const SWAP = {Q:"A",A:"Q",W:"Z",Z:"W"};\n'
+        'const SWAP = %s;\n'
         'const cases = %s;\n'
         'const esc = s => s.replace(/[^\\x20-\\x7e]/g, c => "\\\\u" + c.codePointAt(0).toString(16).padStart(4, "0"));\n'
         'cases.forEach(([layout, dir, src, exp], i) => {\n'
@@ -56,6 +58,7 @@ def run_js_smart(js_maps, cases):
         '});\n'
     ) % (json.dumps({n: dict(js_maps[n]) for n in MAP_NAMES}, ensure_ascii=True),
          m.group(0),
+         json.dumps(dict(caps), ensure_ascii=True),
          json.dumps([[l, d, s, e] for l, d, s, e in cases], ensure_ascii=True))
     r = subprocess.run(['node', '-e', prog], capture_output=True, text=True,
                        encoding='utf-8', errors='replace')
@@ -98,9 +101,63 @@ def run_js_autodir(cases):
     return [res[i] for i in range(len(cases))]
 
 
+def run_js_fuzz(js_maps, caps, cases):
+    """Execute convertSmart extrait du HTML sous node sur les memes cas que
+    le fuzz Python : parite triangulaire page/script/reference.
+    Fichier temporaire : la ligne de commande Windows est limitee en taille.
+    Rend la liste des index en echec, None si node absent."""
+    if not shutil.which('node'):
+        return None
+    with open('convertisseur.html', encoding='utf-8') as f:
+        html = f.read()
+    m = re.search(r'function convertSmart\(text, fullMap, swapCaps, toFrench\) \{[\s\S]*?\n\}',
+                  html)
+    if not m:
+        raise RuntimeError('convertSmart introuvable dans convertisseur.html')
+    prog = (
+        'const MAPS = %s;\n'
+        'const CAPS_SWAP = %s;\n'
+        '%s\n'
+        'const cases = %s;\n'
+        'const esc = s => s.replace(/[^\\x20-\\x7e]/g, c => "\\\\u" + c.codePointAt(0).toString(16).padStart(4, "0"));\n'
+        'let bad = 0;\n'
+        'cases.forEach(([layout, dir, src, exp], i) => {\n'
+        '  const toHe = layout === "azerty" ? MAPS.FR_TO_HE : MAPS.EN_TO_HE;\n'
+        '  const toFr = layout === "azerty" ? MAPS.HE_TO_FR : MAPS.HE_TO_EN;\n'
+        '  const toFrench = dir === "toFr";\n'
+        '  const full = toFrench ? toFr : toHe;\n'
+        '  const swap = toFrench ? (layout === "azerty" ? CAPS_SWAP : null) : full;\n'
+        '  const got = convertSmart(src, full, swap, toFrench);\n'
+        '  if (got !== exp) { bad++; console.log("FUZZ-JS " + i + " " + esc(src)); }\n'
+        '});\n'
+        'console.log(bad === 0 ? "FUZZ-OK" : "FUZZ-FAIL " + bad);\n'
+    ) % (json.dumps({n: dict(js_maps[n]) for n in MAP_NAMES}, ensure_ascii=True),
+         json.dumps(dict(caps), ensure_ascii=True),
+         m.group(0),
+         json.dumps(cases, ensure_ascii=True))
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False,
+                                     encoding='utf-8') as f:
+        f.write(prog)
+        tmp = f.name
+    try:
+        r = subprocess.run(['node', tmp], capture_output=True, text=True,
+                           encoding='utf-8', errors='replace')
+    finally:
+        os.unlink(tmp)
+    if r.returncode != 0:
+        raise RuntimeError('node a echoue : ' + (r.stderr or '').strip()[:200])
+    fails = [int(line.split()[1]) for line in r.stdout.splitlines()
+             if line.startswith('FUZZ-JS ')]
+    if not fails and 'FUZZ-OK' not in r.stdout:
+        raise RuntimeError('sortie node incomplete : ' + repr(r.stdout[:200]))
+    return fails
+
+
 def main():
     with open('convertisseur.html', encoding='utf-8') as f:
-        js_maps = parse_js_maps(f.read())
+        html_text = f.read()
+    js_maps = parse_js_maps(html_text)
+    caps = parse_caps_swap(html_text)
     fix_mod = load_fix()
     py_maps = {n: list(getattr(fix_mod, n).items()) for n in MAP_NAMES}
     ok = True
@@ -122,6 +179,11 @@ def main():
             if dupes:
                 ok = False
                 print('DOUBLON %s dans %s : %r' % (name, label, dupes))
+    py_caps = list(fix_mod.CAPS_SWAP.items())
+    if py_caps != caps:
+        ok = False
+        print('DERIVE CAPS_SWAP : HTML=%s PY=%s'
+              % (_safe(dict(caps)), _safe(dict(py_caps))))
     # garde-fous fonctionnels (non-regression sur des cas connus)
     cases = [
         ('azerty', 'toHe', 'qkuo', 'שלום'),
@@ -154,7 +216,7 @@ def main():
     tables = {'azerty': (dict(js_maps['FR_TO_HE']), dict(js_maps['HE_TO_FR'])),
               'qwerty': (dict(js_maps['EN_TO_HE']), dict(js_maps['HE_TO_EN'])),
               'latin': (dict(js_maps['QW_TO_AZ']), dict(js_maps['AZ_TO_QW']))}
-    swap_az = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
+    swap_az = dict(caps)
     for layout, direction, src, exp in smart_cases:
         to_he, to_fr = tables[layout]
         to_french = direction == 'toFr'
@@ -165,7 +227,7 @@ def main():
             ok = False
             print('SMART-PY %s %s %s -> %s (attendu %s)'
                   % (layout, direction, _safe(src), _safe(got_py), _safe(exp)))
-    got_js = run_js_smart(js_maps, smart_cases)
+    got_js = run_js_smart(js_maps, caps, smart_cases)
     if got_js is None:
         print('SMART-JS ignore (node indisponible)')
     else:
@@ -199,7 +261,7 @@ def main():
             table = to_he if direction == 'toAz' else to_fr
         else:
             table = to_fr if direction == 'toFr' else to_he
-        got = ''.join(table.get(c, c) for c in src)
+        got = src.translate(str.maketrans(table))
         if got != exp:
             ok = False
             print('REGRESSION %s %s %s -> %s (attendu %s)' % (layout, direction, _safe(src), _safe(got), _safe(exp)))
@@ -210,11 +272,12 @@ def main():
     import string
     core = string.ascii_letters + string.digits + " ,;:.!?'\"()-_=+/*%$&"
     qa, aq = dict(js_maps['QW_TO_AZ']), dict(js_maps['AZ_TO_QW'])
+    qa_t, aq_t = str.maketrans(qa), str.maketrans(aq)
     for ch in core:
-        if aq.get(qa.get(ch, ch), qa.get(ch, ch)) != ch:
+        if ch.translate(qa_t).translate(aq_t) != ch:
             ok = False
             print('NON-REVERSIBLE QW->AZ->QW: %r' % ch)
-        if qa.get(aq.get(ch, ch), aq.get(ch, ch)) != ch:
+        if ch.translate(aq_t).translate(qa_t) != ch:
             ok = False
             print('NON-REVERSIBLE AZ->QW->AZ: %r' % ch)
     # fuzz : chemin rapide (sans hebreu) == chemin lent, sur textes aleatoires
@@ -246,6 +309,7 @@ def main():
                 continue
             out.append(''.join(full_map.get(ch, ch) for ch in tok))
         return ''.join(out)
+    fuzz_cases = []
     for trial in range(300):
         t = ''.join(rng.choice(alphabet) for _ in range(rng.randint(0, 120)))
         for layout in ('azerty', 'qwerty'):
@@ -259,6 +323,22 @@ def main():
                     ok = False
                     print('FUZZ %s %s %s' % (layout, to_french, _safe(t)))
                     break
+                fuzz_cases.append([layout, 'toFr' if to_french else 'toHe', t, a])
+    # parite triangulaire : node doit rendre les memes resultats que le
+    # chemin Python (lui-meme identique a la reference _slow ci-dessus)
+    try:
+        fails = run_js_fuzz(js_maps, caps, fuzz_cases)
+    except RuntimeError as e:
+        ok = False
+        fails = []
+        print('FUZZ-JS ' + str(e))
+    if fails is None:
+        print('FUZZ-JS ignore (node indisponible)')
+    else:
+        for i in fails:
+            ok = False
+            layout, direction, src, _exp = fuzz_cases[i]
+            print('FUZZ-JS %s %s %s' % (layout, direction, _safe(src)))
     print('OK : mappings synchronises (%s)' % ', '.join(
         '%s=%d' % (n, len(js_maps[n])) for n in MAP_NAMES) if ok else 'ECHEC : voir ci-dessus')
     return 0 if ok else 1

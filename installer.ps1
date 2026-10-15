@@ -14,10 +14,17 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not $Exe) {
+  # Tri par version numerique, pas par nom : sinon 9.9.9 passerait
+  # devant 10.0.0 (comparaison alphabetique).
   $candidat = Get-ChildItem -Path $PSScriptRoot -Filter 'ConvertisseurClavier-*.exe' |
-    Sort-Object Name -Descending | Select-Object -First 1
+    ForEach-Object {
+      $m = [regex]::Match($_.Name, '\d+\.\d+\.\d+')
+      $v = if ($m.Success) { [version]$m.Value } else { [version]'0.0.0' }
+      [PSCustomObject]@{ Fichier = $_; Version = $v }
+    } |
+    Sort-Object -Property Version -Descending | Select-Object -First 1
   if (-not $candidat) { Write-Host "Aucun ConvertisseurClavier-*.exe a cote du script."; exit 1 }
-  $Exe = $candidat.FullName
+  $Exe = $candidat.Fichier.FullName
 }
 if (-not (Test-Path $Exe)) { Write-Host "Introuvable : $Exe"; exit 1 }
 

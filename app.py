@@ -3,7 +3,6 @@ r"""Application Windows : la page convertisseur dans une fenetre native.
 
 Dev (fenetre) :  python app.py
 Build (.exe)   :  python build_exe.py  (nom versionne : dist\ConvertisseurClavier-X.Y.Z.exe)
-Le .exe se trouve ensuite dans dist\\ConvertisseurClavier.exe.
 Necessite le runtime WebView2 (present par defaut sur Windows 11
 et la plupart des Windows 10 a jour).
 """
