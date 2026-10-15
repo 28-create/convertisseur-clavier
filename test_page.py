@@ -15,7 +15,9 @@ REQUIRED_IDS = ['input', 'output', 'detect', 'stats', 'swap', 'clear', 'copy',
                 'openSettings', 'closeSettings', 'doneSettings', 'resetSettings',
                 'settingsPanel', 'settingsOverlay', 'optLive', 'optAutocopy',
                 'optRemember', 'optHistory', 'heExamples', 'latinExamples', 'latinSeg',
-                'historyBox', 'historyList', 'historyClear', 'historyEmpty']
+                'historyBox', 'historyList', 'historyClear', 'historyEmpty',
+                'layoutSuggest', 'suggestText', 'suggestPreview', 'suggestApply',
+                'suggestDismiss']
 
 results = []
 
@@ -159,6 +161,110 @@ def main():
                   out.strip()[:120])
     else:
         check('historique helpers (node absent, ignore)', True, 'sans node')
+
+    # 4d. suggestion de lecture : fonctions pures + modeles rejoues sous node
+    if shutil.which('node'):
+        from gen_maps import parse_js_maps
+        mm = {
+            'block': re.search(r'// <models:generated>[\s\S]*?// </models:generated>', h),
+            'norm': re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', h),
+            'lang': re.search(r'function scoreLang\(text, lang\) \{[\s\S]*?\n\}', h),
+            'read': re.search(r'function scoreReading\(text\) \{[\s\S]*?\n\}', h),
+            'sugg': re.search(
+                r'function suggestReading\(text, currentLayout\) \{[\s\S]*?\n\}', h),
+            'cv': re.search(
+                r'function convertSmart\(text, fullMap, swapCaps, toFrench\)'
+                r' \{[\s\S]*?\n\}', h),
+            'maps': re.search(r'const MAPS = \{[\s\S]*?\n\};', h),
+            'caps': re.search(r'const CAPS_SWAP = [^\n]*;', h),
+            'cache': re.search(r'const modelCache = \{\};', h),
+            'minh': re.search(r'const SUGGEST_MIN_HEB = \d+;', h),
+            'marg': re.search(r'const SUGGEST_MARGIN = [\d.]+;', h),
+        }
+        missing = sorted(k for k, m in mm.items() if not m)
+        if missing:
+            check('suggestion lecture testable', False, str(missing))
+        else:
+            tables = parse_js_maps(h)
+            # Assemblage dans l'ORDRE DU FICHIER : un bug d'ordre de
+            # declaration (TDZ) dans la page se reproduit ici.
+            ordered = [m.group(0) for _k, m in
+                       sorted(mm.items(), key=lambda kv: kv[1].start())]
+            prologue = '\n'.join(
+                ['const %s = %s;' % (n, json.dumps(dict(tables[n]), ensure_ascii=True))
+                 for n in ('FR_TO_HE', 'HE_TO_FR', 'EN_TO_HE', 'HE_TO_EN')]
+                + ordered)
+            ex = 'הרשןצקמא ב,קדא מ,ןצפםראק /וםן בקאאק יןדאםןרק'
+            fr_az = 'nous avons mangé une délicieuse tarte aux pommes'
+            en_qw = 'we should call the plumber tomorrow morning'
+            t_fr_az = ''.join(dict(tables['FR_TO_HE']).get(c, c) for c in fr_az)
+            t_en_qw = ''.join(dict(tables['EN_TO_HE']).get(c, c) for c in en_qw)
+            cases = [
+                [ex, 'azerty', 'qwerty'],
+                [ex, 'qwerty', None],
+                ['שלום', 'azerty', None],
+                ['qkuo', 'azerty', None],
+                [t_fr_az, 'qwerty', 'azerty'],
+                [t_en_qw, 'azerty', 'qwerty'],
+            ]
+            prog = (prologue + '\nconst cases = %s;\n'
+                    % json.dumps(cases, ensure_ascii=True)
+                    + 'const out = cases.map(c => {\n'
+                    '  const r = suggestReading(c[0], c[1]);\n'
+                    '  return r ? {layout: r.layout, margin: r.margin,'
+                    ' preview: r.preview} : null;\n'
+                    '});\n'
+                    'console.log("SUGGEST:" + JSON.stringify(out));\n')
+            r = subprocess.run(['node', '-e', prog], capture_output=True,
+                               text=True, encoding='utf-8', errors='replace')
+            out_s = (r.stdout or '').strip()
+            if r.returncode != 0 or 'SUGGEST:' not in out_s:
+                check('suggestion lecture (node)', False,
+                      ((r.stdout or '') + (r.stderr or '')).strip()[:140])
+            else:
+                got = json.loads(out_s.split('SUGGEST:', 1)[1])
+                mrg = float(re.search(r'SUGGEST_MARGIN = ([\d.]+)', h).group(1))
+                bad = []
+                for (src, cur, exp), g in zip(cases, got):
+                    gl = g['layout'] if g else None
+                    if gl != exp:
+                        bad.append('attendu=%s obtenu=%s' % (exp, gl))
+                    elif g and g['margin'] < mrg:
+                        bad.append('marge faible %.3f' % g['margin'])
+                if got[0] and not got[0]['preview'].startswith('vraiment'):
+                    bad.append('apercu=' + str(got[0]['preview'])[:40])
+                check('suggestion lecture (node)', not bad, '; '.join(bad)[:140])
+    else:
+        check('suggestion lecture (node absent, ignore)', True, 'sans node')
+
+    # 4e. normalisation identique entre la page et gen_ngrams.py
+    if shutil.which('node'):
+        import gen_ngrams
+        mblk = re.search(r'// <models:generated>[\s\S]*?// </models:generated>', h)
+        mnorm = re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', h)
+        if not (mblk and mnorm):
+            check('normalisation testable', False, 'extraction impossible')
+        else:
+            samples = ['Café  \u2019\u0153uf\u2026  ÉTÉ ', 'a\tb\nc', 'x',
+                       'ÀBÇ 12', 'a\u2014b', '  espaces   multiples  ']
+            prog = (mblk.group(0) + '\n' + mnorm.group(0) + '\n'
+                    'console.log(JSON.stringify(%s.map(s => normalizeForModel(s))));\n'
+                    % json.dumps(samples, ensure_ascii=True))
+            r = subprocess.run(['node', '-e', prog], capture_output=True,
+                               text=True, encoding='utf-8', errors='replace')
+            detail = ''
+            norm_ok = False
+            try:
+                got_n = json.loads((r.stdout or '').strip())
+                exp_n = [gen_ngrams.normalize(s) for s in samples]
+                norm_ok = got_n == exp_n
+                if not norm_ok:
+                    detail = str(list(zip(exp_n, got_n)))[:140]
+            except Exception as e:
+                detail = str(e)[:140]
+            check('normalisation page/script identique', norm_ok, detail)
+    else:
+        check('normalisation (node absent, ignore)', True, 'sans node')
 
     # 5. syntaxe JS (si node disponible)
     if shutil.which('node'):
