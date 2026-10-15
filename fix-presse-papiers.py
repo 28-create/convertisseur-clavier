@@ -152,10 +152,42 @@ LATIN_MAPS = {
 CAPS_SWAP = {'Q': 'A', 'A': 'Q', 'W': 'Z', 'Z': 'W'}
 
 _HE_RE = re.compile(r'[\u0590-\u05FF]')
+_CAP_TOKEN_RE = re.compile(r'[^\s]*[A-Z][^\s]*')
+
+# Tables de traduction C (str.translate), construites une fois par mapping.
+# Semantique identique a mapping.get(ch, ch) : cles = 1 caractere,
+# absents = inchanges. Les dicts module vivent toujours : id() stable.
+_TR_CACHE = {}
+
+
+def _table(mapping):
+    t = _TR_CACHE.get(id(mapping))
+    if t is None:
+        t = str.maketrans(mapping)
+        _TR_CACHE[id(mapping)] = t
+    return t
+
+
+def _map_with(text, mapping):
+    return text.translate(_table(mapping))
+
+
+def _caps_tok(tok, swap_caps):
+    letters = re.sub(r'[^A-Za-z]', '', tok)
+    if letters and letters == letters.upper():
+        return _map_with(tok, swap_caps)
+    return tok
 
 
 def convert_smart(text, full_map, swap_caps, to_french):
     """Texte mixte : voir convertSmart dans convertisseur.html (miroir exact)."""
+    if not _HE_RE.search(text):
+        # Sans hebreu, pas de segmentation : un seul passage C.
+        if not to_french:
+            return _map_with(text, full_map)
+        if not swap_caps:
+            return text
+        return _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), text)
     parts = re.split(r'(\s+)', text)
     out = []
     for tok in parts:
@@ -171,18 +203,14 @@ def convert_smart(text, full_map, swap_caps, to_french):
             if not swap_caps:
                 out.append(tok)
                 continue
-            letters = re.sub(r'[^A-Za-z]', '', tok)
-            if letters and letters == letters.upper():
-                out.append(''.join(swap_caps.get(ch, ch) for ch in tok))
-            else:
-                out.append(tok)
+            out.append(_caps_tok(tok, swap_caps))
             continue
-        out.append(''.join(full_map.get(ch, ch) for ch in tok))
+        out.append(_map_with(tok, full_map))
     return ''.join(out)
 
 
 def convert(text, mapping):
-    return ''.join(mapping.get(ch, ch) for ch in text)
+    return _map_with(text, mapping)
 
 
 def autodir(text):

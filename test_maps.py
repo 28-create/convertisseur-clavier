@@ -141,6 +141,7 @@ def main():
         ('azerty', 'toFr', "C'est bon נםמחםור", "C'est bon bonjour"),
         ('azerty', 'toFr', 'Appel en 2024 נםמחםור', 'Appel en 2024 bonjour'),
         ('azerty', 'toFr', 'AQ', 'QA'),
+        ('azerty', 'toFr', 'APPEL Q R2', 'QPPEL A R2'),
         ('azerty', 'toFr', 'M.', 'M.'),
         ('azerty', 'toFr', 'abc 123', 'abc 123'),
         ('azerty', 'toFr', 'שלום2024', 'qkuoéàé\''),
@@ -215,6 +216,48 @@ def main():
         if qa.get(aq.get(ch, ch), aq.get(ch, ch)) != ch:
             ok = False
             print('NON-REVERSIBLE AZ->QW->AZ: %r' % ch)
+    # fuzz : chemin rapide (sans hebreu) == chemin lent, sur textes aleatoires
+    import random
+    rng = random.Random(20261015)
+    alphabet = ('abcdAQWZ ,;:.!?\'"()-_=+/*%$&0123456789 \t\n'
+                'éèçàùâäîïôöûü') + 'שלוםאבג'
+    def _slow(text, full_map, swap_caps, to_french):
+        parts = re.split(r'(\s+)', text)
+        out = []
+        for tok in parts:
+            if not tok or tok.isspace():
+                out.append(tok)
+                continue
+            has_he = bool(re.search(r'[\u0590-\u05FF]', tok))
+            if has_he:
+                if not to_french:
+                    out.append(tok)
+                    continue
+            elif to_french:
+                if not swap_caps:
+                    out.append(tok)
+                    continue
+                letters = re.sub(r'[^A-Za-z]', '', tok)
+                if letters and letters == letters.upper():
+                    out.append(''.join(swap_caps.get(ch, ch) for ch in tok))
+                else:
+                    out.append(tok)
+                continue
+            out.append(''.join(full_map.get(ch, ch) for ch in tok))
+        return ''.join(out)
+    for trial in range(300):
+        t = ''.join(rng.choice(alphabet) for _ in range(rng.randint(0, 120)))
+        for layout in ('azerty', 'qwerty'):
+            for to_french in (True, False):
+                to_he, to_fr = tables[layout]
+                full = to_fr if to_french else to_he
+                swap = (swap_az if layout == 'azerty' else None) if to_french else full
+                a = fix_mod.convert_smart(t, full, swap, to_french)
+                b = _slow(t, full, swap, to_french)
+                if a != b:
+                    ok = False
+                    print('FUZZ %s %s %s' % (layout, to_french, _safe(t)))
+                    break
     print('OK : mappings synchronises (%s)' % ', '.join(
         '%s=%d' % (n, len(js_maps[n])) for n in MAP_NAMES) if ok else 'ECHEC : voir ci-dessus')
     return 0 if ok else 1

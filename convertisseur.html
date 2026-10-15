@@ -549,6 +549,17 @@ function convertWith(text, layout, dir) {
 // ou frappe shiftée ?) : seules Q/A/W/Z commutent (AZERTY).
 // Pure (sans JS) : extraction par test_maps.py pour exécution sous node.
 function convertSmart(text, fullMap, swapCaps, toFrench) {
+  if (!/[\u0590-\u05FF]/.test(text)) {
+    // Sans hebreu, pas de segmentation : un seul passage.
+    if (!toFrench) return [...text].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
+    if (!swapCaps) return text;
+    return text.replace(/[^\s]*[A-Z][^\s]*/g, tok => {
+      const letters = tok.replace(/[^A-Za-z]/g, '');
+      return (letters.length && letters === letters.toUpperCase())
+        ? [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('')
+        : tok;
+    });
+  }
   return text.split(/(\s+)/).map(tok => {
     if (!tok || /^\s+$/.test(tok)) return tok;
     const hasHe = /[\u0590-\u05FF]/.test(tok);
