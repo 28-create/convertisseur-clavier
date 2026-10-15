@@ -1,5 +1,14 @@
 # Journal des modifications
 
+## v1.8.0 — 15 oct. 2026
+- Suggestion de lecture AZERTY/QWERTY : si un texte hébreu (≥ 11 lettres,
+  marge renforcée entre 11 et 14) se lit nettement mieux avec l'autre
+  disposition, un bandeau en propose un aperçu (« Afficher cette lecture »),
+  jamais appliqué automatiquement.
+- Moteur de bigrammes embarqué (fr/en, ~2,4 Ko/langue, 100 % hors-ligne),
+  généré par `gen_ngrams.py` (sources Gutenberg vérifiées par SHA-256).
+- Exe Windows à jour.
+
 ## v1.7.3 — 15 oct. 2026
 - Cohérence : badge « converti vers Français/Anglais » (fini « vers AZERTY »).
 - Accessibilité Lighthouse 1.0 : repère `<main>`, titres h1→h2 sans saut.
