@@ -180,6 +180,8 @@ def main():
             'cache': re.search(r'const modelCache = \{\};', h),
             'minh': re.search(r'const SUGGEST_MIN_HEB = \d+;', h),
             'marg': re.search(r'const SUGGEST_MARGIN = [\d.]+;', h),
+            'shorth': re.search(r'const SUGGEST_SHORT_HEB = \d+;', h),
+            'shortm': re.search(r'const SUGGEST_SHORT_MARGIN = [\d.]+;', h),
         }
         missing = sorted(k for k, m in mm.items() if not m)
         if missing:
@@ -201,6 +203,7 @@ def main():
             t_en_qw = ''.join(dict(tables['EN_TO_HE']).get(c, c) for c in en_qw)
             cases = [
                 [ex, 'azerty', 'qwerty'],
+                ['חק מ,קמ פקוס פךוד', 'azerty', 'qwerty'],
                 [ex, 'qwerty', None],
                 ['שלום', 'azerty', None],
                 ['qkuo', 'azerty', None],

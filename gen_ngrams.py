@@ -27,7 +27,7 @@ import tempfile
 import urllib.request
 
 HTML_FILE = 'convertisseur.html'
-ALPHA = "abcdefghijklmnopqrstuvwxyz' " + "àâäçéèêëîïôöùûü"
+ALPHA = "abcdefghijklmnopqrstuvwxyz' .,:;!?" + "àâäçéèêëîïôöùûü"
 SCALE, OFFSET = 8, 16
 BEGIN = '// <models:generated>'
 END = '// </models:generated>'
