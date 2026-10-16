@@ -170,7 +170,7 @@
     </div>
     <div id="layoutSuggest" class="row chips" hidden>
       <span role="status"><span id="suggestText"></span> <bdi id="suggestPreview"></bdi></span>
-      <button id="suggestApply" class="primary" data-i18n="suggestApply">Afficher cette lecture</button>
+      <button id="suggestApply" class="primary" data-i18n="suggestApply" aria-keyshortcuts="ArrowDown">Afficher cette lecture (↓)</button>
       <button id="suggestDismiss" class="ghost" data-i18n-aria="suggestDismiss" aria-label="Ignorer pour ce texte">✕</button>
     </div>
     <div class="pane-head">
@@ -381,7 +381,7 @@ const MAPS = {
 };
 
 // --- i18n ---
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 const I18N = {
   fr: { title: 'Convertisseur clavier {la} ⇄ {he}', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier {la} ⇄ {he} (AZERTY / QWERTY)',
@@ -408,7 +408,7 @@ const I18N = {
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
     dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
-    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture', suggestDismiss: 'Ignorer pour ce texte', footNote: '100 % local — aucune donnée envoyée.' },
+    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture (↓)', suggestDismiss: 'Ignorer pour ce texte', footNote: '100 % local — aucune donnée envoyée.' },
   en: { title: '{la} ⇄ {he} keyboard converter', settings: 'Settings',
     docTitle: '{la} ⇄ {he} Keyboard Converter (AZERTY / QWERTY)',
     docDesc: '{la} ⇄ {he} keyboard converter (AZERTY / QWERTY), 100% local.',
@@ -434,7 +434,7 @@ const I18N = {
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
     dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
-    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading', suggestDismiss: 'Ignore for this text', footNote: '100% local — no data sent.' },
+    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading (↓)', suggestDismiss: 'Ignore for this text', footNote: '100% local — no data sent.' },
   he: { title: 'ממיר מקלדת {la} ⇄ {he}', settings: 'הגדרות',
     docTitle: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY)',
     docDesc: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY), 100% מקומי.',
@@ -460,7 +460,7 @@ const I18N = {
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
     dirLatinAz: 'הומר QWERTY ← AZERTY.', dirLatinQw: 'הומר AZERTY ← QWERTY.',
-    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו', suggestDismiss: 'התעלמות בטקסט זה', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
+    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו (↓)', suggestDismiss: 'התעלמות בטקסט זה', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
@@ -833,6 +833,7 @@ document.getElementById('copy').onclick = copyResult;
 input.addEventListener('input', () => { if (settings.live) doConvert(); else { scheduleSave(); scheduleSuggestion(); } });
 input.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyResult(); }
+  else if (e.key === 'ArrowDown' && !suggestBox.hidden) { e.preventDefault(); applySuggestion(); }
 });
 document.querySelectorAll('[data-ex]').forEach(b => {
   b.onclick = () => {
@@ -869,16 +870,18 @@ function scheduleSuggestion() {
   clearTimeout(suggestTimer);
   suggestTimer = setTimeout(updateSuggestion, 300);
 }
-document.getElementById('suggestApply').onclick = () => {
+function applySuggestion() {
   const s = suggestReading(input.value, settings.layout);
-  if (!s) return;
+  if (!s) return false;
   settings.layout = s.layout;
   suggestBox.hidden = true;
   applySettingsToUI();
   scheduleSave();
   doConvert();
   input.focus();
-};
+  return true;
+}
+document.getElementById('suggestApply').onclick = () => { applySuggestion(); };
 document.getElementById('suggestDismiss').onclick = () => {
   suggestDismissed = input.value;
   suggestBox.hidden = true;

@@ -87,6 +87,10 @@ def main():
           and 'panel.inert = false' in h and 'panel.inert = true' in h)
     check('bouton du bandeau visible hors survol',
           '.chips button.primary { background: var(--accent);' in h)
+    check('suggestion applicable via FlecheBas',
+          'aria-keyshortcuts="ArrowDown"' in h
+          and "e.key === 'ArrowDown'" in h
+          and 'function applySuggestion()' in h)
     ids = re.findall(r'\bid="([^"]+)"', h)
     dupes = sorted({i for i in ids if ids.count(i) > 1})
     check('ids uniques', not dupes, str(dupes))

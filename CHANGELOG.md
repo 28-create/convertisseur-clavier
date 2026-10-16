@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## v1.8.1 — 16 oct. 2026
+- Suggestion de lecture : touche `↓` dans le champ pour appliquer la lecture
+  proposée quand le bandeau est visible (bouton « Afficher cette lecture (↓) »).
+- Exe Windows à jour.
+
 ## v1.8.0 — 15 oct. 2026
 - Suggestion de lecture AZERTY/QWERTY : si un texte hébreu (≥ 11 lettres,
   marge renforcée entre 11 et 14) se lit nettement mieux avec l'autre
