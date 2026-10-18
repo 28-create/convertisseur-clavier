@@ -18,11 +18,13 @@ Offline keyboard-layout converter: `convertisseur.html` (single-file web page, s
 python gen_maps.py    # after editing maps in convertisseur.html
 python gen_ngrams.py  # after changing LANGS (network, or --corpus-dir)
 python test_maps.py   # table + CAPS_SWAP sync, duplicate keys, known cases, JS↔Python fuzz
+python test_app.py    # app.py : encodages de fichiers, injection du prechargement, verbes CLI
 python test_page.py   # page integrity, i18n, JS syntax, WCAG contrast, version
 python build_setup.py --check  # installer.iss coherence (version, context menu)
 ```
 
-- No test framework: both suites are plain stdlib scripts returning exit 0/1. Do not add pytest/unittest or new dependencies.
+- No test framework: the suites are plain stdlib scripts returning exit 0/1. Do not add pytest/unittest or new dependencies.
+- `app.py` must keep its contract with the installers: `preload_js` injects the file text after load (WebView2 rejects `file://...?text=...`, so never go back to a query URL), `read_text_file` must decode cp1255 (Hebrew ANSI) as well as cp1252/UTF-8, and the CLI verbs stay `--convert-clipboard` / `--convert-file` / positional file (test_app.py pins all three).
 - Page and script must stay mirrors: `convert_smart` ⇄ `convertSmart`, `autodir` ⇄ `detectDir` (same 0.2 threshold, same accented-Latin class), `CAPS_SWAP` (generated) on both sides. Tests regex-extract `convertSmart`/`detectDir` (test_maps.py) and `migrateSettings(stored, legacy)`, `histInput(text)`, `isHistDup(history, text)`, `normalizeForModel(s)`, `scoreLang(text, lang)`, `scoreReading(text)`, `suggestReading(text, currentLayout)` (test_page.py; reassembled in file order so declaration-order/TDZ bugs fail the tests) from the HTML and run them under `node` (silently skipped when node is absent). Keep those exact signatures, a single inline `<script>` block, and `gen_ngrams.normalize` mirrored with `normalizeForModel`, or the extraction/parity breaks.
 - `test_page.py` also pins: `REQUIRED_IDS`, unique ids, exactly 7 `<fieldset>`/`<legend>`, no external http(s) resource, a CSP meta, identical i18n key sets and placeholders in fr/en/he, `APP_VERSION == latest git tag` (hard failure in CI), `version_info.txt` byte-exact, closed settings panel `inert`, contrast selectors (`[hidden] { display: none !important; }`, `html[dir="rtl"] #settingsPanel.open`, dark-theme primary button).
 - Any new UI string needs an entry in all three `I18N` languages (fr/en/he) and is used via `data-i18n*` / `t('key')`.
@@ -31,7 +33,7 @@ python build_setup.py --check  # installer.iss coherence (version, context menu)
 
 - `APP_VERSION` in `convertisseur.html` is the single version source; it must equal the newest git tag (format `vX.Y.Z`). Between a bump and the tag, `test_page.py` fails on purpose; CI checks out with `fetch-depth: 0` so this check really runs.
 - Release flow: bump `APP_VERSION` → `python gen_version.py` → new `## vX.Y.Z` section in `CHANGELOG.md` → commit `Release vX.Y.Z : ...` → tag `vX.Y.Z`. User-visible changes also belong in `README.md` (French).
-- Build (Windows only): `pip install pywebview pyinstaller` then `python build_exe.py` → `dist/ConvertisseurClavier-X.Y.Z.exe` (gitignored; WebView2 required; embeds `convertisseur.html` + `app.ico`). `python app.py` runs the page in a native window. Cannot be built or run on Linux.
+- Build (Windows only): `pip install pywebview pyinstaller` then `python build_exe.py` → `dist/ConvertisseurClavier-X.Y.Z.exe` (gitignored; WebView2 required; embeds `convertisseur.html`, `fix-presse-papiers.py` + `app.ico`). `python app.py` runs the page in a native window. Cannot be built or run on Linux.
 
 ## Platform conventions
 
@@ -41,4 +43,4 @@ python build_setup.py --check  # installer.iss coherence (version, context menu)
 - `installer.iss` (Inno Setup 6) builds `Setup_ConvertisseurClavier-X.Y.Z.exe`: wizard, per-user install (no admin), Start Menu + two hotkeys + optional context-menu task. `python build_setup.py` compiles; `--check` validates without Inno (used in CI).
 - Context menu can only cover the Explorer (files/folders); Word, browsers and the search bar own their own menus. Universal text conversion is the clipboard hotkey: select, `Ctrl+C`, `Ctrl+Alt+H` (the exe converts the clipboard itself, no Python needed), `Ctrl+V`.
 - `test_installer.ps1` is the end-to-end installer sandbox test (Windows only): `powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1`.
-- CI (`.github/workflows/tests.yml`) runs `test_maps.py` + `test_page.py` on Ubuntu + Windows with Python 3.11–3.14, and the installer test once on Windows (Python 3.12).
+- CI (`.github/workflows/tests.yml`) runs `test_maps.py` + `test_app.py` + `test_page.py` on Ubuntu + Windows with Python 3.11–3.14, and the installer test once on Windows (Python 3.12).

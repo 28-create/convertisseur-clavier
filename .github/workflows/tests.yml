@@ -27,6 +27,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Mappings (anti-derive + non-regression)
         run: python test_maps.py
+      - name: App (lecture fichiers, prechargement, verbes CLI)
+        run: python test_app.py
       - name: Page (integrite, i18n, RTL, JS, contraste, version)
         run: python test_page.py
       - name: Setup (coherence installer.iss, sans compilation)
