@@ -44,6 +44,7 @@ ou sur votre machine Windows.
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
+| `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
 | `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
 | `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
@@ -192,7 +193,9 @@ cohérence (`installer.iss` : version, menu clic droit).
 > bloqué à tort (faux positif de réputation, ex. Avast qui verrouille
 > ou met en quarantaine). Dans ce cas, déclarez une exception pour le
 > dossier dans l'antivirus, restaurez le fichier, puis relancez le build
-> ou l'application.
+> ou l'application. Le `Setup.exe` peut lui aussi être freiné : ajoutez
+> une exception pour le fichier d'installation et pour
+> `%LOCALAPPDATA%\Programs\ConvertisseurClavier`.
 
 ## 4. Développement
 

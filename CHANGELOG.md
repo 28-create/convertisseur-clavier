@@ -1,5 +1,14 @@
 # Journal des modifications
 
+## v1.9.1 — 18 oct. 2026
+- Correctif menu clic droit : le contenu du fichier est injecté dans la page
+  après chargement (`app.preload_js`) — WebView2 refuse une URL
+  `file://…?text=…` et affichait une page d'erreur.
+- Lecture des fichiers `.txt` : décodage cp1255 (hébreu ANSI Windows) en plus
+  d'UTF-8 et cp1252, sans confondre un fichier français accentué.
+- Nouveau `test_app.py` (encodages, injection, verbes CLI), ajouté à la CI.
+- Exe Windows à jour.
+
 ## v1.9.0 — 16 oct. 2026
 - Vrai Setup Windows : `Setup_ConvertisseurClavier-X.Y.Z.exe` (Inno Setup,
   sans admin) avec menu Démarrer, `Ctrl+Alt+K`, `Ctrl+Alt+H` et case

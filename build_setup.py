@@ -40,6 +40,15 @@ ISCC_CANDIDATES = [
 ]
 
 
+def _user_iscc():
+    # Installation per-user (sans admin) : %LOCALAPPDATA%\Programs\Inno...
+    local = os.environ.get('LOCALAPPDATA')
+    if not local:
+        return []
+    return [os.path.join(local, 'Programs', 'Inno Setup 6', 'ISCC.exe'),
+            os.path.join(local, 'Programs', 'Inno', 'ISCC.exe')]
+
+
 def read_version(html_path='convertisseur.html'):
     with open(html_path, encoding='utf-8') as f:
         m = re.search(r"const APP_VERSION = '([^']+)'", f.read())
@@ -79,7 +88,7 @@ def find_iscc():
     env = os.environ.get('INNO_ISCC')
     if env and os.path.exists(env):
         return env
-    for cand in ISCC_CANDIDATES:
+    for cand in ISCC_CANDIDATES + _user_iscc():
         if os.path.isabs(cand):
             if os.path.exists(cand):
                 return cand

@@ -2,16 +2,21 @@
 ; Usage : python build_setup.py   (compile dist\Setup_ConvertisseurClavier-X.Y.Z.exe)
 ; La version ci-dessous est GENEREE depuis convertisseur.html :
 ;   python gen_version.py   (ne pas la modifier a la main).
-#define MyAppVersion "1.9.0"
+#define MyAppVersion "1.9.1"
 #define MyAppExe "ConvertisseurClavier-" + MyAppVersion + ".exe"
 
 [Setup]
-AppId={{E52AB6FD-CFB5-483B-AE1F-0614FE930D83}}
+AppId=ConvertisseurClavier
 AppName=Convertisseur Clavier
 AppVersion={#MyAppVersion}
 AppVerName=Convertisseur Clavier {#MyAppVersion}
 AppPublisher=Mimran
 AppPublisherURL=https://github.com/28-create/convertisseur-clavier
+VersionInfoCompany=Mimran
+VersionInfoDescription=Installation de Convertisseur Clavier
+VersionInfoProductName=Convertisseur Clavier
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\ConvertisseurClavier
 PrivilegesRequired=lowest
 OutputDir=dist
