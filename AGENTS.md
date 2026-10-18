@@ -33,6 +33,7 @@ python build_setup.py --check  # installer.iss coherence (version, context menu)
 
 - `APP_VERSION` in `convertisseur.html` is the single version source; it must equal the newest git tag (format `vX.Y.Z`). Between a bump and the tag, `test_page.py` fails on purpose; CI checks out with `fetch-depth: 0` so this check really runs.
 - Release flow: bump `APP_VERSION` → `python gen_version.py` → new `## vX.Y.Z` section in `CHANGELOG.md` → commit `Release vX.Y.Z : ...` → tag `vX.Y.Z`. User-visible changes also belong in `README.md` (French).
+- Release notes: on Windows, `gh release create/edit --notes-file` mangles UTF-8 (every non-ASCII byte becomes `?`, silently). Publish them through the API instead (`PATCH /repos/{owner}/{repo}/releases/{id}` with a UTF-8 JSON body) or keep them ASCII.
 - Build (Windows only): `pip install pywebview pyinstaller` then `python build_exe.py` → `dist/ConvertisseurClavier-X.Y.Z.exe` (gitignored; WebView2 required; embeds `convertisseur.html`, `fix-presse-papiers.py` + `app.ico`). `python app.py` runs the page in a native window. Cannot be built or run on Linux.
 
 ## Platform conventions
