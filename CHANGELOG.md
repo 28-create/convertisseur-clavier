@@ -1,5 +1,19 @@
 # Journal des modifications
 
+## v1.9.0 — 16 oct. 2026
+- Vrai Setup Windows : `Setup_ConvertisseurClavier-X.Y.Z.exe` (Inno Setup,
+  sans admin) avec menu Démarrer, `Ctrl+Alt+K`, `Ctrl+Alt+H` et case
+  « menu clic droit » (`installer.iss`, `build_setup.py`).
+- Menu clic droit de l'Explorateur : ouvrir un fichier (contenu
+  pré-chargé), convertir un `.txt` (`--convert-file`), ouvrir depuis un
+  dossier ; aussi via `installer.ps1` (désactivable), ménage complet à la
+  désinstallation.
+- L'exe convertit sans fenêtre ni Python : `--convert-clipboard`
+  (texte sélectionné partout : `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V` —
+  Word, navigateur, recherche Windows, dont le clic droit appartient à
+  chaque appli) et `--convert-file`.
+- Exe Windows à jour.
+
 ## v1.8.1 — 16 oct. 2026
 - Suggestion de lecture : touche `↓` dans le champ pour appliquer la lecture
   proposée quand le bandeau est visible (bouton « Afficher cette lecture (↓) »).

@@ -376,6 +376,24 @@ def main():
         actual = f.read()
     check('version_info.txt a jour', actual == expect)
 
+    # 9. installer.iss synchronise avec APP_VERSION (Setup.exe Inno Setup)
+    if os.path.exists('installer.iss'):
+        with open('installer.iss', encoding='utf-8') as f:
+            iss = f.read()
+        miss = re.search(r'#define MyAppVersion "([^"]+)"', iss)
+        check('installer.iss a jour',
+              bool(miss) and miss.group(1) == mver.group(1),
+              'iss=%s page=%s' % (miss.group(1) if miss else '?',
+                                  mver.group(1)))
+        toks = ['Software\\Classes\\*\\shell\\ConvertisseurClavier',
+                'SystemFileAssociations\\.txt',
+                'Directory\\Background\\shell\\ConvertisseurClavier',
+                '--convert-clipboard', '--convert-file']
+        absent = [t for t in toks if t not in iss]
+        check('installer.iss menu contextuel', not absent, str(absent))
+    else:
+        check('installer.iss present', False, 'fichier absent')
+
     ok = True
     for name, passed, *rest in results:
         if not passed:

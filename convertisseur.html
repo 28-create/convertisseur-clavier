@@ -381,7 +381,7 @@ const MAPS = {
 };
 
 // --- i18n ---
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.0';
 const I18N = {
   fr: { title: 'Convertisseur clavier {la} ⇄ {he}', settings: 'Réglages',
     docTitle: 'Convertisseur Clavier {la} ⇄ {he} (AZERTY / QWERTY)',
@@ -952,6 +952,13 @@ window.addEventListener('pagehide', () => { clearTimeout(saveTimer); saveSetting
 
 // init
 if (settings.remember && savedText) input.value = savedText;
+// Ouverture depuis l'explorateur : l'exe (app.py) injecte le texte apres
+// chargement, car WebView2 refuse une URL file://...?text=... (page
+// d'erreur). ?text= reste accepte pour un lien direct dans un navigateur.
+try {
+  const q = new URLSearchParams(location.search).get('text');
+  if (q) input.value = q;
+} catch {}
 applySettingsToUI();
 doConvert();
 renderHistory();

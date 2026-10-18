@@ -3,7 +3,7 @@
 
 Usage : python build_exe.py [--dist DOSSIER]
 Etapes : gen_version.py -> PyInstaller (noconsole, onefile, version-file,
-page embarquee, icone app.ico si presente). Cible Windows uniquement.
+page et script presse-papiers embarques, icone app.ico si presente). Cible Windows uniquement.
 Le nom du .exe reprend toujours APP_VERSION :
 impossible de publier un exe sans version dans son nom.
 --dist cible un autre dossier de sortie (utile si l'antivirus
@@ -18,6 +18,7 @@ import sys
 
 APP = 'app.py'
 HTML = 'convertisseur.html'
+FIX = 'fix-presse-papiers.py'
 ICON = 'app.ico'
 
 
@@ -50,7 +51,8 @@ def main(argv=None):
     cmd = [sys.executable, '-m', 'PyInstaller', '--noconsole', '--onefile',
            '--version-file', 'version_info.txt',
            '--distpath', outdir,
-           '--add-data', 'convertisseur.html' + os.pathsep + '.',
+           '--add-data', HTML + os.pathsep + '.',
+           '--add-data', FIX + os.pathsep + '.',
            '--name', name]
     if os.path.exists(ICON):
         cmd += ['--icon', ICON]

@@ -26,6 +26,8 @@ ou sur votre machine Windows.
   clair / sombre / automatique.
 - Réglages persistants en stockage local — rien ne quitte l'appareil.
 - Raccourci presse-papiers Windows : `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`.
+- Setup Windows (assistant, sans admin) : menu Démarrer, touches globales
+  et menu clic droit de l'Explorateur.
 - Jeux de tests automatisés (mappings, intégrité de la page).
 
 ## Fichiers
@@ -35,7 +37,9 @@ ou sur votre machine Windows.
 | `convertisseur.html` | Page web unique (hors ligne). **Source de vérité des mappings.** |
 | `fix-presse-papiers.py` / `.bat` | Raccourci presse-papiers Windows (usage quotidien). |
 | `installer-raccourci.ps1` | Crée le raccourci Bureau + touche globale (`Ctrl+Alt+H`). |
-| `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + désinstallation). |
+| `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + `Ctrl+Alt+H` + menu clic droit + désinstallation). |
+| `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique, case menu clic droit). |
+| `build_setup.py` | Compile le Setup (`--check` seul en CI, sans Inno). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
 | `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
 | `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
@@ -77,6 +81,8 @@ En mode latin, un mini-sélecteur de sens apparaît dans la page
 
 ## 2. Usage quotidien (Windows)
 
+### Sans rien installer (script Python)
+
 Sélectionnez le texte tapé avec le mauvais clavier, puis :
 
 1. `Ctrl+C`
@@ -102,28 +108,54 @@ Si la console Windows ne peut pas afficher l'hébreu, le script affiche
 un repli ASCII `\uXXXX` au lieu de planter — le presse-papiers,
 lui, est toujours correct.
 
-## 3. Application Windows (.exe)
+### Sans Python (Setup installé)
+
+Une fois le programme installé (section 3), la touche `Ctrl+Alt+H`
+convertit directement le presse-papiers, sans fenêtre ni Python :
+`Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`. C'est le moyen universel pour du
+texte saisi dans Word, un navigateur, la barre de recherche Windows…
+
+## 3. Application Windows (.exe + Setup)
 
 `ConvertisseurClavier.exe` (onglet *Releases* GitHub) : la même page dans
 une fenêtre native, sans navigateur ni Python. Nécessite le runtime
 WebView2 (présent par défaut sur Windows 11 et Windows 10 à jour).
+L'exe sait aussi convertir sans fenêtre (`--convert-clipboard`,
+`--convert-file`) : c'est ce qu'utilisent le menu clic droit et la
+touche `Ctrl+Alt+H`, sans Python installé.
 
-Construire soi-même (nom versionné automatiquement) :
+### Installation recommandée : Setup.exe
 
-```sh
-pip install pywebview pyinstaller
-python build_exe.py
-```
+1. Téléchargez `Setup_ConvertisseurClavier-X.Y.Z.exe` depuis l'onglet
+   *Releases*, double-cliquez, Suivant/Suivant (aucun droit admin requis).
+2. L'assistant installe : menu Démarrer, touche `Ctrl+Alt+K` (ouvrir
+   l'appli), touche `Ctrl+Alt+H` (convertir le presse-papiers), et —
+   case cochée par défaut — le menu clic droit de l'Explorateur.
+3. Désinstallation : Paramètres Windows → Applications (ménage complet,
+   menu clic droit inclus).
 
-Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).
+### Menu clic droit (Explorateur Windows)
 
-> Antivirus : un `.exe` PyInstaller fraîchement construit est parfois
-> bloqué à tort (faux positif de réputation, ex. Avast qui verrouille
-> ou met en quarantaine). Dans ce cas, déclarez une exception pour le
-> dossier dans l'antivirus, restaurez le fichier, puis relancez le build
-> ou l'application.
+- Clic droit sur un **fichier** : *Ouvrir avec Convertisseur Clavier*
+  (le contenu est pré-chargé dans la fenêtre).
+- Clic droit sur un **.txt** : *Convertir avec Convertisseur Clavier*
+  (écrit un `nom.converti.txt` à côté, l'original est conservé).
+- Clic droit sur un **dossier** ou son **fond** : ouvrir l'application.
 
-### Installation (menu Démarrer + touche globale)
+Dans le Setup, c'est la case *« menu clic droit »*. En script,
+`installer.ps1` l'ajoute par défaut (`-SansMenuContextuel` pour l'ignorer).
+
+### Convertir du texte sélectionné partout (Word, navigateur, recherche…)
+
+Le menu clic droit de Word, du navigateur ou de la barre de recherche
+appartient à chaque application : aucun installeur ne peut y ajouter une
+entrée. Le flux universel (installé par le Setup et `installer.ps1`) :
+
+1. Sélectionnez le texte, `Ctrl+C`
+2. `Ctrl+Alt+H` (l'exe convertit le presse-papiers, sans fenêtre ni Python)
+3. `Ctrl+V`
+
+### Installation par script (sans assistant)
 
 Téléchargez `ConvertisseurClavier-X.Y.Z.exe`, `installer.ps1` et
 `desinstaller.ps1` depuis l'onglet *Releases*, placez les trois fichiers
@@ -137,6 +169,30 @@ Le programme devient cherchable dans le menu Démarrer et s'ouvre depuis
 n'importe où avec `Ctrl+Alt+K` (si cette combinaison est déjà prise par
 une autre application, relancez avec `-Raccourci 'CTRL+ALT+J'` par exemple).
 Désinstallation : Paramètres Windows → Applications, ou `desinstaller.ps1`.
+
+Construire soi-même (nom versionné automatiquement) :
+
+```sh
+pip install pywebview pyinstaller
+python build_exe.py
+```
+
+Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).
+Puis le Setup (Windows, Inno Setup 6 requis) :
+
+```sh
+python build_setup.py
+```
+
+Le `Setup_ConvertisseurClavier-X.Y.Z.exe` est dans `dist\`.
+Sans Inno installé, `python build_setup.py --check` vérifie au moins la
+cohérence (`installer.iss` : version, menu clic droit).
+
+> Antivirus : un `.exe` PyInstaller fraîchement construit est parfois
+> bloqué à tort (faux positif de réputation, ex. Avast qui verrouille
+> ou met en quarantaine). Dans ce cas, déclarez une exception pour le
+> dossier dans l'antivirus, restaurez le fichier, puis relancez le build
+> ou l'application.
 
 ## 4. Développement
 

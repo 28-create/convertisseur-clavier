@@ -10,6 +10,7 @@ import sys
 
 HTML_FILE = 'convertisseur.html'
 OUT_FILE = 'version_info.txt'
+ISS_FILE = 'installer.iss'
 
 TEMPLATE = """# UTF-8
 #
@@ -67,11 +68,29 @@ def build_info(ver):
     return text
 
 
+def sync_iss(ver, iss_path=ISS_FILE):
+    # La version du Setup suit APP_VERSION (source unique : le HTML).
+    import os
+    if not os.path.exists(iss_path):
+        return
+    with open(iss_path, encoding='utf-8') as f:
+        iss = f.read()
+    new, n = re.subn(r'#define MyAppVersion "[^"]*"',
+                     '#define MyAppVersion "%s"' % ver, iss, count=1)
+    if not n:
+        raise ValueError('MyAppVersion introuvable dans %s' % iss_path)
+    if new != iss:
+        with open(iss_path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(new)
+        print('OK : %s synchronise (version %s)' % (iss_path, ver))
+
+
 def main():
     ver = read_version()
     with open(OUT_FILE, 'w', encoding='utf-8', newline='\n') as f:
         f.write(build_info(ver))
     print('OK : %s genere (version %s)' % (OUT_FILE, ver))
+    sync_iss(ver)
     return 0
 
 

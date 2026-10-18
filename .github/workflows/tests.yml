@@ -29,6 +29,8 @@ jobs:
         run: python test_maps.py
       - name: Page (integrite, i18n, RTL, JS, contraste, version)
         run: python test_page.py
+      - name: Setup (coherence installer.iss, sans compilation)
+        run: python build_setup.py --check
       - name: Installeur (Windows, une seule fois)
         if: runner.os == 'Windows' && matrix.python-version == '3.12'
         run: powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1
