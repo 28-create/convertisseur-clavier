@@ -22,8 +22,10 @@ python gen_ngrams.py  # after changing LANGS (network, or --corpus-dir)
 python test_maps.py   # table + CAPS_SWAP sync (HTML/PY/EXT), duplicate keys, known cases, JS↔Python fuzz
 python test_app.py    # app.py : encodages de fichiers, injection du prechargement, verbes CLI
 python test_extension.py  # extension : manifeste, icones, CSP, cablage clic droit, conversions
+python test_store.py  # paquet store : manifeste et limites du store, textes de fiche, zip
 python test_page.py   # page integrity, i18n, JS syntax, WCAG contrast, version
 python build_setup.py --check  # installer.iss coherence (version, context menu)
+python build_extension.py --check  # paquet store coherent (version, fichiers references)
 ```
 
 - No test framework: the suites are plain stdlib scripts returning exit 0/1. Do not add pytest/unittest or new dependencies.
@@ -38,6 +40,7 @@ python build_setup.py --check  # installer.iss coherence (version, context menu)
 - `APP_VERSION` in `convertisseur.html` is the single version source; it must equal the newest git tag (format `vX.Y.Z`). Between a bump and the tag, `test_page.py` fails on purpose; CI checks out with `fetch-depth: 0` so this check really runs.
 - Release flow: bump `APP_VERSION` → `python gen_version.py` → new `## vX.Y.Z` section in `CHANGELOG.md` → commit `Release vX.Y.Z : ...` → tag `vX.Y.Z`. User-visible changes also belong in `README.md` (French).
 - Release notes: on Windows, `gh release create/edit --notes-file` mangles UTF-8 (every non-ASCII byte becomes `?`, silently). Publish them through the API instead (`PATCH /repos/{owner}/{repo}/releases/{id}` with a UTF-8 JSON body) or keep them ASCII.
+- Store package (Chrome Web Store / Edge): `python build_extension.py` → `dist/ConvertisseurClavier-extension-X.Y.Z.zip` (contents of `extension/`, `manifest.json` at the root, deterministic zip); bump `APP_VERSION` for every upload, the store refuses a version it already has. Listing texts and the permission justifications to paste live in `store/` (`store/checklist.md` walks through the submission). The privacy policy is `PRIVACY.md` plus the GitHub Pages page `confidentialite.html` (https://28-create.github.io/convertisseur-clavier/confidentialite.html); `test_store.py` pins the manifest limits, the listing texts, the zip layout and the fact that the page loads nothing from the network.
 - Build (Windows only): `pip install pywebview pyinstaller` then `python build_exe.py` → `dist/ConvertisseurClavier-X.Y.Z.exe` (gitignored; WebView2 required; embeds `convertisseur.html`, `fix-presse-papiers.py` + `app.ico`). `python app.py` runs the page in a native window. Cannot be built or run on Linux.
 
 ## Platform conventions
@@ -48,4 +51,4 @@ python build_setup.py --check  # installer.iss coherence (version, context menu)
 - `installer.iss` (Inno Setup 6) builds `Setup_ConvertisseurClavier-X.Y.Z.exe`: wizard, per-user install (no admin), Start Menu + two hotkeys + optional context-menu task. `python build_setup.py` compiles; `--check` validates without Inno (used in CI).
 - Context menu can only cover the Explorer (files/folders); Word, browsers and the search bar own their own menus. Universal text conversion is the clipboard hotkey: select, `Ctrl+C`, `Ctrl+Alt+H` (the exe converts the clipboard itself, no Python needed), `Ctrl+V`. The browser extension (`extension/`) adds a real right-click inside web pages (`input`, `textarea`, contenteditable, any selection) plus `Ctrl+Shift+H`; it is loaded unpacked in Chrome/Edge and is not on the Web Store.
 - `test_installer.ps1` is the end-to-end installer sandbox test (Windows only): `powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1`.
-- CI (`.github/workflows/tests.yml`) runs `test_maps.py` + `test_app.py` + `test_extension.py` + `test_page.py` on Ubuntu + Windows with Python 3.11–3.14, and the installer test once on Windows (Python 3.12).
+- CI (`.github/workflows/tests.yml`) runs `test_maps.py` + `test_app.py` + `test_extension.py` + `test_store.py` + `test_page.py` on Ubuntu + Windows with Python 3.11–3.14, and the installer test once on Windows (Python 3.12).

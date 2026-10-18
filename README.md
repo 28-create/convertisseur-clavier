@@ -42,13 +42,17 @@ ou sur votre machine Windows.
 | `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + `Ctrl+Alt+H` + menu clic droit + désinstallation). |
 | `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique, case menu clic droit). |
 | `build_setup.py` | Compile le Setup (`--check` seul en CI, sans Inno). |
+| `build_extension.py` | Construit `dist\ConvertisseurClavier-extension-X.Y.Z.zip` (paquet à déposer sur les stores). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
 | `extension/` | Extension Chrome/Edge (Manifest V3) : clic droit, `Ctrl+Maj+H`, popup. |
+| `PRIVACY.md` / `confidentialite.html` | Politique de confidentialité (page publiée par GitHub Pages). |
 | `gen_maps.py` | Régénère les tables du `.py` **et le cœur de l'extension** depuis le HTML. |
 | `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
 | `test_extension.py` | Test de l'extension : manifeste, icônes, CSP, câblage du clic droit, conversions. |
+| `test_store.py` | Test du paquet store : manifeste et ses limites, textes de fiche, zip reproductible. |
+| `store/` | Textes de la fiche (fr/en) et justifications de permissions, prêts à coller. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
 | `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
 | `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
@@ -234,6 +238,23 @@ Après une modification des mappings, `python gen_maps.py` met à jour
 `extension/js/core.js` ; cliquez ensuite sur **Recharger** dans la page
 Extensions.
 
+### Publier sur le store (Chrome / Edge)
+
+L'extension **n'est pas publiée** : elle se charge en mode développeur
+(ci-dessus). Pour préparer le paquet à déposer :
+
+```sh
+python build_extension.py --check   # manifeste, fichiers references, version
+python build_extension.py           # dist\ConvertisseurClavier-extension-X.Y.Z.zip
+```
+
+Le ZIP contient le contenu de `extension/`, `manifest.json` à la racine, et le
+numéro de version doit augmenter à chaque envoi. Les textes de la fiche, les
+justifications de permissions à coller dans le tableau de bord et la marche à
+suivre sont dans `store/` (voir **`store/checklist.md`**). Politique de
+confidentialité :
+<https://28-create.github.io/convertisseur-clavier/confidentialite.html>.
+
 ## 5. Développement
 
 **Les tables JavaScript de `convertisseur.html` sont la source de vérité.
@@ -246,6 +267,7 @@ Après toute modification des mappings dans le HTML :
 python gen_maps.py
 python test_maps.py
 python test_extension.py
+python test_store.py
 python test_page.py
 ```
 

@@ -1,0 +1,1 @@
+Convertit le texte tapé avec le mauvais clavier (AZERTY/QWERTY ⇄ hébreu) : clic droit ou Ctrl+Maj+H, 100 % local.

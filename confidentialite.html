@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'">
+<title>Politique de confidentialité — Convertisseur Clavier</title>
+<meta name="description" content="Politique de confidentialité du Convertisseur Clavier : aucune donnée collectée, tout est traité localement.">
+<style>
+  :root { color-scheme: light dark; --fg: #1b1f24; --bg: #fbfbfd; --muted: #5b6673; --line: #dfe3e8; --accent: #2f5fd0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg: #e8ecf1; --bg: #14181d; --muted: #9aa6b4; --line: #2b333c; --accent: #7ea2ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  header { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
+    border-bottom: 1px solid var(--line); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.5rem; margin: 0; }
+  h2 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
+  p, li { margin: .5rem 0; }
+  .sub { color: var(--muted); font-size: .85rem; margin: .2rem 0 0; width: 100%; }
+  table { border-collapse: collapse; width: 100%; margin: .75rem 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: color-mix(in srgb, var(--line) 35%, transparent); }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: .9em; }
+  a { color: var(--accent); }
+  .lead { font-size: 1.05rem; border-left: 4px solid var(--accent); padding-left: .8rem; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+  footer { color: var(--muted); font-size: .85rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <img src="extension/icons/icon128.png" alt="" width="48" height="48">
+  <h1>Politique de confidentialité</h1>
+  <p class="sub">Convertisseur Clavier — Latin ⇄ Hébreu · dernière mise à jour :
+    <time datetime="2026-10-18">18 octobre 2026</time></p>
+</header>
+
+<p class="lead">Aucune donnée ne sort de votre appareil : ni serveur, ni compte,
+ni statistique, ni publicité, ni traceur.</p>
+
+<p>Cette page couvre la page web, l'application Windows
+(<code>ConvertisseurClavier-X.Y.Z.exe</code>, <code>Setup_ConvertisseurClavier-X.Y.Z.exe</code>)
+et l'extension navigateur Chrome / Edge.</p>
+
+<h2>Données collectées</h2>
+<p><strong>Aucune.</strong> Le Convertisseur Clavier ne collecte, ne transmet, ne
+vend et ne partage aucune donnée personnelle. Il ne demande ni compte, ni
+adresse e-mail, ni identifiant.</p>
+
+<h2>Ce qui est traité, et où</h2>
+<ul>
+  <li>Les conversions sont calculées <strong>localement</strong>, à partir de
+    tables embarquées.</li>
+  <li>Le <strong>presse-papiers</strong> n'est lu et écrit que sur une action
+    explicite de votre part : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> dans
+    l'application, ou le menu clic droit de l'extension.</li>
+  <li>Aucun texte converti n'est journalisé, envoyé, ni conservé.</li>
+</ul>
+
+<h2>Ce qui est stocké sur votre appareil</h2>
+<table>
+  <tr><th>Support</th><th>Stockage local</th></tr>
+  <tr><td>Page web</td><td>réglages et historique de la session (<code>localStorage</code>)</td></tr>
+  <tr><td>Extension</td><td>réglages de mode et de clavier (<code>chrome.storage.local</code>)</td></tr>
+  <tr><td>Application</td><td>rien en dehors de vos propres fichiers</td></tr>
+</table>
+<p>Ces données ne quittent pas votre machine. Vous les effacez en vidant les
+données du site, en désinstallant l'extension, ou en supprimant
+<code>%LOCALAPPDATA%\Programs\ConvertisseurClavier</code>.</p>
+
+<h2>Permissions de l'extension</h2>
+<table>
+  <tr><th>Permission</th><th>Pourquoi</th></tr>
+  <tr><td><code>contextMenus</code></td><td>ajouter l'entrée « Convertir la sélection » au clic droit</td></tr>
+  <tr><td><code>clipboardWrite</code></td><td>copier le résultat quand le texte n'est pas dans un champ</td></tr>
+  <tr><td><code>storage</code></td><td>mémoriser vos réglages (mode, clavier) en local</td></tr>
+  <tr><td>accès aux pages (<code>content_scripts</code>)</td><td>lire la sélection et remplacer le texte dans le champ actif, uniquement quand vous déclenchez la conversion</td></tr>
+</table>
+<p>L'extension ne contient <strong>aucun code distant</strong> et n'émet
+<strong>aucune requête réseau</strong>.</p>
+
+<h2>Hébergement et tiers</h2>
+<p>La page web est publiée par GitHub Pages. Comme tout hébergeur, GitHub peut
+journaliser techniquement les requêtes HTTP (adresse IP, agent utilisateur)
+pour fournir et protéger le service ; nous n'avons pas accès à ces journaux et
+n'en tirons aucune statistique. Voir la
+<a href="https://docs.github.com/fr/site-policy/privacy-policies/github-privacy-statement">politique de confidentialité de GitHub</a>.
+Aucun autre tiers n'intervient : pas de régie publicitaire, pas d'outil de
+mesure d'audience, pas de police d'écriture distante.</p>
+
+<h2>Vos droits (RGPD)</h2>
+<p>Aucune donnée personnelle n'étant traitée, il n'y a rien à consulter,
+corriger, exporter ou supprimer. Pour toute question, ouvrez une
+<a href="https://github.com/28-create/convertisseur-clavier/issues">issue sur le dépôt</a>.</p>
+
+<h2>Modifications</h2>
+<p>Toute évolution de cette politique sera publiée sur cette page et dans
+<code>PRIVACY.md</code>, avec la date de mise à jour en tête de page.</p>
+
+<hr>
+
+<section lang="en">
+<h1>Privacy policy</h1>
+<p class="sub">Last updated: 18 October 2026</p>
+
+<p class="lead">Nothing ever leaves your device: no server, no account, no
+analytics, no advertising, no tracker.</p>
+
+<p>The Convertisseur Clavier (web page, Windows application, browser extension
+for Chrome / Edge) collects <strong>no data at all</strong>. Conversions run
+locally from embedded tables.</p>
+
+<ul>
+  <li><strong>Clipboard</strong>: read and written only when you explicitly
+    trigger a conversion (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> in the
+    application, or the extension's right-click menu).</li>
+  <li><strong>Stored on your device</strong>: your settings
+    (<code>localStorage</code> in the page, <code>chrome.storage.local</code> in
+    the extension). Clearing site data or uninstalling removes them.</li>
+  <li><strong>Extension permissions</strong>: <code>contextMenus</code>,
+    <code>clipboardWrite</code>, <code>storage</code>, and page access via
+    <code>content_scripts</code> to read the selection and replace the text in
+    the active field — only when you ask for it. No remote code, no network
+    request.</li>
+  <li><strong>Hosting</strong>: the web page is served by GitHub Pages, which
+    may keep standard technical request logs; we have no access to them. No
+    other third party is involved.</li>
+  <li><strong>Your rights</strong>: since no personal data is processed, there
+    is nothing to access or delete. For any question, open an issue on the
+    repository.</li>
+</ul>
+</section>
+
+<footer>
+  <p><a href="convertisseur.html">Ouvrir le convertisseur</a> ·
+    <a href="https://github.com/28-create/convertisseur-clavier">dépôt GitHub</a></p>
+</footer>
+</main>
+</body>
+</html>
