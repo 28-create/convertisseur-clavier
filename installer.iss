@@ -2,7 +2,7 @@
 ; Usage : python build_setup.py   (compile dist\Setup_ConvertisseurClavier-X.Y.Z.exe)
 ; La version ci-dessous est GENEREE depuis convertisseur.html :
 ;   python gen_version.py   (ne pas la modifier a la main).
-#define MyAppVersion "1.9.1"
+#define MyAppVersion "1.10.0"
 #define MyAppExe "ConvertisseurClavier-" + MyAppVersion + ".exe"
 
 [Setup]

@@ -11,6 +11,7 @@ import sys
 HTML_FILE = 'convertisseur.html'
 OUT_FILE = 'version_info.txt'
 ISS_FILE = 'installer.iss'
+MANIFEST_FILE = 'extension/manifest.json'
 
 TEMPLATE = """# UTF-8
 #
@@ -85,12 +86,30 @@ def sync_iss(ver, iss_path=ISS_FILE):
         print('OK : %s synchronise (version %s)' % (iss_path, ver))
 
 
+def sync_manifest(ver, manifest_path=MANIFEST_FILE):
+    # La version de l'extension suit APP_VERSION (source unique : le HTML).
+    import os
+    if not os.path.exists(manifest_path):
+        return
+    with open(manifest_path, encoding='utf-8') as f:
+        text = f.read()
+    new, n = re.subn(r'("version"\s*:\s*")[^"]*(")',
+                     lambda m: m.group(1) + ver + m.group(2), text, count=1)
+    if not n:
+        raise ValueError('"version" introuvable dans %s' % manifest_path)
+    if new != text:
+        with open(manifest_path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(new)
+        print('OK : %s synchronise (version %s)' % (manifest_path, ver))
+
+
 def main():
     ver = read_version()
     with open(OUT_FILE, 'w', encoding='utf-8', newline='\n') as f:
         f.write(build_info(ver))
     print('OK : %s genere (version %s)' % (OUT_FILE, ver))
     sync_iss(ver)
+    sync_manifest(ver)
     return 0
 
 

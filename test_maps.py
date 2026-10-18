@@ -13,7 +13,9 @@ import subprocess
 import sys
 import tempfile
 
-from gen_maps import MAP_NAMES, parse_js_maps, parse_caps_swap
+from gen_maps import (MAP_NAMES, parse_js_maps, parse_caps_swap,
+                      JS_FILE, JS_BEGIN, JS_END, JS_CORE_BEGIN, JS_CORE_END,
+                      emit_js_maps, extract_core)
 
 
 def _safe(o):
@@ -184,6 +186,28 @@ def main():
         ok = False
         print('DERIVE CAPS_SWAP : HTML=%s PY=%s'
               % (_safe(dict(caps)), _safe(dict(py_caps))))
+    # extension : memes tables et meme coeur que le HTML (blocs generes)
+    with open(JS_FILE, encoding='utf-8') as f:
+        ext_text = f.read()
+    ext_maps = parse_js_maps(ext_text)
+    for name in MAP_NAMES:
+        if ext_maps[name] != js_maps[name]:
+            ok = False
+            print('DERIVE extension %s : %s' % (name, _safe(ext_maps[name][:3])))
+    if parse_caps_swap(ext_text) != caps:
+        ok = False
+        print('DERIVE extension CAPS_SWAP')
+    want_maps = JS_BEGIN + '\n' + emit_js_maps(js_maps, caps) + JS_END
+    want_core = JS_CORE_BEGIN + '\n' + extract_core(html_text) + JS_CORE_END
+    for begin, end, want, label in (
+            (JS_BEGIN, JS_END, want_maps, 'tables'),
+            (JS_CORE_BEGIN, JS_CORE_END, want_core, 'coeur')):
+        m = re.search('^%s$.*?^%s$' % (re.escape(begin), re.escape(end)),
+                      ext_text, re.S | re.M)
+        if not m or m.group(0) != want:
+            ok = False
+            print('DERIVE extension : bloc %s different du HTML '
+                  '(python gen_maps.py)' % label)
     # garde-fous fonctionnels (non-regression sur des cas connus)
     cases = [
         ('azerty', 'toHe', 'qkuo', 'שלום'),
@@ -339,7 +363,7 @@ def main():
             ok = False
             layout, direction, src, _exp = fuzz_cases[i]
             print('FUZZ-JS %s %s %s' % (layout, direction, _safe(src)))
-    print('OK : mappings synchronises (%s)' % ', '.join(
+    print('OK : mappings synchronises HTML/PY/EXT (%s)' % ', '.join(
         '%s=%d' % (n, len(js_maps[n])) for n in MAP_NAMES) if ok else 'ECHEC : voir ci-dessus')
     return 0 if ok else 1
 

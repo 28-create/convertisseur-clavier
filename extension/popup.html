@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convertisseur Clavier</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header>
+  <img src="icons/icon32.png" alt="" width="20" height="20">
+  <h1>Convertisseur Clavier</h1>
+</header>
+<p class="sub">Latin ⇄ Hébreu · 100 % local</p>
+
+<div class="row">
+  <label for="mode">Mode</label>
+  <select id="mode">
+    <option value="hebrew/auto">Hébreu ⇄ Latin (auto)</option>
+    <option value="hebrew/toHe">Vers l’hébreu</option>
+    <option value="hebrew/toFr">Vers le latin</option>
+    <option value="latin/toAz">QWERTY → AZERTY</option>
+    <option value="latin/toQw">AZERTY → QWERTY</option>
+  </select>
+</div>
+
+<div class="row" id="layoutRow">
+  <label for="layout">Clavier</label>
+  <select id="layout">
+    <option value="azerty">AZERTY (français)</option>
+    <option value="qwerty">QWERTY (anglais)</option>
+  </select>
+</div>
+
+<label class="lbl" for="input">Texte</label>
+<textarea id="input" rows="4" spellcheck="false" dir="auto"
+  placeholder="qkuo · נםמחםור · bonjour"></textarea>
+
+<label class="lbl" for="output">Résultat</label>
+<output id="output" for="input" dir="ltr"></output>
+
+<div class="actions">
+  <button id="copy" type="button">Copier</button>
+  <span id="status" class="status" role="status" aria-live="polite"></span>
+</div>
+
+<p class="hint">Clic droit dans une page → « Convertir la sélection ».<br>
+Raccourci : <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>H</kbd>.</p>
+
+<script src="js/core.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

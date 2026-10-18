@@ -1,5 +1,17 @@
 # Journal des modifications
 
+## v1.10.0 — 18 oct. 2026
+- Nouvelle extension navigateur (Chrome/Edge, Manifest V3) dans `extension/` :
+  clic droit sur une sélection → conversion dans le champ actif (input,
+  textarea, contenteditable) ou copie du résultat ; raccourci `Ctrl+Maj+H` ;
+  popup de conversion avec réglages mémorisés localement.
+- Les tables et le cœur de conversion (`convertSmart`, `detectDir`) de
+  l'extension sont **générés** depuis `convertisseur.html` par `gen_maps.py` :
+  une seule implémentation, aucune dérive possible (vérifié par les tests).
+- `gen_version.py` synchronise aussi la version du manifeste de l'extension.
+- Nouveau `test_extension.py` (manifeste, icônes, CSP, syntaxe JS, câblage du
+  clic droit et conversions), ajouté à la CI et à `test_maps.py`.
+
 ## v1.9.1 — 18 oct. 2026
 - Correctif menu clic droit : le contenu du fichier est injecté dans la page
   après chargement (`app.preload_js`) — WebView2 refuse une URL

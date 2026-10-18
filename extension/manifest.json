@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Convertisseur Clavier — Latin ⇄ Hébreu",
+  "short_name": "Convertisseur Clavier",
+  "version": "1.10.0",
+  "description": "Convertit le texte tapé avec le mauvais clavier (AZERTY/QWERTY ⇄ hébreu), 100 % local.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Convertisseur Clavier",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "clipboardWrite",
+    "contextMenus",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/core.js",
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "convert-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H"
+      },
+      "description": "Convertir la sélection dans le champ actif"
+    }
+  }
+}

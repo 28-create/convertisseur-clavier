@@ -28,7 +28,9 @@ ou sur votre machine Windows.
 - Raccourci presse-papiers Windows : `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`.
 - Setup Windows (assistant, sans admin) : menu Démarrer, touches globales
   et menu clic droit de l'Explorateur.
-- Jeux de tests automatisés (mappings, intégrité de la page).
+- Extension navigateur Chrome/Edge : clic droit sur une sélection,
+  `Ctrl+Maj+H`, popup de conversion (section 4).
+- Jeux de tests automatisés (mappings, intégrité de la page, extension).
 
 ## Fichiers
 
@@ -41,10 +43,12 @@ ou sur votre machine Windows.
 | `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique, case menu clic droit). |
 | `build_setup.py` | Compile le Setup (`--check` seul en CI, sans Inno). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
-| `gen_maps.py` | Régénère les tables du `.py` depuis le HTML. |
+| `extension/` | Extension Chrome/Edge (Manifest V3) : clic droit, `Ctrl+Maj+H`, popup. |
+| `gen_maps.py` | Régénère les tables du `.py` **et le cœur de l'extension** depuis le HTML. |
 | `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
+| `test_extension.py` | Test de l'extension : manifeste, icônes, CSP, câblage du clic droit, conversions. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
 | `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
 | `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
@@ -197,26 +201,64 @@ cohérence (`installer.iss` : version, menu clic droit).
 > une exception pour le fichier d'installation et pour
 > `%LOCALAPPDATA%\Programs\ConvertisseurClavier`.
 
-## 4. Développement
+## 4. Extension navigateur (Chrome / Edge)
+
+Dossier `extension/` — Manifest V3, **100 % local**, aucune permission
+réseau (voir `test_extension.py`). L'extension n'est pas publiée sur le
+store : on la charge en mode développeur.
+
+1. Chrome : `chrome://extensions` (Edge : `edge://extensions`).
+2. Activez **Mode développeur**.
+3. **Charger l'extension non empaquetée** → choisissez le dossier
+   `extension/`.
+
+Utilisation :
+
+- **Popup** (icône de la barre d'outils) : le résultat se met à jour
+  pendant la frappe ; choix du mode (auto, vers l'hébreu, vers le latin,
+  QWERTY ⇄ AZERTY) et du clavier (AZERTY / QWERTY). Les réglages sont
+  mémorisés localement.
+- **Clic droit sur une sélection** : *Convertir la sélection* (sens
+  détecté), *Convertir en hébreu*, *Convertir en latin*. Dans un champ
+  (`input`, `textarea`, zone éditable), le texte est remplacé sur place
+  et reste annulable avec `Ctrl+Z` ; ailleurs, le résultat est copié et
+  affiché dans une notification.
+- **`Ctrl+Maj+H`** : convertit la sélection du champ actif.
+
+Limite : le clic droit **dans Word** ou dans la barre de recherche Windows
+appartient à ces applications et reste hors de portée d'une extension.
+Dans le navigateur, l'extension le permet ; partout ailleurs, utilisez
+`Ctrl+Alt+H` (section 3).
+
+Après une modification des mappings, `python gen_maps.py` met à jour
+`extension/js/core.js` ; cliquez ensuite sur **Recharger** dans la page
+Extensions.
+
+## 5. Développement
 
 **Les tables JavaScript de `convertisseur.html` sont la source de vérité.
-Ne jamais éditer les tables (ni `CAPS_SWAP`) de `fix-presse-papiers.py`
-à la main.**
+Ne jamais éditer à la main les tables (ni `CAPS_SWAP`) de
+`fix-presse-papiers.py` ni les blocs générés de `extension/js/core.js`.**
 
 Après toute modification des mappings dans le HTML :
 
 ```sh
 python gen_maps.py
 python test_maps.py
+python test_extension.py
 python test_page.py
 ```
 
-`test_maps.py` compare les 6 tables et `CAPS_SWAP` (ordre + valeurs),
-détecte les clés dupliquées, vérifie la réversibilité exacte, rejoue des
-cas connus (`qkuo`/`akuo` → `שלום`, etc.) puis confronte le JS au Python
-sur 1200 textes aléatoires. Exit `0` = synchronisé, `1` = dérive.
-La CI GitHub Actions rejoue les deux suites (Ubuntu + Windows,
-Python 3.11 à 3.14) à chaque push.
+`test_maps.py` compare les 6 tables et `CAPS_SWAP` (ordre + valeurs) dans
+le HTML, le script Python et l'extension, détecte les clés dupliquées,
+vérifie la réversibilité exacte, rejoue des cas connus
+(`qkuo`/`akuo` → `שלום`, etc.) puis confronte le JS au Python sur
+1200 textes aléatoires. Exit `0` = synchronisé, `1` = dérive.
+`test_extension.py` vérifie en plus le manifeste, les icônes, l'absence de
+code distant ou inline, la syntaxe JS, le câblage du clic droit et des
+conversions réelles.
+La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
+3.14) à chaque push.
 
 `gen_ngrams.py` régénère les modèles de bigrammes (textes du domaine public,
 vérifiés par SHA-256) qui alimentent la suggestion de lecture :
