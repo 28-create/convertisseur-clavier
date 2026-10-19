@@ -73,11 +73,12 @@ adresse e-mail, ni identifiant.</p>
   <tr><th>Support</th><th>Stockage local</th></tr>
   <tr><td>Page web</td><td>réglages et historique de la session (<code>localStorage</code>)</td></tr>
   <tr><td>Extension</td><td>réglages de mode et de clavier (<code>chrome.storage.local</code>)</td></tr>
-  <tr><td>Application</td><td>rien en dehors de vos propres fichiers</td></tr>
+  <tr><td>Application</td><td>réglages du guetteur (<code>%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json</code>)</td></tr>
 </table>
 <p>Ces données ne quittent pas votre machine. Vous les effacez en vidant les
 données du site, en désinstallant l'extension, ou en supprimant
-<code>%LOCALAPPDATA%\Programs\ConvertisseurClavier</code>.</p>
+<code>%LOCALAPPDATA%\Programs\ConvertisseurClavier</code> et
+<code>%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json</code>.</p>
 
 <h2>Permissions de l'extension</h2>
 <table>
@@ -131,7 +132,10 @@ locally from embedded tables.</p>
     clipboard is rewritten only if you choose "Convert and paste".</li>
   <li><strong>Stored on your device</strong>: your settings
     (<code>localStorage</code> in the page, <code>chrome.storage.local</code> in
-    the extension). Clearing site data or uninstalling removes them.</li>
+    the extension, and
+    <code>%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json</code> for the
+    watcher). Clearing site data, uninstalling the extension, or deleting those
+    files removes them.</li>
   <li><strong>Extension permissions</strong>: <code>contextMenus</code>,
     <code>clipboardWrite</code>, <code>storage</code>, and page access via
     <code>content_scripts</code> to read the selection and replace the text in

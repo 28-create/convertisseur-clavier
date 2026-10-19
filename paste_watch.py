@@ -12,6 +12,7 @@ Usage :
 """
 import base64
 import ctypes
+import json
 import os
 import queue
 import re
@@ -57,6 +58,11 @@ MIN_TARGET = -3.5
 MARGIN = 0.8
 SHORT_MARGIN = 1.0
 SHORT_LETTERS = 8
+LAYOUT_MARGIN = 0.8
+LAYOUT_PENALTY = 2.5
+LAYOUTS = ('azerty', 'qwerty')
+DEFAULT_LAYOUT = 'azerty'
+SETTINGS_ENV = 'CONVERTISSEUR_PASTE_SETTINGS'
 SYMBOL_RE = re.compile(r'[@\\/<>{}[\]|~^_=#$%&*+]')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
@@ -158,14 +164,70 @@ def count_scripts(text):
     return lat, heb
 
 
-def detect_text(text, models, fix_mod):
+def normalize_layout(layout):
+    """Rend une disposition connue ; AZERTY par defaut."""
+    return layout if layout in LAYOUTS else DEFAULT_LAYOUT
+
+
+def convert_for_layout(text, layout, direction, fix_mod):
+    """Convertit un texte pour une disposition imposee (popup)."""
+    layout = normalize_layout(layout)
+    if direction == 'toHe':
+        table, _to_fr = fix_mod.MAPS[layout]
+        swap = fix_mod.CAPS_SWAP if layout == 'azerty' else None
+        return fix_mod.convert_smart(text, table, swap, False)
+    _to_he, table = fix_mod.MAPS[layout]
+    swap = fix_mod.CAPS_SWAP if layout == 'azerty' else None
+    return fix_mod.convert_smart(text, table, swap, True)
+
+
+def _layout_penalty(text, direction):
+    """Penalise les restes de l'ecriture source et les symboles de code.
+
+    Une disposition erronee laisse souvent une lettre latine dans la sortie
+    hebraique (ou l'inverse), ou transforme une touche en / \\ etc. Le modele
+    de bigrammes ne voit pas ces caracteres : on les compte a part.
+    """
+    penalty = 0
+    for ch in text:
+        if ch.isalpha():
+            if direction == 'toHe' and not HEB_RE.match(ch):
+                penalty += LAYOUT_PENALTY
+            elif direction == 'toFr' and HEB_RE.match(ch):
+                penalty += LAYOUT_PENALTY
+        elif SYMBOL_RE.match(ch):
+            penalty += LAYOUT_PENALTY
+    return penalty
+
+
+def _layout_candidates(text, direction, models, fix_mod):
+    """Note les deux dispositions : score modele et score effectif."""
+    out = {}
+    for layout in LAYOUTS:
+        converted = convert_for_layout(text, layout, direction, fix_mod)
+        if direction == 'toHe':
+            score = score_hebrew(models, converted)
+        else:
+            score = score_latin(models, converted)
+        if score is None:
+            continue
+        penalty = _layout_penalty(converted, direction)
+        out[layout] = {'layout': layout, 'text': converted,
+                       'score': score, 'penalty': penalty,
+                       'effective': score - penalty}
+    return out
+
+
+def detect_text(text, models, fix_mod, default_layout=DEFAULT_LAYOUT):
     """Rend None ou {direction, layout, text, source_text, score, ...}.
 
-    Compare la lecture actuelle (modele de sa langue) a la meilleure lecture
-    dans l'autre ecriture (deux dispositions testees), et ne propose que si
-    l'ecart est net.
+    Compare la lecture actuelle (modele de sa langue) aux deux dispositions
+    possibles, et ne propose que si l'ecart avec la source est net. Si les
+    deux dispositions restent plausibles et proches (peu de lettres pour les
+    distinguer), la disposition par defaut de l'utilisateur est utilisee.
     """
     text = '' if text is None else str(text)
+    default_layout = normalize_layout(default_layout)
     if not text.strip() or len(text) > MAX_TEXT:
         return None
     lat, heb = count_scripts(text)
@@ -176,42 +238,44 @@ def detect_text(text, models, fix_mod):
     if SYMBOL_RE.search(text):  # URL, chemin, code, adresse...
         return None
 
-    best = None
-    if lat:
-        source_score = score_latin(models, text)
-        for layout in ('azerty', 'qwerty'):
-            to_he, _to_fr = fix_mod.MAPS[layout]
-            swap = fix_mod.CAPS_SWAP if layout == 'azerty' else None
-            out = fix_mod.convert_smart(text, to_he, swap, False)
-            sc = score_hebrew(models, out)
-            if sc is not None and (best is None or sc > best['score']):
-                best = {'layout': layout, 'text': out, 'score': sc}
-        direction = 'toHe'
-    else:
-        source_score = score_hebrew(models, text)
-        for layout in ('azerty', 'qwerty'):
-            _to_he, to_fr = fix_mod.MAPS[layout]
-            swap = fix_mod.CAPS_SWAP if layout == 'azerty' else None
-            out = fix_mod.convert_smart(text, to_fr, swap, True)
-            sc = score_latin(models, out)
-            if sc is not None and (best is None or sc > best['score']):
-                best = {'layout': layout, 'text': out, 'score': sc}
-        direction = 'toFr'
+    direction = 'toHe' if lat else 'toFr'
+    source_score = (score_latin(models, text) if lat
+                    else score_hebrew(models, text))
+    candidates = _layout_candidates(text, direction, models, fix_mod)
+    if source_score is None or not candidates:
+        return None
+    ranked = sorted(candidates.values(),
+                    key=lambda item: item['effective'], reverse=True)
+    best = ranked[0]
+    detected_layout = best['layout']
+    ambiguous = False
+    if len(ranked) > 1:
+        second = ranked[1]
+        close = (best['effective'] - second['effective'] < LAYOUT_MARGIN
+                 and best['text'] != second['text'])
+        if (close and second['effective'] >= MIN_TARGET
+                and candidates.get(default_layout) is not None
+                and candidates[default_layout]['effective'] >= MIN_TARGET):
+            best = candidates[default_layout]
+            ambiguous = True
 
-    if source_score is None or best is None or not best['text'].strip():
+    if not best['text'].strip() or best['text'] == text:
         return None
-    if best['text'] == text:
-        return None
-    if best['score'] < MIN_TARGET:
+    if best['effective'] < MIN_TARGET:
         return None
     need = MARGIN if lat + heb >= SHORT_LETTERS else SHORT_MARGIN
-    margin = best['score'] - source_score
+    margin = best['effective'] - source_score
     if margin < need:
         return None
     return {'direction': direction, 'layout': best['layout'],
+            'detected_layout': detected_layout,
             'text': best['text'], 'source_text': text,
             'source_score': source_score, 'score': best['score'],
-            'margin': margin}
+            'effective_score': best['effective'],
+            'margin': margin, 'layout_ambiguous': ambiguous,
+            'layout_default': default_layout,
+            'layout_scores': {layout: candidate['effective']
+                              for layout, candidate in candidates.items()}}
 
 
 def truncate(text, limit=160):
@@ -223,6 +287,56 @@ def truncate(text, limit=160):
 
 def layout_label(layout):
     return 'AZERTY' if layout == 'azerty' else 'QWERTY'
+
+
+def settings_path():
+    """Fichier de reglages du guetteur (surchargeable pour les tests)."""
+    override = os.environ.get(SETTINGS_ENV)
+    if override:
+        return os.path.abspath(os.path.expanduser(override))
+    base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA')
+    if not base:
+        base = (os.environ.get('XDG_CONFIG_HOME')
+                or os.path.join(os.path.expanduser('~'), '.config'))
+    return os.path.join(base, 'ConvertisseurClavier', 'paste_watch.json')
+
+
+def load_settings(path=None):
+    """Lit le clavier par defaut ; un fichier absent/casse rend AZERTY."""
+    path = path or settings_path()
+    raw = None
+    try:
+        with open(path, encoding='utf-8') as f:
+            raw = json.load(f)
+    except (OSError, ValueError, TypeError):
+        raw = None
+    if not isinstance(raw, dict):
+        raw = {}
+    return {'default_layout': normalize_layout(raw.get('default_layout'))}
+
+
+def save_settings(settings, path=None):
+    """Ecrit les reglages de facon atomique ; ne leve jamais d'exception."""
+    path = path or settings_path()
+    layout = normalize_layout((settings or {}).get('default_layout'))
+    tmp = path + '.tmp'
+    try:
+        folder = os.path.dirname(path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+            json.dump({'default_layout': layout}, f,
+                      ensure_ascii=True, indent=2)
+            f.write('\n')
+        os.replace(tmp, path)
+        return True
+    except Exception:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+        return False
 
 
 # --- Win32 : crochet clavier, icone de notification, collage ---
@@ -472,6 +586,7 @@ class Watcher:
         self.icon_path = icon_path
         self.fix = fix_mod
         self.models = None
+        self.default_layout = load_settings()['default_layout']
         self.queue = queue.Queue()
         self.paused = False
         self.proposal = None
@@ -565,7 +680,8 @@ class Watcher:
                     self.pending_seq = seq
                     self.handled_seq = seq
                     continue
-                self.proposal = (detect_text(text, self.models, self.fix)
+                self.proposal = (detect_text(text, self.models, self.fix,
+                                             self.default_layout)
                                  if text else None)
                 self.pending_seq = seq
             except Exception:
@@ -739,6 +855,22 @@ class Watcher:
             self._set_tip(APP_NAME + ' - surveillance du presse-papiers')
             self._balloon(APP_NAME, 'Surveillance du presse-papiers reprise.')
 
+    def set_default_layout(self, layout):
+        """Memorise le clavier utilise quand la detection est ambigue."""
+        layout = normalize_layout(layout)
+        if save_settings({'default_layout': layout}):
+            self.default_layout = layout
+            return True
+        return False
+
+    def _change_default_layout(self, layout):
+        if self.set_default_layout(layout):
+            self._balloon(APP_NAME, 'Clavier par défaut si ambiguïté : %s.'
+                          % layout_label(layout))
+        else:
+            self._balloon(APP_NAME, 'Impossible d’enregistrer le clavier '
+                                    'par défaut.')
+
     def _menu(self):
         u32, _ = _win32()
         menu = u32.CreatePopupMenu()
@@ -749,6 +881,12 @@ class Watcher:
         u32.AppendMenuW(menu, 0, 1, label)
         u32.AppendMenuW(menu, 0, 2, 'Ouvrir le convertisseur')
         u32.AppendMenuW(menu, 0x800, 0, None)  # MF_SEPARATOR
+        checked = 0x8  # MF_CHECKED
+        u32.AppendMenuW(menu, checked if self.default_layout == 'azerty' else 0,
+                        4, 'Défaut si ambigu : AZERTY')
+        u32.AppendMenuW(menu, checked if self.default_layout == 'qwerty' else 0,
+                        5, 'Défaut si ambigu : QWERTY')
+        u32.AppendMenuW(menu, 0x800, 0, None)
         u32.AppendMenuW(menu, 0, 3, 'Quitter')
         pt = POINT()
         u32.GetCursorPos(ctypes.byref(pt))
@@ -761,6 +899,10 @@ class Watcher:
             self._toggle_pause()
         elif cmd == 2:
             self._open_app()
+        elif cmd == 4:
+            self._change_default_layout('azerty')
+        elif cmd == 5:
+            self._change_default_layout('qwerty')
         elif cmd == 3:
             u32.DestroyWindow(self.hwnd)
 
@@ -943,32 +1085,128 @@ def show_proposal(root, watcher, data, target, anchor, current):
     win.configure(bg=ACCENT)
     win.resizable(False, False)
 
-    outer = tk.Frame(win, bg=CARD, padx=16, pady=14,
+    outer = tk.Frame(win, bg=CARD, padx=14, pady=12,
                      highlightbackground=ACCENT, highlightthickness=1)
     outer.pack(fill='both', expand=True)
 
     tk.Label(outer, text='Convertir avant de coller ?', bg=CARD, fg=TEXT,
-             font=('Segoe UI', 11, 'bold'), anchor='w').pack(fill='x')
-    tk.Label(outer, text='Disposition %s détectée' % layout_label(
-        data['layout']), bg=CARD, fg=MUTED,
-        font=('Segoe UI', 9), anchor='w').pack(fill='x', pady=(1, 8))
+             font=('Segoe UI', 10, 'bold'), anchor='w').pack(fill='x')
 
     rtl = data['direction'] == 'toHe'
-    preview_text = truncate(data['text'], 240)
-    tk.Label(outer, text=preview_text, bg=CARD, fg=TEXT,
-             font=('Segoe UI', 15), wraplength=430,
-             justify=('right' if rtl else 'left'),
-             anchor=('e' if rtl else 'w')).pack(fill='x', pady=(0, 6))
+    state = {'layout': normalize_layout(data['layout']),
+             'text': data['text'], 'manual': False,
+             'convert_button': None}
+    selected_var = tk.StringVar(value=state['layout'])
+    default_var = tk.StringVar(value=normalize_layout(
+        data.get('layout_default', data['layout'])))
+
+    preview_label = tk.Label(outer, text=truncate(data['text'], 220),
+                             bg=CARD, fg=TEXT, font=('Segoe UI', 14),
+                             wraplength=390,
+                             justify=('right' if rtl else 'left'),
+                             anchor=('e' if rtl else 'w'))
+    preview_label.pack(fill='x', pady=(6, 2))
     source_one = ' '.join(data['source_text'].split())
-    tk.Label(outer, text='Original : ' + truncate(source_one, 90),
-             bg=CARD, fg=MUTED, font=('Segoe UI', 9),
-             anchor='w').pack(fill='x', pady=(0, 12))
+    tk.Label(outer, text='Original : ' + truncate(source_one, 80),
+             bg=CARD, fg=MUTED, font=('Segoe UI', 8),
+             anchor='w').pack(fill='x', pady=(0, 4))
+
+    layout_line = tk.Frame(outer, bg=CARD)
+    layout_line.pack(fill='x', pady=(0, 8))
+    tk.Label(layout_line, text='Clavier :', bg=CARD, fg=MUTED,
+             font=('Segoe UI', 8), anchor='w').pack(side='left')
+    layout_btn = tk.Menubutton(
+        layout_line, text=layout_label(state['layout']) + '\n\u25be',
+        bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
+        activeforeground=TEXT, relief='flat', bd=0,
+        highlightthickness=0, padx=8, pady=1, cursor='hand2',
+        font=('Segoe UI', 9), indicatoron=False, justify='center')
+    layout_btn.pack(side='left', padx=(5, 0))
+    note_label = tk.Label(layout_line, text='', bg=CARD, fg=MUTED,
+                          font=('Segoe UI', 8), anchor='w')
+    note_label.pack(side='left', padx=(8, 0))
 
     row = tk.Frame(outer, bg=CARD)
     row.pack(fill='x')
 
+    def note_text():
+        if state['manual']:
+            return 'Choix manuel'
+        if data.get('layout_ambiguous'):
+            return 'Détection ambiguë'
+        return 'Détection automatique'
+
+    def apply_layout(layout, manual=True):
+        layout = normalize_layout(layout)
+        if manual:
+            state['manual'] = True
+        state['layout'] = layout
+        state['text'] = convert_for_layout(
+            data['source_text'], layout, data['direction'], watcher.fix)
+        preview_label.configure(text=truncate(state['text'], 220)
+                                or '(aucun texte)')
+        selected_var.set(layout)
+        layout_btn.configure(text=layout_label(layout) + '\n\u25be')
+        note_label.configure(text=note_text())
+        convert_button = state.get('convert_button')
+        if convert_button is not None:
+            convert_button.configure(
+                state='normal' if state['text'].strip() else 'disabled')
+
+    def select_layout(layout):
+        apply_layout(layout, manual=True)
+        try:
+            b1.focus_set()
+        except Exception:
+            pass
+
+    def set_default(layout):
+        layout = normalize_layout(layout)
+        old = normalize_layout(data.get('layout_default', state['layout']))
+        if layout == old:
+            return
+        if not watcher.set_default_layout(layout):
+            default_var.set(old)
+            try:
+                messagebox.showerror(
+                    APP_NAME, 'Impossible d’enregistrer le clavier par '
+                              'défaut.')
+            except Exception:
+                pass
+            return
+        data['layout_default'] = layout
+        if data.get('layout_ambiguous') and not state['manual']:
+            apply_layout(layout, manual=False)
+        else:
+            note_label.configure(text=note_text())
+        try:
+            b1.focus_set()
+        except Exception:
+            pass
+
+    menu = tk.Menu(layout_btn, tearoff=0, bg=CARD, fg=TEXT,
+                   activebackground=ACCENT, activeforeground=ACCENT_TEXT,
+                   font=('Segoe UI', 9))
+    menu.add_radiobutton(label='Utiliser AZERTY', variable=selected_var,
+                         value='azerty',
+                         command=lambda: select_layout('azerty'))
+    menu.add_radiobutton(label='Utiliser QWERTY', variable=selected_var,
+                         value='qwerty',
+                         command=lambda: select_layout('qwerty'))
+    menu.add_separator()
+    menu.add_radiobutton(label='Défaut si ambigu : AZERTY',
+                         variable=default_var, value='azerty',
+                         command=lambda: set_default('azerty'))
+    menu.add_radiobutton(label='Défaut si ambigu : QWERTY',
+                         variable=default_var, value='qwerty',
+                         command=lambda: set_default('qwerty'))
+    layout_btn.configure(menu=menu)
+    note_label.configure(text=note_text())
+
     def choose(choice):
         if current.get('win') is not win or current.get('choose') is None:
+            return
+        if choice == 'convert' and not state['text'].strip():
             return
         current['choose'] = None
         current['win'] = None
@@ -980,7 +1218,10 @@ def show_proposal(root, watcher, data, target, anchor, current):
             win.destroy()
         except Exception:
             pass
-        err = watcher.resolve(choice, data, target)
+        selected = dict(data)
+        selected['layout'] = state['layout']
+        selected['text'] = state['text']
+        err = watcher.resolve(choice, selected, target)
         if err:
             try:
                 messagebox.showerror(APP_NAME, err)
@@ -990,26 +1231,27 @@ def show_proposal(root, watcher, data, target, anchor, current):
     b1 = tk.Button(row, text='Convertir et coller', command=lambda: choose('convert'),
                    bg=ACCENT, fg=ACCENT_TEXT, activebackground='#9ab8ff',
                    activeforeground=ACCENT_TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=12, pady=6, cursor='hand2',
+                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
                    font=('Segoe UI', 9, 'bold'))
     b1.pack(side='left')
+    state['convert_button'] = b1
     b2 = tk.Button(row, text='Coller tel quel', command=lambda: choose('keep'),
                    bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
                    activeforeground=TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=12, pady=6, cursor='hand2',
+                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
                    font=('Segoe UI', 9))
     b2.pack(side='left', padx=(8, 0))
     b3 = tk.Button(row, text='Annuler', command=lambda: choose('cancel'),
                    bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
                    activeforeground=TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=12, pady=6, cursor='hand2',
+                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
                    font=('Segoe UI', 9))
     b3.pack(side='right')
 
     tk.Label(outer, text='Entrée = convertir · Maj+Entrée = original · '
                          'Échap = annuler', bg=CARD,
              fg=MUTED, font=('Segoe UI', 8), anchor='w').pack(
-        fill='x', pady=(10, 0))
+        fill='x', pady=(6, 0))
 
     win.bind('<Return>', lambda _e: choose('convert'))
     win.bind('<Escape>', lambda _e: choose('cancel'))

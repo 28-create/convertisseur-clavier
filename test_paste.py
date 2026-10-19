@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 import gen_ngrams
 import paste_watch
@@ -147,6 +148,22 @@ def detection_checks(models, fix):
             check('source conservee %s' % ascii(text),
                   r['source_text'] == text)
 
+    # Texte volontairement ambigu : les deux dispositions restent
+    # plausibles. La disposition par defaut doit trancher.
+    for default in ('azerty', 'qwerty'):
+        r = paste_watch.detect_text('zbhrun', models, fix, default)
+        check('detection ambigue utilise %s' % default,
+              bool(r) and r['layout_ambiguous']
+              and r['layout'] == default
+              and r['detected_layout'] == 'qwerty',
+              '' if not r else '%s/%s' % (r['layout'], r['detected_layout']))
+    forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
+    other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)
+    check('conversion imposee AZERTY',
+          forced == '\u05e9\u05dc\u05d5\u05dd', ascii(forced))
+    check('conversion imposee QWERTY differente',
+          other != forced and '/' in other, ascii(other))
+
     keeps = [
         'bonjour', 'bonsoir', 'merci', 'salut', 'hello', 'hello world',
         'bonne nuit', 'il fait beau', 'Mimran', 'Jean', 'Paris', 'the',
@@ -163,6 +180,56 @@ def detection_checks(models, fix):
               paste_watch.detect_text(text, models, fix) is None)
     check('texte trop long ignore',
           paste_watch.detect_text('bonjour ' * 600, models, fix) is None)
+
+
+def settings_checks():
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, 'sous-dossier', 'paste_watch.json')
+        check('reglages absents -> AZERTY',
+              paste_watch.load_settings(path)['default_layout'] == 'azerty')
+        check('ecriture des reglages',
+              paste_watch.save_settings({'default_layout': 'qwerty'}, path))
+        check('lecture du clavier par defaut',
+              paste_watch.load_settings(path)['default_layout'] == 'qwerty')
+        check('fichier temporaire retire',
+              not os.path.exists(path + '.tmp'))
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write('{casse')
+        check('reglages casses -> AZERTY',
+              paste_watch.load_settings(path)['default_layout'] == 'azerty')
+        paste_watch.save_settings({'default_layout': 'dvorak'}, path)
+        check('disposition inconnue -> AZERTY',
+              paste_watch.load_settings(path)['default_layout'] == 'azerty')
+        old = os.environ.get(paste_watch.SETTINGS_ENV)
+        try:
+            os.environ[paste_watch.SETTINGS_ENV] = path
+            check('surcharge du chemin des reglages',
+                  paste_watch.settings_path() == os.path.abspath(path))
+            watcher = paste_watch.Watcher('', '', None)
+            check('guetteur charge le reglage',
+                  watcher.default_layout == 'azerty')
+            check('guetteur enregistre le reglage',
+                  watcher.set_default_layout('qwerty')
+                  and watcher.default_layout == 'qwerty')
+            check('reglage ecrit par le guetteur',
+                  paste_watch.load_settings(path)['default_layout'] == 'qwerty')
+            check('guetteur recharge le reglage',
+                  paste_watch.Watcher('', '', None).default_layout == 'qwerty')
+        finally:
+            if old is None:
+                os.environ.pop(paste_watch.SETTINGS_ENV, None)
+            else:
+                os.environ[paste_watch.SETTINGS_ENV] = old
+
+
+def popup_checks():
+    src = read('paste_watch.py')
+    for token in ('Clavier :', 'Menubutton', 'add_radiobutton',
+                  'Utiliser AZERTY', 'Utiliser QWERTY',
+                  'Défaut si ambigu :', 'Détection ambiguë',
+                  'convert_for_layout', 'set_default_layout',
+                  'layout_ambiguous'):
+        check('popup : %s' % token, token in src)
 
 
 def installer_checks():
@@ -195,10 +262,12 @@ def installer_checks():
           '--paste-watch' in test and 'RunName' in test)
     priv = read('PRIVACY.md').lower()
     check('PRIVACY.md couvre la surveillance',
-          'surveillance avant' in priv and 'guetteur' in priv)
+          'surveillance avant' in priv and 'guetteur' in priv
+          and 'paste_watch.json' in priv)
     page = read('confidentialite.html').lower()
     check('page confidentialite couvre la surveillance',
-          'surveillance avant' in page and 'guetteur' in page)
+          'surveillance avant' in page and 'guetteur' in page
+          and 'paste_watch.json' in page)
 
 
 def main():
@@ -208,6 +277,8 @@ def main():
     models = page_model_checks(html)
     detection_checks(models, fix)
     node_checks(html, models)
+    settings_checks()
+    popup_checks()
     installer_checks()
 
     ok = all(passed for _name, passed, _detail in results)

@@ -139,6 +139,14 @@ clavier, une petite fenêtre propose la conversion avant l'insertion :
 - `Maj+Entrée` ou **Coller tel quel** : colle l'original ;
 - `Échap` ou **Annuler** : ne colle rien (le presse-papiers reste intact).
 
+La fenêtre affiche la disposition détectée dans un petit menu **AZERTY ▾** :
+on peut y choisir **AZERTY** ou **QWERTY**, et l'aperçu comme le texte collé
+suivent immédiatement le choix. Le même menu propose **Défaut si ambigu :
+AZERTY / QWERTY**, utilisé quand le texte est trop court pour distinguer les
+deux dispositions. Ce réglage est mémorisé dans
+`%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json` et se change aussi
+depuis le menu de l'icône de notification.
+
 La proposition disparaît seule au bout de 12 secondes. Les `Ctrl+Maj+V`,
 `Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la surveillance se
 suspend ou se quitte par un clic droit sur son icône dans la zone de

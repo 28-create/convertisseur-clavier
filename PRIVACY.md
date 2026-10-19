@@ -42,11 +42,12 @@ ni identifiant.
 |---|---|
 | Page web | réglages et historique de la session (`localStorage`) |
 | Extension | réglages de mode et de clavier (`chrome.storage.local`) |
-| Application | rien en dehors de vos propres fichiers |
+| Application | réglages du guetteur (`%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json`) |
 
 Ces données ne quittent pas votre machine. Vous les effacez en vidant les
 données du site, en désinstallant l'extension, ou en supprimant
-`%LOCALAPPDATA%\Programs\ConvertisseurClavier`.
+`%LOCALAPPDATA%\Programs\ConvertisseurClavier` et
+`%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json`.
 
 ## Permissions de l'extension
 
@@ -98,7 +99,9 @@ no advertising and no tracker.
   conversion proposal. Nothing is logged or sent; the clipboard is rewritten
   only if you choose "Convert and paste".
 - **Stored on your device**: your settings (`localStorage` in the page,
-  `chrome.storage.local` in the extension). Clearing site data or uninstalling
+  `chrome.storage.local` in the extension, and
+  `%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json` for the watcher).
+  Clearing site data, uninstalling the extension, or deleting those files
   removes them.
 - **Extension permissions**: `contextMenus` (add the right-click entry),
   `clipboardWrite` (copy the result), `storage` (remember your settings) and

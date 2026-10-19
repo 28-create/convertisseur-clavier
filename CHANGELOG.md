@@ -1,5 +1,21 @@
 # Journal des modifications
 
+## v1.12.0 — 19 oct. 2026
+- Page : icône **Réglages** redessinée en engrenage à 6 dents, plus lisible en
+  petit.
+- Fenêtre de proposition `Ctrl+V` affinée : la disposition détectée est un
+  petit menu **AZERTY ▾** qui permet de choisir manuellement AZERTY/QWERTY ;
+  l'aperçu et le collage suivent immédiatement le choix.
+- Le même menu propose **« Défaut si ambigu : AZERTY / QWERTY »** : quand les
+  deux dispositions restent plausibles sur un texte court, le guetteur utilise
+  ce choix par défaut. Le réglage est mémorisé localement et se change aussi
+  depuis le menu de l'icône de notification.
+- Détection des dispositions améliorée : une sortie qui laisse des lettres de
+  l'écriture source ou des symboles de code (`/`, `\`, etc.) est pénalisée,
+  pour éviter de choisir une disposition manifestement fausse.
+- Tests : disposition par défaut, conversion imposée, lecture/écriture des
+  réglages et présence des contrôles dans la fenêtre.
+
 ## v1.11.0 — 19 oct. 2026
 - Nouvelle **surveillance avant `Ctrl+V`** (Windows, 100 % local) : quand le
   texte copié se lit nettement mieux avec l'autre clavier, une fenêtre
