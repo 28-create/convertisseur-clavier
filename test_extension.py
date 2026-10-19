@@ -259,11 +259,12 @@ def main():
     else:
         for (text, _opts, exp), row in zip(cases, got):
             if row.get('err') or row.get('got') != exp:
-                check('conversion %r' % text, False,
-                      '%s (attendu %s)' % (row.get('got') or row.get('err'),
-                                           ascii(exp)))
+                check('conversion %s' % ascii(text), False,
+                      '%s (attendu %s)' % (
+                          ascii(row.get('got') or row.get('err')),
+                          ascii(exp)))
             else:
-                check('conversion %r' % text, True)
+                check('conversion %s' % ascii(text), True)
         check('detection du sens', all(
             row.get('dir') == want for row, want in zip(
                 got, ['toHe', 'toFr', 'toHe', 'toFr', 'toFr', 'toHe', 'toHe', 'toHe'])),
