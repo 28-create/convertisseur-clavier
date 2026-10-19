@@ -13,8 +13,11 @@ $nom = 'Convertisseur Clavier Test'
 $lnkClipNom = 'Convertisseur Clavier Test Presse-papiers'
 $shellName = 'ConvertisseurClavier-Test'
 $shellRoot = 'HKCU:\Software\TestInstallConv-Classes'
+$runPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$runName = 'ConvertisseurClavier-Test'
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
 if (Test-Path $shellRoot) { Remove-Item $shellRoot -Recurse -Force }
+Remove-ItemProperty -Path $runPath -Name $runName -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 $faux9 = Join-Path $tmp 'ConvertisseurClavier-9.9.9-TEST.exe'
 $faux10 = Join-Path $tmp 'ConvertisseurClavier-10.0.0-TEST.exe'
@@ -23,7 +26,7 @@ $faux10 = Join-Path $tmp 'ConvertisseurClavier-10.0.0-TEST.exe'
 Copy-Item "$PSScriptRoot\desinstaller.ps1" (Join-Path $tmp 'desinstaller.ps1')
 Copy-Item "$PSScriptRoot\installer.ps1" (Join-Path $tmp 'installer.ps1')
 
-& (Join-Path $tmp 'installer.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -ShellRoot $shellRoot -ShellName $shellName
+& (Join-Path $tmp 'installer.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -RunName $runName -ShellRoot $shellRoot -ShellName $shellName -SansDemarrage
 $lnk = Join-Path (Join-Path $tmp 'Menu') ($nom + '.lnk')
 if (-not (Test-Path $lnk)) { Write-Host 'ECHEC : .lnk absent'; exit 1 }
 $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
@@ -41,8 +44,13 @@ $ok = $ok -and ($props.DisplayVersion -eq '10.0.0') -and ($props.DisplayName -eq
 $ok = $ok -and (Test-Path (Join-Path $tmp 'App\desinstaller.ps1'))
 Write-Host ('registre=' + $props.DisplayVersion + '/' + $props.DisplayName)
 Write-Host ('desinst-copie=' + (Test-Path (Join-Path $tmp 'App\desinstaller.ps1')))
-# Menu clic droit (ruche de test) : 4 entrees + verbes.
 $exeAttendu = Join-Path $tmp 'App\ConvertisseurClavier.exe'
+# Demarrage automatique de la surveillance (valeur Run HKCU de test).
+$runProps = Get-ItemProperty -Path $runPath -ErrorAction SilentlyContinue
+$runVal = if ($runProps) { $runProps.$runName } else { $null }
+$ok = $ok -and ($runVal -eq ('"' + $exeAttendu + '" --paste-watch'))
+Write-Host ('surveillance=' + $runVal)
+# Menu clic droit (ruche de test) : 4 entrees + verbes.
 $cmda = (Get-ItemProperty -LiteralPath "$shellRoot\*\shell\$shellName\command").'(Default)'
 $cmdt = (Get-ItemProperty -LiteralPath "$shellRoot\SystemFileAssociations\.txt\shell\$shellName.Convertir\command").'(Default)'
 $cmdd = (Get-ItemProperty -LiteralPath "$shellRoot\Directory\shell\$shellName\command").'(Default)'
@@ -54,12 +62,14 @@ $ok = $ok -and ($cmdb -eq ('"' + $exeAttendu + '" "%V"'))
 Write-Host ('clic-droit=' + $cmda + ' | ' + $cmdt)
 Write-Host ('checks-install=' + $ok)
 
-& (Join-Path $tmp 'App\desinstaller.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -ShellRoot $shellRoot -ShellName $shellName
+& (Join-Path $tmp 'App\desinstaller.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -RunName $runName -ShellRoot $shellRoot -ShellName $shellName
 $restes = @()
 if (Test-Path $lnk) { $restes += "lnk:$lnk" }
 if (Test-Path $lnk2) { $restes += "lnk:$lnk2" }
 if (Test-Path (Join-Path $tmp 'App')) { $restes += 'App' }
 if (Test-Path $rk) { $restes += "reg:$rk" }
+$runProps = Get-ItemProperty -Path $runPath -ErrorAction SilentlyContinue
+if ($runProps -and $runProps.$runName) { $restes += "run:$runName" }
 foreach ($k in @(
   "$shellRoot\*\shell\$shellName",
   "$shellRoot\SystemFileAssociations\.txt\shell\$shellName.Convertir",
@@ -70,6 +80,7 @@ foreach ($k in @(
 }
 $ok = $ok -and ($restes.Count -eq 0)
 if (Test-Path $shellRoot) { Remove-Item $shellRoot -Recurse -Force }
+Remove-ItemProperty -Path $runPath -Name $runName -ErrorAction SilentlyContinue
 Remove-Item $tmp -Recurse -Force
 if (-not $ok) { Write-Host ('ECHEC : verification, restes=' + ($restes -join ' | ')); exit 1 }
 Write-Host 'INSTALL-OK'

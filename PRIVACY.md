@@ -1,6 +1,6 @@
 # Politique de confidentialité — Convertisseur Clavier
 
-Dernière mise à jour : 18 octobre 2026
+Dernière mise à jour : 19 octobre 2026
 
 Version en ligne : <https://28-create.github.io/convertisseur-clavier/confidentialite.html>
 
@@ -27,8 +27,13 @@ ni identifiant.
 
 - Les conversions sont calculées **localement** (dans la page, dans
   l'application ou dans l'extension), à partir de tables embarquées.
-- Le **presse-papiers** n'est lu et écrit que sur une action explicite de votre
-  part : `Ctrl+Alt+H` dans l'application, ou le menu clic droit de l'extension.
+- Le **presse-papiers** est lu et écrit sur une action explicite de votre part :
+  `Ctrl+Alt+H` dans l'application, ou le menu clic droit de l'extension.
+- Si vous activez la **surveillance avant `Ctrl+V`** (option du Setup), le
+  guetteur lit le texte du presse-papiers **localement**, au moment où il
+  change et lorsque vous appuyez sur `Ctrl+V`, uniquement pour calculer une
+  proposition de conversion. Rien n'est journalisé ni envoyé ; le
+  presse-papiers n'est réécrit que si vous choisissez « Convertir et coller ».
 - Aucun texte converti n'est journalisé, envoyé, ni conservé après l'opération.
 
 ## Ce qui est stocké sur votre appareil
@@ -79,15 +84,19 @@ Toute évolution de cette politique sera publiée dans ce fichier et sur la page
 
 ## Privacy policy (English)
 
-Last updated: 18 October 2026
+Last updated: 19 October 2026
 
 The Convertisseur Clavier (web page, Windows application, browser extension)
 collects **no data at all**. Conversions are computed locally from embedded
 tables; nothing is sent anywhere. There is no server, no account, no analytics,
 no advertising and no tracker.
 
-- **Clipboard**: read and written only when you explicitly trigger a conversion
-  (`Ctrl+Alt+H` in the application, or the extension's right-click menu).
+- **Clipboard**: read and written when you explicitly trigger a conversion
+  (`Ctrl+Alt+H` in the application, or the extension's right-click menu). If
+  you enable the optional **Ctrl+V watcher**, it reads the clipboard locally
+  when the content changes and when you press `Ctrl+V`, only to compute a
+  conversion proposal. Nothing is logged or sent; the clipboard is rewritten
+  only if you choose "Convert and paste".
 - **Stored on your device**: your settings (`localStorage` in the page,
   `chrome.storage.local` in the extension). Clearing site data or uninstalling
   removes them.

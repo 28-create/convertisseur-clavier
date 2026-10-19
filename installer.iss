@@ -2,7 +2,7 @@
 ; Usage : python build_setup.py   (compile dist\Setup_ConvertisseurClavier-X.Y.Z.exe)
 ; La version ci-dessous est GENEREE depuis convertisseur.html :
 ;   python gen_version.py   (ne pas la modifier a la main).
-#define MyAppVersion "1.10.0"
+#define MyAppVersion "1.11.0"
 #define MyAppExe "ConvertisseurClavier-" + MyAppVersion + ".exe"
 
 [Setup]
@@ -32,6 +32,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "contextmenu"; Description: "Ajouter au menu clic droit de l'Explorateur (ouvrir / convertir)"; GroupDescription: "Intégration Windows :"; Flags: checkedonce
+Name: "surveillance"; Description: "Surveiller le presse-papiers au démarrage (propose la conversion avant Ctrl+V)"; GroupDescription: "Intégration Windows :"; Flags: checkedonce
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
@@ -60,6 +61,25 @@ Root: HKCU; Subkey: "Software\Classes\Directory\shell\ConvertisseurClavier\comma
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier"; ValueType: string; ValueName: "MUIVerb"; ValueData: "Ouvrir Convertisseur Clavier ici"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\ConvertisseurClavier.exe,0"; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" ""%V"""; Tasks: contextmenu
+; Surveillance du presse-papiers au demarrage de session (option).
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ConvertisseurClavier"; ValueData: """{app}\ConvertisseurClavier.exe"" --paste-watch"; Flags: uninsdeletevalue; Tasks: surveillance
 
 [Run]
 Filename: "{app}\ConvertisseurClavier.exe"; Description: "{cm:LaunchProgram,Convertisseur Clavier}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\ConvertisseurClavier.exe"; Parameters: "--paste-watch"; Description: "Lancer la surveillance du presse-papiers"; Flags: nowait postinstall skipifsilent; Tasks: surveillance
+
+[UninstallRun]
+; Arrete le guetteur avant de supprimer l'exe (sinon le fichier reste verrouille).
+Filename: "{app}\ConvertisseurClavier.exe"; Parameters: "--paste-stop"; Flags: runhidden waituntilterminated; RunOnceId: "StopSurveillance"
+
+[Code]
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Result := '';
+  // Une mise a jour doit pouvoir remplacer l'exe : on arrete l'ancien guetteur.
+  if FileExists(ExpandConstant('{app}\ConvertisseurClavier.exe')) then
+    Exec(ExpandConstant('{app}\ConvertisseurClavier.exe'),
+         '--paste-stop', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;

@@ -53,9 +53,14 @@ def main(argv=None):
            '--distpath', outdir,
            '--add-data', HTML + os.pathsep + '.',
            '--add-data', FIX + os.pathsep + '.',
+           '--hidden-import', 'paste_watch',
+           '--hidden-import', 'win32_clip',
            '--name', name]
     if os.path.exists(ICON):
-        cmd += ['--icon', ICON]
+        # L'icone sert a la fois de ressource de l'exe et d'image de la
+        # zone de notification (chargee depuis le bundle au demarrage).
+        cmd += ['--icon', ICON,
+                '--add-data', ICON + os.pathsep + '.']
     cmd.append(APP)
     print('+ ' + ' '.join(cmd))
     r = subprocess.run(cmd)

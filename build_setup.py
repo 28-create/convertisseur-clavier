@@ -4,7 +4,8 @@
 Usage :
   python build_setup.py          (compile avec ISCC.exe, Windows uniquement)
   python build_setup.py --check  (verifie la coherence sans compiler :
-                                  version, sections, menu contextuel)
+                                  version, sections, menu contextuel,
+                                  surveillance au demarrage)
 
 Etapes : gen_version.py (synchronise installer.iss) -> ISCC installer.iss.
 Le .exe versionne doit exister dans dist\\ (voir build_exe.py).
@@ -29,6 +30,11 @@ REQUIRED_TOKENS = [
     'Software\\Classes\\Directory\\Background\\shell\\ConvertisseurClavier',
     '--convert-clipboard',
     '--convert-file',
+    '--paste-watch',
+    '--paste-stop',
+    'Software\\Microsoft\\Windows\\CurrentVersion\\Run',
+    'Tasks: surveillance',
+    '[UninstallRun]',
     'HotKey',
 ]
 
@@ -80,7 +86,8 @@ def check():
         for p in problems:
             print('MANQUE : %s' % p)
         return 1
-    print('OK : installer.iss coherent (version %s, menu contextuel)' % ver)
+    print('OK : installer.iss coherent (version %s, menu contextuel, '
+          'surveillance)' % ver)
     return 0
 
 

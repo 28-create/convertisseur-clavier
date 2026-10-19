@@ -37,7 +37,7 @@
   <img src="extension/icons/icon128.png" alt="" width="48" height="48">
   <h1>Politique de confidentialité</h1>
   <p class="sub">Convertisseur Clavier — Latin ⇄ Hébreu · dernière mise à jour :
-    <time datetime="2026-10-18">18 octobre 2026</time></p>
+    <time datetime="2026-10-19">19 octobre 2026</time></p>
 </header>
 
 <p class="lead">Aucune donnée ne sort de votre appareil : ni serveur, ni compte,
@@ -56,9 +56,15 @@ adresse e-mail, ni identifiant.</p>
 <ul>
   <li>Les conversions sont calculées <strong>localement</strong>, à partir de
     tables embarquées.</li>
-  <li>Le <strong>presse-papiers</strong> n'est lu et écrit que sur une action
+  <li>Le <strong>presse-papiers</strong> est lu et écrit sur une action
     explicite de votre part : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> dans
     l'application, ou le menu clic droit de l'extension.</li>
+  <li>Si vous activez la <strong>surveillance avant Ctrl+V</strong> (option du
+    Setup), le guetteur lit le presse-papiers <strong>localement</strong>, quand
+    son contenu change et lorsque vous appuyez sur <kbd>Ctrl</kbd>+<kbd>V</kbd>,
+    uniquement pour calculer une proposition. Rien n'est journalisé ni envoyé ;
+    le presse-papiers n'est réécrit que si vous choisissez
+    « Convertir et coller ».</li>
   <li>Aucun texte converti n'est journalisé, envoyé, ni conservé.</li>
 </ul>
 
@@ -106,7 +112,7 @@ corriger, exporter ou supprimer. Pour toute question, ouvrez une
 
 <section lang="en">
 <h1>Privacy policy</h1>
-<p class="sub">Last updated: 18 October 2026</p>
+<p class="sub">Last updated: 19 October 2026</p>
 
 <p class="lead">Nothing ever leaves your device: no server, no account, no
 analytics, no advertising, no tracker.</p>
@@ -116,9 +122,13 @@ for Chrome / Edge) collects <strong>no data at all</strong>. Conversions run
 locally from embedded tables.</p>
 
 <ul>
-  <li><strong>Clipboard</strong>: read and written only when you explicitly
-    trigger a conversion (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> in the
-    application, or the extension's right-click menu).</li>
+  <li><strong>Clipboard</strong>: read and written when you explicitly trigger
+    a conversion (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> in the
+    application, or the extension's right-click menu). If you enable the
+    optional <strong>Ctrl+V watcher</strong>, it reads the clipboard locally
+    when the content changes and when you press <kbd>Ctrl</kbd>+<kbd>V</kbd>,
+    only to compute a conversion proposal. Nothing is logged or sent; the
+    clipboard is rewritten only if you choose "Convert and paste".</li>
   <li><strong>Stored on your device</strong>: your settings
     (<code>localStorage</code> in the page, <code>chrome.storage.local</code> in
     the extension). Clearing site data or uninstalling removes them.</li>

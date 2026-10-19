@@ -7,11 +7,24 @@ param(
   [string]$MenuDir = (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),
   [string]$RegName = 'ConvertisseurClavier',
   [string]$Nom = 'Convertisseur Clavier',
+  [string]$RunName = 'ConvertisseurClavier',
   [string]$ShellRoot = '',
   [string]$ShellName = 'ConvertisseurClavier',
   [string]$LnkPressePapiers = 'Convertisseur Clavier - Presse-papiers'
 )
 $ErrorActionPreference = 'Stop'
+
+# Arrete le guetteur avant de supprimer son exe (fichier verrouille sinon).
+$exeInst = Join-Path $AppDir 'ConvertisseurClavier.exe'
+if (Test-Path $exeInst) {
+  try {
+    Start-Process -FilePath $exeInst -ArgumentList '--paste-stop' -WindowStyle Hidden -Wait | Out-Null
+  } catch {
+    # Ancienne version sans --paste-stop : on continue.
+  }
+}
+# Retire le demarrage automatique de la surveillance.
+Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name $RunName -ErrorAction SilentlyContinue
 
 $lnk = Join-Path $MenuDir ($Nom + '.lnk')
 if (Test-Path $lnk) { Remove-Item $lnk -Force }

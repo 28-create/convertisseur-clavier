@@ -26,8 +26,11 @@ ou sur votre machine Windows.
   clair / sombre / automatique.
 - Réglages persistants en stockage local — rien ne quitte l'appareil.
 - Raccourci presse-papiers Windows : `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`.
-- Setup Windows (assistant, sans admin) : menu Démarrer, touches globales
-  et menu clic droit de l'Explorateur.
+- **Surveillance avant `Ctrl+V`** : si le texte collé se lit nettement mieux
+  avec l'autre clavier, une proposition apparaît avant l'insertion
+  (`Entrée` = convertir, `Maj+Entrée` = coller l'original, `Échap` = annuler).
+- Setup Windows (assistant, sans admin) : menu Démarrer, touches globales,
+  menu clic droit de l'Explorateur et démarrage automatique de la surveillance.
 - Extension navigateur Chrome/Edge : clic droit sur une sélection,
   `Ctrl+Maj+H`, popup de conversion (section 4).
 - Jeux de tests automatisés (mappings, intégrité de la page, extension).
@@ -43,13 +46,16 @@ ou sur votre machine Windows.
 | `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique, case menu clic droit). |
 | `build_setup.py` | Compile le Setup (`--check` seul en CI, sans Inno). |
 | `build_extension.py` | Construit `dist\ConvertisseurClavier-extension-X.Y.Z.zip` (paquet à déposer sur les stores). |
-| `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller). |
+| `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller), verbes CLI et surveillance. |
+| `paste_watch.py` | Guetteur `Ctrl+V` : détection, fenêtre de proposition, icône de notification, crochet clavier Win32. |
+| `win32_clip.py` | Presse-papiers Unicode Win32 partagé par `app.py` et `paste_watch.py`. |
 | `extension/` | Extension Chrome/Edge (Manifest V3) : clic droit, `Ctrl+Maj+H`, popup. |
 | `PRIVACY.md` / `confidentialite.html` | Politique de confidentialité (page publiée par GitHub Pages). |
 | `gen_maps.py` | Régénère les tables du `.py` **et le cœur de l'extension** depuis le HTML. |
 | `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
+| `test_paste.py` | Test de la surveillance : détection, modèle hébreu, parité page, démarrage auto. |
 | `test_extension.py` | Test de l'extension : manifeste, icônes, CSP, câblage du clic droit, conversions. |
 | `test_store.py` | Test du paquet store : manifeste et ses limites, textes de fiche, zip reproductible. |
 | `store/` | Textes de la fiche (fr/en) et justifications de permissions, prêts à coller. |
@@ -124,6 +130,20 @@ convertit directement le presse-papiers, sans fenêtre ni Python :
 `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`. C'est le moyen universel pour du
 texte saisi dans Word, un navigateur, la barre de recherche Windows…
 
+La **surveillance du presse-papiers** (option cochée par défaut dans le
+Setup) fait encore plus court : copiez normalement, puis appuyez sur
+`Ctrl+V`. Si le texte copié est manifestement tapé avec le mauvais
+clavier, une petite fenêtre propose la conversion avant l'insertion :
+
+- `Entrée` ou **Convertir et coller** : convertit puis colle ;
+- `Maj+Entrée` ou **Coller tel quel** : colle l'original ;
+- `Échap` ou **Annuler** : ne colle rien (le presse-papiers reste intact).
+
+La proposition disparaît seule au bout de 12 secondes. Les `Ctrl+Maj+V`,
+`Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la surveillance se
+suspend ou se quitte par un clic droit sur son icône dans la zone de
+notification (ou `--paste-stop`).
+
 ## 3. Application Windows (.exe + Setup)
 
 `ConvertisseurClavier.exe` (onglet *Releases* GitHub) : la même page dans
@@ -138,10 +158,12 @@ touche `Ctrl+Alt+H`, sans Python installé.
 1. Téléchargez `Setup_ConvertisseurClavier-X.Y.Z.exe` depuis l'onglet
    *Releases*, double-cliquez, Suivant/Suivant (aucun droit admin requis).
 2. L'assistant installe : menu Démarrer, touche `Ctrl+Alt+K` (ouvrir
-   l'appli), touche `Ctrl+Alt+H` (convertir le presse-papiers), et —
-   case cochée par défaut — le menu clic droit de l'Explorateur.
+   l'appli), touche `Ctrl+Alt+H` (convertir le presse-papiers), — case
+   cochée par défaut — le menu clic droit de l'Explorateur, et le
+   démarrage automatique de la surveillance `Ctrl+V` (décochez la case
+   *Surveiller le presse-papiers au démarrage* pour l'éviter).
 3. Désinstallation : Paramètres Windows → Applications (ménage complet,
-   menu clic droit inclus).
+   menu clic droit et démarrage automatique inclus).
 
 ### Menu clic droit (Explorateur Windows)
 
@@ -163,6 +185,26 @@ entrée. Le flux universel (installé par le Setup et `installer.ps1`) :
 1. Sélectionnez le texte, `Ctrl+C`
 2. `Ctrl+Alt+H` (l'exe convertit le presse-papiers, sans fenêtre ni Python)
 3. `Ctrl+V`
+
+### Surveillance avant `Ctrl+V` (option du Setup)
+
+La surveillance est un petit processus dans la zone de notification
+(`--paste-watch`), lancé au démarrage de session par une valeur
+`HKCU\...\Run` (aucun droit admin). Elle lit le presse-papiers en local et
+installe un crochet clavier bas niveau qui n'intercepte que le `Ctrl+V`
+simple ; tout le reste passe normalement. Le texte n'est jamais envoyé
+sur le réseau, et le presse-papiers n'est modifié qu'après un choix
+explicite.
+
+En script, `installer.ps1` l'active par défaut (`-SansSurveillance` pour
+ne pas l'installer, `-SansDemarrage` pour l'installer sans la lancer).
+`desinstaller.ps1` arrête le guetteur et retire la valeur `Run`.
+L'arrêt manuel se fait par `ConvertisseurClavier.exe --paste-stop`.
+
+> Un crochet clavier bas niveau peut attirer les faux positifs de
+> certains antivirus. Si la surveillance est bloquée, ajoutez une
+> exception pour `ConvertisseurClavier.exe` (voir aussi la note
+> antivirus plus bas).
 
 ### Installation par script (sans assistant)
 
@@ -203,7 +245,9 @@ cohérence (`installer.iss` : version, menu clic droit).
 > dossier dans l'antivirus, restaurez le fichier, puis relancez le build
 > ou l'application. Le `Setup.exe` peut lui aussi être freiné : ajoutez
 > une exception pour le fichier d'installation et pour
-> `%LOCALAPPDATA%\Programs\ConvertisseurClavier`.
+> `%LOCALAPPDATA%\Programs\ConvertisseurClavier`. La surveillance
+> (`--paste-watch`) installe un crochet clavier local : si elle est
+> bloquée, excluez aussi `ConvertisseurClavier.exe`.
 
 ## 4. Extension navigateur (Chrome / Edge)
 
@@ -266,6 +310,8 @@ Après toute modification des mappings dans le HTML :
 ```sh
 python gen_maps.py
 python test_maps.py
+python test_app.py
+python test_paste.py
 python test_extension.py
 python test_store.py
 python test_page.py
@@ -278,7 +324,10 @@ vérifie la réversibilité exacte, rejoue des cas connus
 1200 textes aléatoires. Exit `0` = synchronisé, `1` = dérive.
 `test_extension.py` vérifie en plus le manifeste, les icônes, l'absence de
 code distant ou inline, la syntaxe JS, le câblage du clic droit et des
-conversions réelles.
+conversions réelles. `test_paste.py` couvre la détection prudente
+(`qkuo`/`akuo`/`נםמחםור`, faux positifs), le bloc de modèle hébreu, la
+parité des scores avec la page et la présence du démarrage automatique
+dans les deux installateurs.
 La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
 3.14) à chaque push.
 
@@ -286,7 +335,9 @@ La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
 vérifiés par SHA-256) qui alimentent la suggestion de lecture :
 `python gen_ngrams.py` (téléchargement, ou `--corpus-dir` pour réutiliser
 des fichiers locaux). Ajouter une langue de détection = une entrée dans
-`LANGS`, puis relancer.
+`LANGS`, puis relancer. Pour le guetteur, `python gen_ngrams.py --hebrew`
+régénère le modèle hébreu de `paste_watch.py` (même source Gutenberg
+épinglée, bloc généré à ne pas éditer à la main).
 
 ## Version et historique
 

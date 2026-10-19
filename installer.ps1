@@ -3,7 +3,11 @@
 # de l'Explorateur (option), entree de desinstallation.
 # Usage : powershell -ExecutionPolicy Bypass -File installer.ps1
 #   [-Exe chemin-de-l-exe] [-Raccourci 'CTRL+ALT+K'] [-SansMenuContextuel]
+#   [-SansSurveillance] [-SansDemarrage]
 # L'exe est cherche a cote du script (ConvertisseurClavier-*.exe).
+# La surveillance du presse-papiers demarre avec Windows (valeur Run HKCU) ;
+# -SansSurveillance la desactive, -SansDemarrage l'installe sans la lancer
+# (utilise par le test en bac a sable).
 # Le menu clic droit (HKCU, sans admin) ajoute :
 #   fichiers *  -> "Ouvrir avec Convertisseur Clavier"
 #   fichiers .txt -> "Convertir avec Convertisseur Clavier" (--convert-file)
@@ -18,7 +22,10 @@ param(
   [string]$Nom = 'Convertisseur Clavier',
   [string]$Raccourci = 'CTRL+ALT+K',
   [string]$Exe = '',
+  [string]$RunName = 'ConvertisseurClavier',
   [switch]$SansMenuContextuel,
+  [switch]$SansSurveillance,
+  [switch]$SansDemarrage,
   [string]$ShellRoot = '',
   [string]$ShellName = 'ConvertisseurClavier',
   [string]$LnkPressePapiers = 'Convertisseur Clavier - Presse-papiers',
@@ -50,6 +57,14 @@ if (-not $ver) {
 New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
 New-Item -ItemType Directory -Force -Path $MenuDir | Out-Null
 $exeInst = Join-Path $AppDir 'ConvertisseurClavier.exe'
+# Mise a jour : l'ancien guetteur verrouille l'exe, on l'arrete avant la copie.
+if (Test-Path $exeInst) {
+  try {
+    Start-Process -FilePath $exeInst -ArgumentList '--paste-stop' -WindowStyle Hidden -Wait | Out-Null
+  } catch {
+    # Ancienne version sans --paste-stop (ou exe de test) : on continue.
+  }
+}
 Copy-Item $Exe $exeInst -Force
 $desinstSrc = Join-Path $PSScriptRoot 'desinstaller.ps1'
 if (Test-Path $desinstSrc) { Copy-Item $desinstSrc $AppDir -Force }
@@ -86,6 +101,18 @@ $uninst = 'powershell -ExecutionPolicy Bypass -File "' + (Join-Path $AppDir 'des
 New-ItemProperty -Path $reg -Name 'UninstallString' -Value $uninst -PropertyType String -Force | Out-Null
 New-ItemProperty -Path $reg -Name 'NoModify' -Value 1 -PropertyType DWord -Force | Out-Null
 New-ItemProperty -Path $reg -Name 'NoRepair' -Value 1 -PropertyType DWord -Force | Out-Null
+
+# Surveillance du presse-papiers au demarrage de session (HKCU, sans admin).
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+if (-not $SansSurveillance) {
+  if (-not (Test-Path $runKey)) { New-Item -Path $runKey -Force | Out-Null }
+  $runVal = '"' + $exeInst + '" --paste-watch'
+  New-ItemProperty -Path $runKey -Name $RunName -Value $runVal -PropertyType String -Force | Out-Null
+  Write-Host "Surveillance : demarrage automatique ($RunName)"
+} else {
+  Remove-ItemProperty -Path $runKey -Name $RunName -ErrorAction SilentlyContinue
+  Write-Host 'Surveillance : desactivee (-SansSurveillance)'
+}
 
 if (-not $SansMenuContextuel) {
   $classes = if ($ShellRoot) { $ShellRoot } else { 'HKCU:\Software\Classes' }
@@ -126,3 +153,12 @@ if (-not $SansMenuContextuel) {
 Write-Host "Installe : $Nom $ver"
 Write-Host "Menu Demarrer : $lnk ($Raccourci)"
 Write-Host "Presse-papiers : $lnkClip ($RaccourciPressePapiers)"
+
+if (-not $SansSurveillance -and -not $SansDemarrage) {
+  try {
+    Start-Process -FilePath $exeInst -ArgumentList '--paste-watch' -WindowStyle Hidden | Out-Null
+    Write-Host 'Surveillance : demarree'
+  } catch {
+    Write-Host ('Surveillance : demarrage impossible : ' + $_.Exception.Message)
+  }
+}

@@ -1,5 +1,26 @@
 # Journal des modifications
 
+## v1.11.0 — 19 oct. 2026
+- Nouvelle **surveillance avant `Ctrl+V`** (Windows, 100 % local) : quand le
+  texte copié se lit nettement mieux avec l'autre clavier, une fenêtre
+  propose la conversion avant l'insertion. `Entrée` convertit et colle,
+  `Maj+Entrée` colle l'original, `Échap` annule ; fermeture automatique
+  après 12 secondes.
+- Détection prudente dans les deux sens (latin → hébreu et hébreu → latin),
+  AZERTY et QWERTY, avec marge de confiance ; textes courts, mixtes, URL,
+  chemins et code ne déclenchent rien.
+- Icône dans la zone de notification : suspendre/reprendre, ouvrir
+  l'application, quitter ; `--paste-watch` / `--paste-stop` pour le piloter.
+- Démarrage automatique avec Windows (valeur `Run` HKCU) dans le Setup et
+  `installer.ps1` ; `desinstaller.ps1` et l'UninstallRun arrêtent le guetteur
+  avant de supprimer l'exe.
+- Modèle de bigrammes hébreu généré depuis un texte Gutenberg du domaine
+  public (`python gen_ngrams.py --hebrew`), séparé des modèles latins de la
+  page.
+- Nouveau `win32_clip.py` (presse-papiers Unicode Win32 partagé) et
+  `test_paste.py` (détection, modèle, parité page, démarrage automatique),
+  ajouté à la CI. L'exe embarque `app.ico` pour la zone de notification.
+
 ## v1.10.0 — 18 oct. 2026
 - Nouvelle extension navigateur (Chrome/Edge, Manifest V3) dans `extension/` :
   clic droit sur une sélection → conversion dans le champ actif (input,

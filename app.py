@@ -13,6 +13,9 @@ Verbes pour le menu contextuel et les touches globales :
                                touche globale, Ctrl+V)
   app.py --convert-file f.txt  convertit un fichier texte vers
                                f.converti.txt, sans fenetre
+  app.py --paste-watch         surveille le presse-papiers et propose la
+                               conversion avant Ctrl+V (zone de notification)
+  app.py --paste-stop          arrete la surveillance en cours
 
 La logique de conversion vient de fix-presse-papiers.py (lui-meme
 genere depuis convertisseur.html) : aucune table dupliquee ici.
@@ -20,6 +23,8 @@ genere depuis convertisseur.html) : aucune table dupliquee ici.
 import argparse
 import os
 import sys
+
+from win32_clip import win32_clip as _win32_clip
 
 APP_TITLE = 'Convertisseur Clavier Latin ⇄ Hébreu'
 HTML_NAME = 'convertisseur.html'
@@ -113,84 +118,6 @@ def show_msg(text, error=False):
         print(text)
     except UnicodeEncodeError:
         print(text.encode('ascii', 'backslashreplace').decode('ascii'))
-
-
-def _win32_clip():
-    # Acces presse-papiers via l'API Win32 (ctypes), sans tkinter :
-    # fiable dans l'exe --noconsole, avec reessais si une autre appli
-    # verrouille le presse-papiers. Rend (get, set).
-    import ctypes
-    import time
-    u32 = ctypes.windll.user32
-    k32 = ctypes.windll.kernel32
-    CF_UNICODETEXT = 13
-    GHND = 0x0042
-    # Prototypes : sans restype c_void_p, les handles 64 bits seraient
-    # tronques en int 32 bits (access violation a la dereference).
-    u32.OpenClipboard.argtypes = [ctypes.c_void_p]
-    u32.CloseClipboard.argtypes = []
-    u32.EmptyClipboard.argtypes = []
-    u32.GetClipboardData.restype = ctypes.c_void_p
-    u32.GetClipboardData.argtypes = [ctypes.c_uint]
-    u32.SetClipboardData.restype = ctypes.c_void_p
-    u32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
-    k32.GlobalAlloc.restype = ctypes.c_void_p
-    k32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
-    k32.GlobalLock.restype = ctypes.c_void_p
-    k32.GlobalLock.argtypes = [ctypes.c_void_p]
-    k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
-    k32.GlobalFree.argtypes = [ctypes.c_void_p]
-
-    def _open():
-        for _i in range(10):
-            if u32.OpenClipboard(None):
-                return True
-            time.sleep(0.05)
-        return False
-
-    def get():
-        if not _open():
-            raise OSError('ouverture impossible (presse-papiers verrouille)')
-        try:
-            h = u32.GetClipboardData(CF_UNICODETEXT)
-            if not h:
-                return ''
-            p = k32.GlobalLock(h)
-            if not p:
-                return ''
-            try:
-                return ctypes.wstring_at(p)
-            finally:
-                k32.GlobalUnlock(h)
-        finally:
-            u32.CloseClipboard()
-
-    def set_text(text):
-        buf = ctypes.create_unicode_buffer(text)
-        size = ctypes.sizeof(buf)
-        if not _open():
-            raise OSError('ouverture impossible (presse-papiers verrouille)')
-        try:
-            u32.EmptyClipboard()
-            h = k32.GlobalAlloc(GHND, size)
-            if not h:
-                raise OSError('allocation impossible')
-            p = k32.GlobalLock(h)
-            if not p:
-                k32.GlobalFree(h)
-                raise OSError('verrouillage impossible')
-            try:
-                ctypes.memmove(p, buf, size)
-            finally:
-                k32.GlobalUnlock(h)
-            # Le systeme devient proprietaire du bloc en cas de succes.
-            if not u32.SetClipboardData(CF_UNICODETEXT, h):
-                k32.GlobalFree(h)
-                raise OSError('ecriture refusee')
-        finally:
-            u32.CloseClipboard()
-
-    return get, set_text
 
 
 def cmd_clipboard(mod, args):
@@ -306,11 +233,24 @@ def build_parser():
                     help='hebrew = francais/anglais<->hebreu (defaut), '
                          'latin = QWERTY<->AZERTY')
     ap.add_argument('--latin-dir', default='toAz', choices=['toAz', 'toQw'])
+    ap.add_argument('--paste-watch', action='store_true',
+                    help='surveille le presse-papiers et propose la '
+                         'conversion avant Ctrl+V (icone de notification)')
+    ap.add_argument('--paste-stop', action='store_true',
+                    help='arrete la surveillance du presse-papiers')
     return ap
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    if args.paste_stop:
+        import paste_watch
+        return paste_watch.run_stop()
+    if args.paste_watch:
+        import paste_watch
+        return paste_watch.run(page_path(),
+                               os.path.join(bundle_dir(), 'app.ico'),
+                               load_fix())
     if args.convert_clipboard:
         return cmd_clipboard(load_fix(), args)
     if args.convert_file:

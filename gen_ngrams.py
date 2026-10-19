@@ -4,10 +4,12 @@ convertisseur.html (bloc <models:generated>).
 
 Usage :
   python gen_ngrams.py [--corpus-dir DOSSIER]
+  python gen_ngrams.py --hebrew [--corpus-dir DOSSIER]
 
 Ajouter une langue de detection : une entree dans LANGS (code + sources
 verifiees par SHA-256), puis relancer. Rien d'autre a toucher : le score,
-l'UI et les tests iterent sur les donnees.
+l'UI et les tests iterent sur les donnees. --hebrew regenere le modele
+hebreu de paste_watch.py (guetteur Ctrl+V), separe des modeles latins.
 
 Sources : textes du domaine public (Project Gutenberg), telecharges et
 verifies ; --corpus-dir reutilise des fichiers deja presents.
@@ -30,6 +32,18 @@ ALPHA = "abcdefghijklmnopqrstuvwxyz' .,:;!?" + "àâäçéèêëîïôöùûü"
 SCALE, OFFSET = 8, 16
 BEGIN = '// <models:generated>'
 END = '// </models:generated>'
+# Modele hebreu du guetteur de presse-papiers (paste_watch.py) : alphabet
+# separe, donc les modeles latin de la page restent inchanges.
+HE_ALPHA = ('\u05d0\u05d1\u05d2\u05d3\u05d4\u05d5\u05d6\u05d7\u05d8\u05d9'
+            '\u05db\u05dc\u05de\u05e0\u05e1\u05e2\u05e4\u05e6\u05e7\u05e8'
+            '\u05e9\u05ea\u05da\u05dd\u05df\u05e3\u05e5' + " '.,:;!?")
+HE_SCALE, HE_OFFSET = 8, 16
+HE_FILE = 'paste_watch.py'
+HE_BEGIN = '# <he_model:generated>'
+HE_END = '# </he_model:generated>'
+HE_SOURCES = [('pg5139.txt',
+               'https://www.gutenberg.org/cache/epub/5139/pg5139.txt',
+               'd105307feb42da018e2b6713247c3256f7ac4273a2f269e0f0fc1fd69bb7d903')]
 LANGS = [
     ('fr', [('pg17489.txt',
              'https://www.gutenberg.org/cache/epub/17489/pg17489.txt',
@@ -77,25 +91,41 @@ def fetch_source(name, url, sha, corpus_dir):
     return data.decode('utf-8', 'replace')
 
 
-def build_model(texts):
-    """Table dense quantifiee : ALPHA x ALPHA octets."""
+def build_matrix(texts, alpha, norm, scale=SCALE, offset=OFFSET):
+    """Table dense quantifiee : len(alpha) x len(alpha) octets."""
     counts, tot = {}, {}
     for raw in texts:
-        txt = normalize(strip_gutenberg(raw))
+        txt = norm(strip_gutenberg(raw))
         prev = None
         for ch in txt:
             if prev is not None:
                 counts[(prev, ch)] = counts.get((prev, ch), 0) + 1
                 tot[prev] = tot.get(prev, 0) + 1
             prev = ch
-    V = len(ALPHA) ** 2
+    V = len(alpha) ** 2
     out = bytearray()
-    for c1 in ALPHA:
+    for c1 in alpha:
         t = tot.get(c1, 0)
-        for c2 in ALPHA:
+        for c2 in alpha:
             logp = math.log((counts.get((c1, c2), 0) + 0.5) / (t + 0.5 * V))
-            out.append(max(0, min(255, round((logp + OFFSET) * SCALE))))
+            out.append(max(0, min(255, round((logp + offset) * scale))))
     return bytes(out)
+
+
+def build_model(texts):
+    return build_matrix(texts, ALPHA, normalize, SCALE, OFFSET)
+
+
+def normalize_he(s):
+    # Meme principe que normalize() : tout ce qui n'est pas dans l'alphabet
+    # devient une espace (niqqud, cantillation, chiffres, latin...).
+    s = s.lower().replace('\u05f3', "'").replace('\u05f4', '"')
+    return re.sub(r'\s+', ' ',
+                  ''.join(ch if ch in HE_ALPHA else ' ' for ch in s)).strip()
+
+
+def build_he_model(texts):
+    return build_matrix(texts, HE_ALPHA, normalize_he, HE_SCALE, HE_OFFSET)
 
 
 def emit_block(models):
@@ -116,11 +146,52 @@ def emit_block(models):
     return '\n'.join(lines)
 
 
+def _py_unicode(s):
+    # Litteral Python sur, en ASCII (le bloc genere reste lisible en cp1252).
+    return ''.join(c if ord(c) < 128 else '\\u%04x' % ord(c) for c in s)
+
+
+def emit_he_block(model):
+    lines = [HE_BEGIN]
+    lines.append('# Modele de bigrammes hebreu genere par : python gen_ngrams.py --hebrew')
+    lines.append('# Source (domaine public) :')
+    for name, url, sha in HE_SOURCES:
+        lines.append('#   %s <- %s (sha256 %s)' % (name, url, sha[:16]))
+    lines.append('HE_ALPHA = "%s"' % _py_unicode(HE_ALPHA))
+    lines.append('HE_SCALE = %d' % HE_SCALE)
+    lines.append('HE_OFFSET = %d' % HE_OFFSET)
+    lines.append("HE_B64 = '%s'" % base64.b64encode(model).decode('ascii'))
+    lines.append(HE_END)
+    return '\n'.join(lines)
+
+
+def sync_he_block(block):
+    with open(HE_FILE, encoding='utf-8') as f:
+        text = f.read()
+    m = re.search('^%s$.*?^%s$' % (re.escape(HE_BEGIN), re.escape(HE_END)),
+                  text, re.S | re.M)
+    if not m:
+        raise SystemExit('marqueurs %s / %s introuvables dans %s'
+                         % (HE_BEGIN, HE_END, HE_FILE))
+    text = text[:m.start()] + block + text[m.end():]
+    with open(HE_FILE, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--corpus-dir', default='',
                     help='dossier contenant les fichiers sources (sinon telechargement)')
+    ap.add_argument('--hebrew', action='store_true',
+                    help='genere le modele hebreu de paste_watch.py')
     args = ap.parse_args(argv)
+    if args.hebrew:
+        texts = [fetch_source(n, u, s, args.corpus_dir)
+                 for n, u, s in HE_SOURCES]
+        model = build_he_model(texts)
+        sync_he_block(emit_he_block(model))
+        print('OK, modele hebreu regenere (%d valeurs)' % len(model))
+        return 0
     models = {}
     for code, sources in LANGS:
         texts = [fetch_source(n, u, s, args.corpus_dir) for n, u, s in sources]

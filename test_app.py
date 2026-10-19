@@ -82,6 +82,10 @@ def main():
     c = ap.parse_args(['--convert-clipboard', '--direction', 'toFr'])
     check('verbe --convert-clipboard',
           c.convert_clipboard and c.direction == 'toFr')
+    d = ap.parse_args(['--paste-watch'])
+    check('verbe --paste-watch', d.paste_watch and not d.paste_stop)
+    e = ap.parse_args(['--paste-stop'])
+    check('verbe --paste-stop', e.paste_stop and not e.paste_watch)
 
     # 4. conversion via fix-presse-papiers.py (source unique, aucune table
     #    dupliquee dans app.py)
