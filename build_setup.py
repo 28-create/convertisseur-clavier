@@ -23,6 +23,9 @@ ISS_FILE = 'installer.iss'
 REQUIRED_TOKENS = [
     '#define MyAppVersion',
     'PrivilegesRequired=lowest',
+    'SetupIconFile=app.ico',
+    'UninstallDisplayIcon={app}\\ConvertisseurClavier.exe',
+    'WizardSmallImageFile=installer-logo.png',
     'Tasks: contextmenu',
     'Software\\Classes\\*\\shell\\ConvertisseurClavier',
     'SystemFileAssociations\\.txt\\shell\\ConvertirClavier',
@@ -82,11 +85,14 @@ def check():
     for tok in REQUIRED_TOKENS:
         if tok not in iss:
             problems.append('manquant dans installer.iss : %s' % tok)
+    for logo in ('app.ico', 'installer-logo.png'):
+        if not os.path.exists(logo):
+            problems.append('logo introuvable : %s' % logo)
     if problems:
         for p in problems:
             print('MANQUE : %s' % p)
         return 1
-    print('OK : installer.iss coherent (version %s, menu contextuel, '
+    print('OK : installer.iss coherent (version %s, logo, menu contextuel, '
           'surveillance)' % ver)
     return 0
 

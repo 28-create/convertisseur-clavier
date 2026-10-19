@@ -25,9 +25,15 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 results = []
 
 
+def _ascii(value):
+    # Console Windows cp1252/cp1255 : ne jamais imprimer d'accent.
+    return str(value).encode('ascii', 'backslashreplace').decode('ascii')
+
+
 def check(name, cond, detail=''):
     results.append((name, bool(cond), detail))
-    print('%s %s %s' % ('PASS' if cond else 'FAIL', name, detail))
+    print('%s %s %s' % ('PASS' if cond else 'FAIL', _ascii(name),
+                       _ascii(detail)))
 
 
 def read(name):

@@ -2,7 +2,7 @@
 ; Usage : python build_setup.py   (compile dist\Setup_ConvertisseurClavier-X.Y.Z.exe)
 ; La version ci-dessous est GENEREE depuis convertisseur.html :
 ;   python gen_version.py   (ne pas la modifier a la main).
-#define MyAppVersion "1.12.0"
+#define MyAppVersion "1.12.1"
 #define MyAppExe "ConvertisseurClavier-" + MyAppVersion + ".exe"
 
 [Setup]
@@ -25,6 +25,9 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 ShowLanguageDialog=yes
+SetupIconFile=app.ico
+UninstallDisplayIcon={app}\ConvertisseurClavier.exe
+WizardSmallImageFile=installer-logo.png
 
 [Languages]
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"

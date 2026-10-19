@@ -43,7 +43,7 @@ ou sur votre machine Windows.
 | `fix-presse-papiers.py` / `.bat` | Raccourci presse-papiers Windows (usage quotidien). |
 | `installer-raccourci.ps1` | Crée le raccourci Bureau + touche globale (`Ctrl+Alt+H`). |
 | `installer.ps1` / `desinstaller.ps1` | Installe le vrai programme (menu Démarrer + `Ctrl+Alt+K` + `Ctrl+Alt+H` + menu clic droit + désinstallation). |
-| `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique, case menu clic droit). |
+| `installer.iss` | Script Inno Setup : construit `Setup_ConvertisseurClavier-X.Y.Z.exe` (assistant graphique avec logo, case menu clic droit). |
 | `build_setup.py` | Compile le Setup (`--check` seul en CI, sans Inno). |
 | `build_extension.py` | Construit `dist\ConvertisseurClavier-extension-X.Y.Z.zip` (paquet à déposer sur les stores). |
 | `app.py` | Application Windows : la page dans une fenêtre native (PyInstaller), verbes CLI et surveillance. |
@@ -165,6 +165,7 @@ touche `Ctrl+Alt+H`, sans Python installé.
 
 1. Téléchargez `Setup_ConvertisseurClavier-X.Y.Z.exe` depuis l'onglet
    *Releases*, double-cliquez, Suivant/Suivant (aucun droit admin requis).
+   Le Setup et l'assistant affichent le logo de l'application.
 2. L'assistant installe : menu Démarrer, touche `Ctrl+Alt+K` (ouvrir
    l'appli), touche `Ctrl+Alt+H` (convertir le presse-papiers), — case
    cochée par défaut — le menu clic droit de l'Explorateur, et le

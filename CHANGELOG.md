@@ -1,5 +1,12 @@
 # Journal des modifications
 
+## v1.12.1 — 19 oct. 2026
+- Installateur : le Setup, le désinstalleur et l'assistant utilisent
+  maintenant le logo **Aא** de l'application (`SetupIconFile`,
+  `UninstallDisplayIcon`, `WizardSmallImageFile`).
+- `build_setup.py --check` vérifie la présence des logos et leur présence
+  dans `installer.iss`.
+
 ## v1.12.0 — 19 oct. 2026
 - Page : icône **Réglages** redessinée en engrenage à 6 dents, plus lisible en
   petit.
