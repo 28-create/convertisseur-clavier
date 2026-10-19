@@ -26,6 +26,11 @@ REQUIRED_TOKENS = [
     'SetupIconFile=app.ico',
     'UninstallDisplayIcon={app}\\ConvertisseurClavier.exe',
     'WizardSmallImageFile=installer-logo.png',
+    'Name: "hebrew"; MessagesFile: "compiler:Languages\\Hebrew.isl"',
+    'hebrew.TaskContextMenu=',
+    'hebrew.TaskSurveillance=',
+    'Description: "{cm:TaskContextMenu}"',
+    'Description: "{cm:TaskSurveillance}"',
     'Tasks: contextmenu',
     'Software\\Classes\\*\\shell\\ConvertisseurClavier',
     'SystemFileAssociations\\.txt\\shell\\ConvertirClavier',
@@ -85,15 +90,24 @@ def check():
     for tok in REQUIRED_TOKENS:
         if tok not in iss:
             problems.append('manquant dans installer.iss : %s' % tok)
+    if 'Flags: checkedonce' in iss:
+        problems.append('taches contextmenu/surveillance non cochees par defaut')
     for logo in ('app.ico', 'installer-logo.png'):
         if not os.path.exists(logo):
             problems.append('logo introuvable : %s' % logo)
+    if os.path.exists('installer-logo.png'):
+        with open('installer-logo.png', 'rb') as f:
+            head = f.read(24)
+        if (len(head) < 24 or not head.startswith(b'\x89PNG\r\n\x1a\n')
+                or int.from_bytes(head[16:20], 'big') < 512
+                or int.from_bytes(head[20:24], 'big') < 512):
+            problems.append('installer-logo.png doit etre un PNG >= 512x512')
     if problems:
         for p in problems:
             print('MANQUE : %s' % p)
         return 1
-    print('OK : installer.iss coherent (version %s, logo, menu contextuel, '
-          'surveillance)' % ver)
+    print('OK : installer.iss coherent (version %s, logo haute resolution, '
+          'hebreu, taches par defaut, menu contextuel, surveillance)' % ver)
     return 0
 
 

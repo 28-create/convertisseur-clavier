@@ -1,5 +1,15 @@
 # Journal des modifications
 
+## v1.12.2 — 19 oct. 2026
+- Installateur : logo haute résolution (rendu 1024 px de `logo.svg`) pour
+  l'assistant, le Setup et le désinstalleur ; `app.ico` est régénérée à
+  partir du même logo vectoriel.
+- Installateur : les cases **menu clic droit** et **surveillance du
+  presse-papiers** sont cochées par défaut à chaque installation.
+- Installateur : ajout de l'**hébreu** aux langues (français, anglais,
+  hébreu), avec traduction des tâches, raccourcis, commentaires et entrées
+  du menu clic droit.
+
 ## v1.12.1 — 19 oct. 2026
 - Installateur : le Setup, le désinstalleur et l'assistant utilisent
   maintenant le logo **Aא** de l'application (`SetupIconFile`,

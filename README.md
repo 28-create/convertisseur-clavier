@@ -165,7 +165,8 @@ touche `Ctrl+Alt+H`, sans Python installé.
 
 1. Téléchargez `Setup_ConvertisseurClavier-X.Y.Z.exe` depuis l'onglet
    *Releases*, double-cliquez, Suivant/Suivant (aucun droit admin requis).
-   Le Setup et l'assistant affichent le logo de l'application.
+   Le Setup et l'assistant affichent le logo de l'application. L'assistant
+   est disponible en français, anglais et hébreu.
 2. L'assistant installe : menu Démarrer, touche `Ctrl+Alt+K` (ouvrir
    l'appli), touche `Ctrl+Alt+H` (convertir le presse-papiers), — case
    cochée par défaut — le menu clic droit de l'Explorateur, et le
