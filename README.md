@@ -153,6 +153,9 @@ plus toute seule. Un clic ailleurs la ferme sans rien coller ; si vous
 n'avez pas fait de choix, elle réapparaît au `Ctrl+V` suivant. `Annuler`
 ou `Échap` la ferme et ne la propose plus pour le même presse-papiers.
 
+La fenêtre utilise un thème clair à fort contraste, avec coins arrondis,
+logo net et anneaux de focus visibles pour l'accessibilité.
+
 Les `Ctrl+Maj+V`, `Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la
 surveillance se suspend ou se quitte par un clic droit sur son icône dans
 la zone de notification (ou `--paste-stop`).

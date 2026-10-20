@@ -20,6 +20,7 @@ APP = 'app.py'
 HTML = 'convertisseur.html'
 FIX = 'fix-presse-papiers.py'
 ICON = 'app.ico'
+LOGO = os.path.join('extension', 'icons', 'icon128.png')
 
 
 def read_version(html_path=HTML):
@@ -61,6 +62,9 @@ def main(argv=None):
         # zone de notification (chargee depuis le bundle au demarrage).
         cmd += ['--icon', ICON,
                 '--add-data', ICON + os.pathsep + '.']
+    if os.path.exists(LOGO):
+        # Le logo carre du popup, deja optimise pour l'extension.
+        cmd += ['--add-data', LOGO + os.pathsep + '.']
     cmd.append(APP)
     print('+ ' + ' '.join(cmd))
     r = subprocess.run(cmd)

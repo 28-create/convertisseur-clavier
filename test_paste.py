@@ -250,6 +250,22 @@ def proposal_state_checks():
           and not watcher.overlay_open and not watcher.block_v)
 
 
+def _relative_luminance(color):
+    color = color.lstrip('#')
+    values = [int(color[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+    values = [v / 12.92 if v <= 0.04045
+              else ((v + 0.055) / 1.055) ** 2.4 for v in values]
+    return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2]
+
+
+def _contrast_ratio(foreground, background):
+    first = _relative_luminance(foreground)
+    second = _relative_luminance(background)
+    if first < second:
+        first, second = second, first
+    return (first + 0.05) / (second + 0.05)
+
+
 def popup_checks():
     src = read('paste_watch.py')
     for token in ('Clavier :', 'Menubutton', 'add_radiobutton',
@@ -266,6 +282,38 @@ def popup_checks():
     for token in ('APERÇU', 'Vérifiez l’aperçu',
                   'La fenêtre reste ouverte', 'clique ailleurs'):
         check('popup : design %s' % token, token in src)
+
+    pairs = (
+        ('texte/carte', paste_watch.TEXT, paste_watch.CARD, 4.5),
+        ('texte/apercu', paste_watch.TEXT, paste_watch.PREVIEW, 4.5),
+        ('texte secondaire/carte', paste_watch.MUTED, paste_watch.CARD, 4.5),
+        ('accent/apercu', paste_watch.ACCENT, paste_watch.PREVIEW, 4.5),
+        ('texte/accent', paste_watch.ACCENT_TEXT, paste_watch.ACCENT, 4.5),
+        ('texte/bouton secondaire', paste_watch.TEXT,
+         paste_watch.SECONDARY, 4.5),
+        ('texte/bouton secondaire actif', paste_watch.TEXT,
+         paste_watch.SECONDARY_ACTIVE, 4.5),
+        ('texte/accent actif', paste_watch.ACCENT_TEXT,
+         paste_watch.ACCENT_ACTIVE, 4.5),
+        ('focus/carte', paste_watch.FOCUS, paste_watch.CARD, 3.0),
+        ('bordure/carte', paste_watch.BORDER, paste_watch.CARD, 3.0),
+    )
+    for label, foreground, background, minimum in pairs:
+        ratio = _contrast_ratio(foreground, background)
+        check('popup : contraste %s >= %.1f' % (label, minimum),
+              ratio >= minimum, '%.2f' % ratio)
+    check('popup : fond clair (carte)',
+          _relative_luminance(paste_watch.CARD) >= 0.8,
+          '%.2f' % _relative_luminance(paste_watch.CARD))
+    check('popup : fond clair (apercu)',
+          _relative_luminance(paste_watch.PREVIEW) >= 0.8,
+          '%.2f' % _relative_luminance(paste_watch.PREVIEW))
+    for token in ('SECONDARY_ACTIVE', 'ACCENT_ACTIVE', 'FOCUS',
+                  'highlightcolor=FOCUS', 'highlightthickness=2'):
+        check('popup : lisibilite %s' % token, token in src)
+    for token in ('CORNER_RADIUS', '_round_window', '_logo_path',
+                  'icon128.png'):
+        check('popup : rendu %s' % token, token in src)
 
 
 def installer_checks():
@@ -287,6 +335,8 @@ def installer_checks():
     be = read('build_exe.py')
     check('build_exe.py embarque app.ico',
           'ICON + os.pathsep' in be)
+    check('build_exe.py embarque le logo popup',
+          'icon128.png' in be and 'LOGO + os.pathsep' in be)
     check('build_exe.py embarque paste_watch/win32_clip',
           be.count('--hidden-import') >= 2
           and 'paste_watch' in be and 'win32_clip' in be)

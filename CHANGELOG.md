@@ -1,6 +1,15 @@
 # Journal des modifications
 
-## v1.12.3 — 20 oct. 2026
+## v1.12.4 - 20 oct. 2026
+- Fenêtre de proposition avant `Ctrl+V` : thème clair haute lisibilité
+  (fond blanc, texte presque noir, accents bleu foncé), avec des contrastes
+  WCAG AA vérifiés par les tests.
+- Coins arrondis au niveau de la fenêtre et vrai logo de l'application
+  (icône 128 px) à la place du badge dessiné, pour un rendu net.
+- Boutons et menu avec anneaux de focus visibles, tailles de texte
+  légèrement augmentées pour l'accessibilité.
+
+## v1.12.3 - 20 oct. 2026
 - Surveillance avant `Ctrl+V` : fenêtre de proposition agrandie et
   redessinée (aperçu, badge, boutons et aide clavier plus lisibles).
 - La fenêtre ne se ferme plus toute seule après 12 secondes : elle reste
