@@ -29,6 +29,7 @@ ou sur votre machine Windows.
 - **Surveillance avant `Ctrl+V`** : si le texte collé se lit nettement mieux
   avec l'autre clavier, une proposition apparaît avant l'insertion
   (`Entrée` = convertir, `Maj+Entrée` = coller l'original, `Échap` = annuler).
+  Elle reste ouverte jusqu'à un choix ou un clic ailleurs.
 - Setup Windows (assistant, sans admin) : menu Démarrer, touches globales,
   menu clic droit de l'Explorateur et démarrage automatique de la surveillance.
 - Extension navigateur Chrome/Edge : clic droit sur une sélection,
@@ -147,10 +148,14 @@ deux dispositions. Ce réglage est mémorisé dans
 `%LOCALAPPDATA%\ConvertisseurClavier\paste_watch.json` et se change aussi
 depuis le menu de l'icône de notification.
 
-La proposition disparaît seule au bout de 12 secondes. Les `Ctrl+Maj+V`,
-`Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la surveillance se
-suspend ou se quitte par un clic droit sur son icône dans la zone de
-notification (ou `--paste-stop`).
+La fenêtre reste ouverte tant qu'aucun choix n'est fait : elle ne se ferme
+plus toute seule. Un clic ailleurs la ferme sans rien coller ; si vous
+n'avez pas fait de choix, elle réapparaît au `Ctrl+V` suivant. `Annuler`
+ou `Échap` la ferme et ne la propose plus pour le même presse-papiers.
+
+Les `Ctrl+Maj+V`, `Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la
+surveillance se suspend ou se quitte par un clic droit sur son icône dans
+la zone de notification (ou `--paste-stop`).
 
 ## 3. Application Windows (.exe + Setup)
 

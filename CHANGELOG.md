@@ -1,5 +1,16 @@
 # Journal des modifications
 
+## v1.12.3 — 20 oct. 2026
+- Surveillance avant `Ctrl+V` : fenêtre de proposition agrandie et
+  redessinée (aperçu, badge, boutons et aide clavier plus lisibles).
+- La fenêtre ne se ferme plus toute seule après 12 secondes : elle reste
+  ouverte jusqu'à un choix ou un clic ailleurs.
+- Un clic ailleurs la ferme sans rien coller ; si aucun choix n'a été fait,
+  la proposition réapparaît au `Ctrl+V` suivant. `Annuler`/`Échap` la
+  consomme pour le presse-papiers courant.
+- Test de la surveillance : état de la proposition après clic ailleurs ou
+  annulation, et absence de minuterie de fermeture.
+
 ## v1.12.2 — 19 oct. 2026
 - Installateur : logo haute résolution (rendu 1024 px de `logo.svg`) pour
   l'assistant, le Setup et le désinstalleur ; `app.ico` est régénérée à

@@ -228,6 +228,28 @@ def settings_checks():
                 os.environ[paste_watch.SETTINGS_ENV] = old
 
 
+def proposal_state_checks():
+    def fresh():
+        watcher = object.__new__(paste_watch.Watcher)
+        watcher.pending_seq = 42
+        watcher.handled_seq = 7
+        watcher.overlay_open = True
+        watcher.block_v = True
+        return watcher
+
+    watcher = fresh()
+    err = watcher.resolve('dismiss', {}, None)
+    check('clic ailleurs : proposition conservee',
+          err is None and watcher.handled_seq == 7
+          and not watcher.overlay_open and not watcher.block_v)
+
+    watcher = fresh()
+    err = watcher.resolve('cancel', {}, None)
+    check('annuler : proposition consommee',
+          err is None and watcher.handled_seq == 42
+          and not watcher.overlay_open and not watcher.block_v)
+
+
 def popup_checks():
     src = read('paste_watch.py')
     for token in ('Clavier :', 'Menubutton', 'add_radiobutton',
@@ -236,6 +258,14 @@ def popup_checks():
                   'convert_for_layout', 'set_default_layout',
                   'layout_ambiguous'):
         check('popup : %s' % token, token in src)
+    check('popup : pas de fermeture automatique',
+          'after(12000' not in src and 'after_cancel' not in src)
+    check('popup : fermeture par clic ailleurs',
+          'click_outside' in src and 'WindowFromPoint' in src
+          and "choose('dismiss')" in src)
+    for token in ('APERÇU', 'Vérifiez l’aperçu',
+                  'La fenêtre reste ouverte', 'clique ailleurs'):
+        check('popup : design %s' % token, token in src)
 
 
 def installer_checks():
@@ -284,6 +314,7 @@ def main():
     detection_checks(models, fix)
     node_checks(html, models)
     settings_checks()
+    proposal_state_checks()
     popup_checks()
     installer_checks()
 

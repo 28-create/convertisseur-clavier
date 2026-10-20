@@ -489,6 +489,8 @@ def _win32():
     u32.ShowWindow.argtypes = [vp, ctypes.c_int]
     u32.GetCursorPos.argtypes = [ctypes.POINTER(POINT)]
     u32.ClientToScreen.argtypes = [vp, ctypes.POINTER(POINT)]
+    u32.WindowFromPoint.restype = vp
+    u32.WindowFromPoint.argtypes = [POINT]
     u32.GetWindowThreadProcessId.restype = ul
     u32.GetWindowThreadProcessId.argtypes = [vp, vp]
     u32.GetGUIThreadInfo.restype = ctypes.c_int
@@ -999,8 +1001,10 @@ class Watcher:
                     self.handled_seq = _U32.GetClipboardSequenceNumber()
                 except Exception as e:
                     err = 'Ecriture du presse-papiers impossible : %s' % e
-            else:
+            elif choice in ('keep', 'cancel'):
                 self.handled_seq = self.pending_seq
+            # choice == 'dismiss' : proposition conservee pour le prochain
+            # Ctrl+V (l'utilisateur a seulement clique ailleurs).
             self.overlay_open = False
             self.block_v = False
             if choice in ('convert', 'keep') and err is None:
@@ -1055,6 +1059,9 @@ class Watcher:
 
 BG = '#1e2430'
 CARD = '#262e3d'
+PREVIEW = '#1b2536'
+BORDER = '#405477'
+SHADOW = '#0b1019'
 TEXT = '#f2f5fa'
 MUTED = '#9aa6b8'
 ACCENT = '#7aa2ff'
@@ -1082,15 +1089,42 @@ def show_proposal(root, watcher, data, target, anchor, current):
         win.attributes('-toolwindow', True)
     except Exception:
         pass
-    win.configure(bg=ACCENT)
+    win.configure(bg=SHADOW)
     win.resizable(False, False)
 
-    outer = tk.Frame(win, bg=CARD, padx=14, pady=12,
-                     highlightbackground=ACCENT, highlightthickness=1)
+    shell = tk.Frame(win, bg=SHADOW)
+    shell.pack(fill='both', expand=True)
+    card = tk.Frame(shell, bg=CARD, highlightbackground=BORDER,
+                    highlightthickness=1)
+    card.pack(fill='both', expand=True, padx=2, pady=2)
+    tk.Frame(card, bg=ACCENT, height=4).pack(fill='x')
+    outer = tk.Frame(card, bg=CARD, padx=18, pady=14)
     outer.pack(fill='both', expand=True)
 
-    tk.Label(outer, text='Convertir avant de coller ?', bg=CARD, fg=TEXT,
-             font=('Segoe UI', 10, 'bold'), anchor='w').pack(fill='x')
+    header = tk.Frame(outer, bg=CARD)
+    header.pack(fill='x')
+    badge = tk.Canvas(header, width=44, height=44, bg=CARD,
+                      highlightthickness=0)
+    badge.create_oval(2, 2, 42, 42, fill=ACCENT, outline='')
+    badge.create_text(22, 22, text='A\u05d0', fill=ACCENT_TEXT,
+                      font=('Segoe UI', 10, 'bold'))
+    badge.pack(side='left', padx=(0, 12))
+
+    titles = tk.Frame(header, bg=CARD)
+    titles.pack(side='left', fill='x', expand=True)
+    tk.Label(titles, text='Convertir avant de coller ?', bg=CARD, fg=TEXT,
+             font=('Segoe UI', 13, 'bold'), anchor='w').pack(fill='x')
+    tk.Label(titles, text='Vérifiez l’aperçu, puis choisissez.', bg=CARD,
+             fg=MUTED, font=('Segoe UI', 9), anchor='w').pack(
+        fill='x', pady=(2, 0))
+
+    close_btn = tk.Button(header, text='\u2715',
+                          command=lambda: choose('cancel'),
+                          bg=CARD, fg=MUTED, activebackground=SECONDARY,
+                          activeforeground=TEXT, relief='flat', bd=0,
+                          highlightthickness=0, padx=6, pady=1,
+                          cursor='hand2', font=('Segoe UI', 11))
+    close_btn.pack(side='right', anchor='n')
 
     rtl = data['direction'] == 'toHe'
     state = {'layout': normalize_layout(data['layout']),
@@ -1100,34 +1134,40 @@ def show_proposal(root, watcher, data, target, anchor, current):
     default_var = tk.StringVar(value=normalize_layout(
         data.get('layout_default', data['layout'])))
 
-    preview_label = tk.Label(outer, text=truncate(data['text'], 220),
-                             bg=CARD, fg=TEXT, font=('Segoe UI', 14),
-                             wraplength=390,
+    preview_box = tk.Frame(outer, bg=PREVIEW, padx=14, pady=10,
+                           highlightbackground=BORDER, highlightthickness=1)
+    preview_box.pack(fill='x', pady=(14, 0))
+    tk.Label(preview_box, text='APERÇU', bg=PREVIEW, fg=ACCENT,
+             font=('Segoe UI', 7, 'bold'), anchor='w').pack(fill='x')
+    preview_label = tk.Label(preview_box, text=truncate(data['text'], 220),
+                             bg=PREVIEW, fg=TEXT, font=('Segoe UI', 16),
+                             wraplength=470,
                              justify=('right' if rtl else 'left'),
                              anchor=('e' if rtl else 'w'))
-    preview_label.pack(fill='x', pady=(6, 2))
+    preview_label.pack(fill='x', pady=(4, 0))
     source_one = ' '.join(data['source_text'].split())
-    tk.Label(outer, text='Original : ' + truncate(source_one, 80),
+    tk.Label(outer, text='Original : ' + truncate(source_one, 110),
              bg=CARD, fg=MUTED, font=('Segoe UI', 8),
-             anchor='w').pack(fill='x', pady=(0, 4))
+             justify=('right' if rtl else 'left'),
+             anchor=('e' if rtl else 'w')).pack(fill='x', pady=(8, 0))
 
     layout_line = tk.Frame(outer, bg=CARD)
-    layout_line.pack(fill='x', pady=(0, 8))
+    layout_line.pack(fill='x', pady=(12, 0))
     tk.Label(layout_line, text='Clavier :', bg=CARD, fg=MUTED,
-             font=('Segoe UI', 8), anchor='w').pack(side='left')
+             font=('Segoe UI', 9), anchor='w').pack(side='left')
     layout_btn = tk.Menubutton(
-        layout_line, text=layout_label(state['layout']) + '\n\u25be',
+        layout_line, text=layout_label(state['layout']) + '  \u25be',
         bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
         activeforeground=TEXT, relief='flat', bd=0,
-        highlightthickness=0, padx=8, pady=1, cursor='hand2',
-        font=('Segoe UI', 9), indicatoron=False, justify='center')
-    layout_btn.pack(side='left', padx=(5, 0))
+        highlightthickness=0, padx=10, pady=3, cursor='hand2',
+        font=('Segoe UI', 10), indicatoron=False, justify='center')
+    layout_btn.pack(side='left', padx=(6, 0))
     note_label = tk.Label(layout_line, text='', bg=CARD, fg=MUTED,
                           font=('Segoe UI', 8), anchor='w')
     note_label.pack(side='left', padx=(8, 0))
 
     row = tk.Frame(outer, bg=CARD)
-    row.pack(fill='x')
+    row.pack(fill='x', pady=(14, 0))
 
     def note_text():
         if state['manual']:
@@ -1146,7 +1186,7 @@ def show_proposal(root, watcher, data, target, anchor, current):
         preview_label.configure(text=truncate(state['text'], 220)
                                 or '(aucun texte)')
         selected_var.set(layout)
-        layout_btn.configure(text=layout_label(layout) + '\n\u25be')
+        layout_btn.configure(text=layout_label(layout) + '  \u25be')
         note_label.configure(text=note_text())
         convert_button = state.get('convert_button')
         if convert_button is not None:
@@ -1211,10 +1251,6 @@ def show_proposal(root, watcher, data, target, anchor, current):
         current['choose'] = None
         current['win'] = None
         try:
-            win.after_cancel(timer)
-        except Exception:
-            pass
-        try:
             win.destroy()
         except Exception:
             pass
@@ -1228,37 +1264,44 @@ def show_proposal(root, watcher, data, target, anchor, current):
             except Exception:
                 pass
 
-    b1 = tk.Button(row, text='Convertir et coller', command=lambda: choose('convert'),
+    b1 = tk.Button(row, text='Convertir et coller',
+                   command=lambda: choose('convert'),
                    bg=ACCENT, fg=ACCENT_TEXT, activebackground='#9ab8ff',
                    activeforeground=ACCENT_TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
-                   font=('Segoe UI', 9, 'bold'))
+                   highlightthickness=0, padx=16, pady=8, cursor='hand2',
+                   font=('Segoe UI', 10, 'bold'))
     b1.pack(side='left')
     state['convert_button'] = b1
-    b2 = tk.Button(row, text='Coller tel quel', command=lambda: choose('keep'),
+    b2 = tk.Button(row, text='Coller tel quel',
+                   command=lambda: choose('keep'),
                    bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
                    activeforeground=TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
+                   highlightthickness=0, padx=14, pady=8, cursor='hand2',
                    font=('Segoe UI', 9))
-    b2.pack(side='left', padx=(8, 0))
+    b2.pack(side='left', padx=(10, 0))
     b3 = tk.Button(row, text='Annuler', command=lambda: choose('cancel'),
                    bg=SECONDARY, fg=TEXT, activebackground='#4a5874',
                    activeforeground=TEXT, relief='flat', bd=0,
-                   highlightthickness=0, padx=10, pady=5, cursor='hand2',
+                   highlightthickness=0, padx=14, pady=8, cursor='hand2',
                    font=('Segoe UI', 9))
     b3.pack(side='right')
 
-    tk.Label(outer, text='Entrée = convertir · Maj+Entrée = original · '
-                         'Échap = annuler', bg=CARD,
-             fg=MUTED, font=('Segoe UI', 8), anchor='w').pack(
-        fill='x', pady=(6, 0))
+    footer = tk.Frame(outer, bg=CARD)
+    footer.pack(fill='x', pady=(10, 0))
+    tk.Label(footer, text='Entrée : convertir  ·  Maj+Entrée : original  ·  '
+                          'Échap : annuler', bg=CARD, fg=MUTED,
+             font=('Segoe UI', 8), anchor='w').pack(fill='x')
+    tk.Label(footer, text='La fenêtre reste ouverte ; clique ailleurs pour '
+                          'la fermer.', bg=CARD, fg=ACCENT,
+             font=('Segoe UI', 8), anchor='w').pack(fill='x', pady=(2, 0))
 
     win.bind('<Return>', lambda _e: choose('convert'))
+    win.bind('<Shift-Return>', lambda _e: choose('keep'))
     win.bind('<Escape>', lambda _e: choose('cancel'))
     win.protocol('WM_DELETE_WINDOW', lambda: choose('cancel'))
 
     win.update_idletasks()
-    w = win.winfo_reqwidth()
+    w = max(560, win.winfo_reqwidth())
     h = win.winfo_reqheight()
     left, top, right, bottom = work_area(anchor[0], anchor[1])
     w = min(w, max(320, right - left - 16))
@@ -1276,9 +1319,46 @@ def show_proposal(root, watcher, data, target, anchor, current):
         pass
     b1.focus_set()
 
+    mouse_buttons = (0x01, 0x02, 0x04)
+    try:
+        u32, _ = _win32()
+        for vk in mouse_buttons:
+            u32.GetAsyncKeyState(vk)
+    except Exception:
+        pass
+
+    def click_outside():
+        # Aucune minuterie de fermeture. On surveille le clic hors de la
+        # fenetre (ou de son menu), sans dependre du focus : un simple clic
+        # ailleurs ferme la proposition. Le bit 0x0001 attrape aussi un clic
+        # tres bref, relache avant le passage suivant.
+        if current.get('win') is not win:
+            return
+        try:
+            u32, _ = _win32()
+            states = [u32.GetAsyncKeyState(vk) for vk in mouse_buttons]
+            if any(state & 0x8001 for state in states):
+                pt = POINT()
+                u32.GetCursorPos(ctypes.byref(pt))
+                hit = u32.WindowFromPoint(pt)
+                if not hit:
+                    choose('dismiss')
+                    return
+                pid = ctypes.c_ulong()
+                u32.GetWindowThreadProcessId(hit, ctypes.byref(pid))
+                if pid.value != os.getpid():
+                    choose('dismiss')
+                    return
+        except Exception:
+            pass
+        try:
+            win.after(50, click_outside)
+        except Exception:
+            pass
+
     current['win'] = win
     current['choose'] = choose
-    timer = win.after(12000, lambda: choose('cancel'))
+    win.after(30, click_outside)
 
 
 def _run_tk(watcher):

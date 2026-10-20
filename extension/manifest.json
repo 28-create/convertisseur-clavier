@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Convertisseur Clavier — Latin ⇄ Hébreu",
   "short_name": "Convertisseur Clavier",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "Convertit le texte tapé avec le mauvais clavier (AZERTY/QWERTY ⇄ hébreu), 100 % local.",
   "icons": {
     "16": "icons/icon16.png",
