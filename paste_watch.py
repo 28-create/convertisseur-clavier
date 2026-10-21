@@ -72,6 +72,9 @@ RARE_IN_TEXT = re.compile(r'[/"\\]')
 # Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
 # Si elles sont au milieu -> lecture erronee tres probable.
 SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
+# Apostrophe/gershayim : tres rare en hebreu naturel (0.04%),
+# mais produite par EN w (2.3%) en lecture erronee QWERTY->HE.
+# Deja dans RARE_IN_TEXT via ".
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
