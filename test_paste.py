@@ -312,7 +312,7 @@ def popup_checks():
                   'highlightcolor=FOCUS', 'highlightthickness=2'):
         check('popup : lisibilite %s' % token, token in src)
     for token in ('CORNER_RADIUS', '_round_window', '_logo_path',
-                  'icon128.png'):
+                  'DwmSetWindowAttribute', 'icon128.png'):
         check('popup : rendu %s' % token, token in src)
 
 

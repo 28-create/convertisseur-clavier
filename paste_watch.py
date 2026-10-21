@@ -1059,20 +1059,21 @@ class Watcher:
 
 # Theme clair haute lisibilite : les contrastes sont verifies par
 # test_paste.py (WCAG AA pour le texte, 3:1 pour les bordures).
-BG = '#eef3fa'
+BG = '#eef2ff'
 CARD = '#ffffff'
-PREVIEW = '#edf4ff'
+PREVIEW = '#f6f7ff'
 BORDER = '#7d8fa8'
-SHADOW = '#b7c4d6'
-TEXT = '#111827'
-MUTED = '#4b5563'
-ACCENT = '#1d4ed8'
+EDGE = '#d5deeb'
+SHADOW = '#c7d2e3'
+TEXT = '#0f172a'
+MUTED = '#475569'
+ACCENT = '#4f46e5'
 ACCENT_TEXT = '#ffffff'
-SECONDARY = '#e6edf7'
-SECONDARY_ACTIVE = '#cfdced'
-ACCENT_ACTIVE = '#163ea8'
-FOCUS = '#0b57d0'
-CORNER_RADIUS = 20
+SECONDARY = '#eef2ff'
+SECONDARY_ACTIVE = '#e0e7ff'
+ACCENT_ACTIVE = '#4338ca'
+FOCUS = '#4f46e5'
+CORNER_RADIUS = 24
 
 
 def _logo_path():
@@ -1123,8 +1124,21 @@ def _round_window(win):
         radius = max(8, int(round(CORNER_RADIUS * factor)))
         rgn = gdi32.CreateRoundRectRgn(0, 0, width + 1, height + 1,
                                        radius, radius)
+        applied = False
         if rgn:
-            u32.SetWindowRgn(hwnd, ctypes.c_void_p(rgn), True)
+            applied = bool(u32.SetWindowRgn(hwnd, ctypes.c_void_p(rgn), True))
+        # Windows 11 : coins arrondis natifs du compositeur, en complement
+        # du clipping GDI (utile quand le theme ou DWM arrondit la fenetre).
+        try:
+            dwm = ctypes.windll.dwmapi
+            pref = ctypes.c_int(2)  # DWMWCP_ROUND
+            dwm.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(pref),
+                                      ctypes.sizeof(pref))
+        except Exception:
+            pass
+        if os.environ.get('CONVERTISSEUR_DEBUG_ROUND'):
+            print('round: %dx%d radius=%d scale=%d%% applied=%s' % (
+                width, height, radius, scale.value, applied), flush=True)
     except Exception:
         pass
 
@@ -1149,16 +1163,15 @@ def show_proposal(root, watcher, data, target, anchor, current):
         win.attributes('-toolwindow', True)
     except Exception:
         pass
-    win.configure(bg=SHADOW)
+    win.configure(bg=EDGE)
     win.resizable(False, False)
 
-    shell = tk.Frame(win, bg=SHADOW)
+    shell = tk.Frame(win, bg=EDGE)
     shell.pack(fill='both', expand=True)
-    card = tk.Frame(shell, bg=CARD, highlightbackground=BORDER,
-                    highlightthickness=1)
-    card.pack(fill='both', expand=True, padx=2, pady=2)
-    tk.Frame(card, bg=ACCENT, height=5).pack(fill='x')
-    outer = tk.Frame(card, bg=CARD, padx=20, pady=16)
+    card = tk.Frame(shell, bg=CARD)
+    card.pack(fill='both', expand=True, padx=1, pady=1)
+    tk.Frame(card, bg=ACCENT, height=3).pack(fill='x')
+    outer = tk.Frame(card, bg=CARD, padx=22, pady=18)
     outer.pack(fill='both', expand=True)
 
     header = tk.Frame(outer, bg=CARD)
@@ -1188,19 +1201,20 @@ def show_proposal(root, watcher, data, target, anchor, current):
     titles = tk.Frame(header, bg=CARD)
     titles.pack(side='left', fill='x', expand=True)
     tk.Label(titles, text='Convertir avant de coller ?', bg=CARD, fg=TEXT,
-             font=('Segoe UI', 14, 'bold'), anchor='w').pack(fill='x')
+             font=('Segoe UI', 15, 'bold'), anchor='w').pack(fill='x')
     tk.Label(titles, text='Vérifiez l’aperçu, puis choisissez.', bg=CARD,
              fg=MUTED, font=('Segoe UI', 10), anchor='w').pack(
-        fill='x', pady=(2, 0))
+        fill='x', pady=(3, 0))
 
     close_btn = tk.Button(header, text='\u2715',
                           command=lambda: choose('cancel'),
-                          bg=CARD, fg=TEXT, activebackground=SECONDARY,
+                          bg=SECONDARY, fg=MUTED,
+                          activebackground=SECONDARY_ACTIVE,
                           activeforeground=TEXT, relief='flat', bd=0,
                           highlightthickness=2,
                           highlightbackground=CARD, highlightcolor=FOCUS,
-                          takefocus=True, padx=8, pady=2,
-                          cursor='hand2', font=('Segoe UI', 12))
+                          takefocus=True, padx=9, pady=4,
+                          cursor='hand2', font=('Segoe UI', 10))
     close_btn.pack(side='right', anchor='n')
 
     rtl = data['direction'] == 'toHe'
@@ -1211,42 +1225,47 @@ def show_proposal(root, watcher, data, target, anchor, current):
     default_var = tk.StringVar(value=normalize_layout(
         data.get('layout_default', data['layout'])))
 
-    preview_box = tk.Frame(outer, bg=PREVIEW, padx=16, pady=12,
-                           highlightbackground=BORDER, highlightthickness=1)
-    preview_box.pack(fill='x', pady=(14, 0))
-    tk.Label(preview_box, text='APERÇU', bg=PREVIEW, fg=ACCENT,
-             font=('Segoe UI', 8, 'bold'), anchor='w').pack(fill='x')
-    preview_label = tk.Label(preview_box, text=truncate(data['text'], 220),
+    preview_box = tk.Frame(outer, bg=PREVIEW,
+                           highlightbackground=EDGE, highlightthickness=1)
+    preview_box.pack(fill='x', pady=(16, 0))
+    tk.Frame(preview_box, bg=ACCENT, width=3).pack(side='left', fill='y')
+    preview_inner = tk.Frame(preview_box, bg=PREVIEW, padx=14, pady=10)
+    preview_inner.pack(side='left', fill='both', expand=True)
+    preview_head = tk.Frame(preview_inner, bg=PREVIEW)
+    preview_head.pack(fill='x')
+    tk.Label(preview_head, text='APERÇU', bg=PREVIEW, fg=ACCENT,
+             font=('Segoe UI', 8, 'bold'), anchor='w').pack(side='left')
+    preview_label = tk.Label(preview_inner, text=truncate(data['text'], 220),
                              bg=PREVIEW, fg=TEXT, font=('Segoe UI', 17),
                              wraplength=520,
                              justify=('right' if rtl else 'left'),
                              anchor=('e' if rtl else 'w'))
-    preview_label.pack(fill='x', pady=(4, 0))
+    preview_label.pack(fill='x', pady=(5, 0))
     source_one = ' '.join(data['source_text'].split())
     tk.Label(outer, text='Original : ' + truncate(source_one, 110),
              bg=CARD, fg=MUTED, font=('Segoe UI', 9),
              justify=('right' if rtl else 'left'),
-             anchor=('e' if rtl else 'w')).pack(fill='x', pady=(8, 0))
+             anchor=('e' if rtl else 'w')).pack(fill='x', pady=(9, 0))
 
     layout_line = tk.Frame(outer, bg=CARD)
-    layout_line.pack(fill='x', pady=(12, 0))
+    layout_line.pack(fill='x', pady=(14, 0))
     tk.Label(layout_line, text='Clavier :', bg=CARD, fg=MUTED,
-             font=('Segoe UI', 10), anchor='w').pack(side='left')
+             font=('Segoe UI', 9, 'bold'), anchor='w').pack(side='left')
     layout_btn = tk.Menubutton(
         layout_line, text=layout_label(state['layout']) + '  \u25be',
         bg=SECONDARY, fg=TEXT, activebackground=SECONDARY_ACTIVE,
         activeforeground=TEXT, relief='flat', bd=0,
         highlightthickness=2, highlightbackground=CARD,
-        highlightcolor=FOCUS, takefocus=True, padx=12, pady=4,
+        highlightcolor=FOCUS, takefocus=True, padx=14, pady=5,
         cursor='hand2', font=('Segoe UI', 10), indicatoron=False,
         justify='center')
-    layout_btn.pack(side='left', padx=(6, 0))
+    layout_btn.pack(side='left', padx=(7, 0))
     note_label = tk.Label(layout_line, text='', bg=CARD, fg=MUTED,
-                          font=('Segoe UI', 9), anchor='w')
-    note_label.pack(side='left', padx=(8, 0))
+                          font=('Segoe UI', 9), anchor='e')
+    note_label.pack(side='right', padx=(8, 0))
 
     row = tk.Frame(outer, bg=CARD)
-    row.pack(fill='x', pady=(14, 0))
+    row.pack(fill='x', pady=(16, 0))
 
     def note_text():
         if state['manual']:
@@ -1349,7 +1368,7 @@ def show_proposal(root, watcher, data, target, anchor, current):
                    activeforeground=ACCENT_TEXT, relief='flat', bd=0,
                    highlightthickness=2, highlightbackground=CARD,
                    highlightcolor=FOCUS, takefocus=True,
-                   padx=18, pady=9, cursor='hand2',
+                   padx=22, pady=10, cursor='hand2',
                    font=('Segoe UI', 11, 'bold'))
     b1.pack(side='left')
     state['convert_button'] = b1
@@ -1359,25 +1378,26 @@ def show_proposal(root, watcher, data, target, anchor, current):
                    activeforeground=TEXT, relief='flat', bd=0,
                    highlightthickness=2, highlightbackground=CARD,
                    highlightcolor=FOCUS, takefocus=True,
-                   padx=16, pady=9, cursor='hand2',
+                   padx=17, pady=10, cursor='hand2',
                    font=('Segoe UI', 10))
-    b2.pack(side='left', padx=(10, 0))
+    b2.pack(side='left', padx=(9, 0))
     b3 = tk.Button(row, text='Annuler', command=lambda: choose('cancel'),
-                   bg=SECONDARY, fg=TEXT, activebackground=SECONDARY_ACTIVE,
+                   bg=CARD, fg=MUTED, activebackground=SECONDARY,
                    activeforeground=TEXT, relief='flat', bd=0,
                    highlightthickness=2, highlightbackground=CARD,
                    highlightcolor=FOCUS, takefocus=True,
-                   padx=16, pady=9, cursor='hand2',
+                   padx=14, pady=10, cursor='hand2',
                    font=('Segoe UI', 10))
     b3.pack(side='right')
 
+    tk.Frame(outer, bg=EDGE, height=1).pack(fill='x', pady=(14, 10))
     footer = tk.Frame(outer, bg=CARD)
-    footer.pack(fill='x', pady=(10, 0))
+    footer.pack(fill='x')
     tk.Label(footer, text='Entrée : convertir  ·  Maj+Entrée : original  ·  '
                           'Échap : annuler', bg=CARD, fg=MUTED,
              font=('Segoe UI', 9), anchor='w').pack(fill='x')
     tk.Label(footer, text='La fenêtre reste ouverte ; clique ailleurs pour '
-                          'la fermer.', bg=CARD, fg=ACCENT,
+                          'la fermer.', bg=CARD, fg=MUTED,
              font=('Segoe UI', 9), anchor='w').pack(fill='x', pady=(2, 0))
 
     win.bind('<Return>', lambda _e: choose('convert'))
@@ -1397,6 +1417,7 @@ def show_proposal(root, watcher, data, target, anchor, current):
     y = max(top + 8, y)
     win.geometry('%dx%d+%d+%d' % (w, h, x, y))
     win.deiconify()
+    win.update_idletasks()
     _round_window(win)
     win.lift()
     try:

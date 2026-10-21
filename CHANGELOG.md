@@ -1,5 +1,16 @@
 # Journal des modifications
 
+## v1.12.5 - 21 oct. 2026
+- Interface principale modernisée : en-tête compact, espace de travail en
+  deux panneaux (saisie / résultat), palette indigo-violet, cartes historique
+  et exemples, et réglages en tiroir avec sélecteurs et interrupteurs.
+- Fenêtre de proposition `Ctrl+V` harmonisée avec la page : mêmes couleurs,
+  aperçu avec barre d'accent, boutons et espacements revus, coins arrondis
+  fiabilisés (DWM Windows 11 + découpe GDI) et logo net.
+- Comportement inchangé : conversion locale, thèmes clair/sombre, RTL,
+  traductions fr/en/he et choix explicite avant chaque collage.
+- Tests : contrôles de contraste, de structure et de rendu des deux fenêtres.
+
 ## v1.12.4 - 20 oct. 2026
 - Fenêtre de proposition avant `Ctrl+V` : thème clair haute lisibilité
   (fond blanc, texte presque noir, accents bleu foncé), avec des contrastes

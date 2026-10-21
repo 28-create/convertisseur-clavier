@@ -24,6 +24,9 @@ ou sur votre machine Windows.
 - Interface en **français, anglais et hébreu** (langue détectée
   automatiquement), prise en charge complète du RTL, thèmes
   clair / sombre / automatique.
+- Interface principale modernisée : en-tête compact, espace de travail en
+  deux panneaux saisie/résultat, cartes historique et exemples, réglages en
+  tiroir avec sélecteurs et interrupteurs.
 - Réglages persistants en stockage local — rien ne quitte l'appareil.
 - Raccourci presse-papiers Windows : `Ctrl+C`, `Ctrl+Alt+H`, `Ctrl+V`.
 - **Surveillance avant `Ctrl+V`** : si le texte collé se lit nettement mieux
@@ -74,8 +77,8 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
 - Texte mixte : en sens hébreu→français, seuls les mots contenant de
   l'hébreu sont convertis ; le français (mots, chiffres, ponctuation)
   est préservé. Mots tout en capitales : seules Q/A/W/Z commutent.
-- Boutons : `⇄ Inverser`, `✕ Effacer`, `📋 Copier (Ctrl+Entrée)`.
-- **Historique** (replié sous le résultat) : chaque copie explicite y est
+- Boutons : `Inverser`, `Effacer`, `Copier (Ctrl+Entrée)`.
+- **Historique** (replié sous l'espace de travail) : chaque copie explicite y est
   mémorisée **localement** (navigateur uniquement, effaçable, désactivable
   dans ⚙) ; clic pour restaurer.
 - ⚙ **Réglages** : mode de conversion (**Français/Anglais ⇄ Hébreu** par défaut,
@@ -153,7 +156,8 @@ plus toute seule. Un clic ailleurs la ferme sans rien coller ; si vous
 n'avez pas fait de choix, elle réapparaît au `Ctrl+V` suivant. `Annuler`
 ou `Échap` la ferme et ne la propose plus pour le même presse-papiers.
 
-La fenêtre utilise un thème clair à fort contraste, avec coins arrondis,
+La fenêtre utilise un thème clair à fort contraste, aux mêmes teintes que
+la page principale : aperçu sur fond lavande, accents indigo, coins arrondis,
 logo net et anneaux de focus visibles pour l'accessibilité.
 
 Les `Ctrl+Maj+V`, `Ctrl+Alt+V` et `Win+V` ne sont jamais interceptés ; la
