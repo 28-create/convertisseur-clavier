@@ -69,6 +69,9 @@ SYMBOL_RE = re.compile(r'[@\\<>{}[\]|~^_=#$%&*+]')
 # CARACTERES RARES DANS LE TEXTE NATUREL MAIS FREQUENTS EN LECTURE ERROREE :
 # / (FR_TO_HE['a']) , " (gershayim), etc. On les penalise plus fort.
 RARE_IN_TEXT = re.compile(r'[/"\\]')
+# Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
+# Si elles sont au milieu -> lecture erronee tres probable.
+SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -210,6 +213,24 @@ def convert_for_layout(text, layout, direction, fix_mod):
     return fix_mod.convert_smart(text, table, swap, True)
 
 
+def _sofit_penalty(text):
+    """Penalise les lettres finales (sofit) au milieu des mots.
+
+    En hebreu, les lettres finales (ך ם ן ף ץ) n'apparaissent qu'en fin de mot.
+    Si elles sont precedees et suivies d'une lettre hebreu, c'est un signal
+    tres fort de lecture erronee (ex: conversion avec mauvaise disposition).
+    """
+    penalty = 0
+    for i, ch in enumerate(text):
+        if SOFIT_RE.match(ch):
+            # Verifie si on est au milieu d'un mot hebreu
+            prev_heb = i > 0 and HEB_RE.match(text[i - 1])
+            next_heb = i + 1 < len(text) and HEB_RE.match(text[i + 1])
+            if prev_heb and next_heb:
+                penalty += LAYOUT_PENALTY * 5  # signal tres fort
+    return penalty
+
+
 def _layout_penalty(text, direction):
     """Penalise les restes de l'ecriture source et les symboles de code.
 
@@ -220,6 +241,8 @@ def _layout_penalty(text, direction):
     Certains symboles (/, ") sont tres rares dans le texte naturel mais
     tres frequents en lecture erronee (ex: FR 'a' -> '/' en HE). On leur
     applique une penalite renforcee.
+
+    Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
     """
     penalty = 0
     for ch in text:
@@ -233,6 +256,9 @@ def _layout_penalty(text, direction):
             penalty += LAYOUT_PENALTY * 3
         elif SYMBOL_RE.match(ch):
             penalty += LAYOUT_PENALTY
+    # Penalite sofit (uniquement pertinent pour texte hebreu cible)
+    if direction == 'toHe':
+        penalty += _sofit_penalty(text)
     return penalty
 
 
