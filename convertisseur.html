@@ -10,134 +10,209 @@
 <title>Convertisseur Clavier Français ⇄ Hébreu (AZERTY / QWERTY)</title>
 <style>
   :root {
-    --bg: #edf0f6; --card: #ffffff; --text: #17233a; --muted: #5d6c84;
-    --border: #dfe6f0; --accent: #4f46e5; --accent-hover: #4338c2;
-    --accent-soft: rgba(79, 70, 229, .1); --out-bg: #f7f9fd;
-    --shadow: 0 8px 30px rgba(0,0,0,.18); --card-shadow: 0 1px 2px rgba(23,35,58,.06), 0 8px 24px rgba(23,35,58,.08);
-    --radius: 16px;
+    color-scheme: light;
+    --bg: #f4f6fb;
+    --bg-deep: #e9edf7;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #52617a;
+    --border: #d9e1ec;
+    --border-strong: #c3cfdf;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: rgba(79, 70, 229, .10);
+    --accent-softer: rgba(79, 70, 229, .055);
+    --out-bg: #f7f8fd;
+    --success: #0f766e;
+    --shadow: 0 24px 70px rgba(15, 23, 42, .22);
+    --card-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 18px 45px -28px rgba(15, 23, 42, .28);
+    --radius: 22px;
+    --radius-lg: 28px;
+    --radius-sm: 14px;
+    --primary-shadow: 0 10px 24px -12px rgba(79, 70, 229, .85);
   }
   html[data-theme="dark"] {
-    --bg: #0e1320; --card: #161d2c; --text: #e9eef6; --muted: #94a2b9;
-    --border: #2a3547; --accent: #818cf8; --accent-hover: #a5b4fc;
-    --accent-soft: rgba(129, 140, 248, .14); --out-bg: #101725;
-    --shadow: 0 8px 30px rgba(0,0,0,.5); --card-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+    --bg: #080e1a;
+    --bg-deep: #0c1424;
+    --card: #111a2b;
+    --text: #edf2fa;
+    --muted: #a3b2c7;
+    --border: #263449;
+    --border-strong: #35465f;
+    --accent: #a5b4fc;
+    --accent-hover: #c7d2fe;
+    --accent-soft: rgba(165, 180, 252, .14);
+    --accent-softer: rgba(165, 180, 252, .07);
+    --out-bg: #0d1626;
+    --success: #5eead4;
+    --shadow: 0 24px 70px rgba(0, 0, 0, .6);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 18px 45px -28px rgba(0, 0, 0, .7);
+    --primary-shadow: 0 10px 24px -12px rgba(165, 180, 252, .45);
   }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: radial-gradient(1200px 400px at 50% -120px, var(--accent-soft), transparent), var(--bg);
-    color: var(--text); margin: 0; padding: 0; line-height: 1.55; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .wrap { max-width: 920px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
-  header.top { position: relative; display: flex; flex-direction: column; align-items: center;
-    text-align: center; gap: .45rem; margin-bottom: .25rem; padding-inline: 3rem; }
-  .brand { display: flex; flex-direction: column; align-items: center; gap: .55rem; text-align: center; }
-  .brand-mark { display: inline-flex; width: 2.5rem; height: 2.5rem;
-    border-radius: .8rem; overflow: hidden; box-shadow: var(--card-shadow); }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(70rem 36rem at 8% -12%, var(--accent-soft), transparent 60%),
+      radial-gradient(55rem 30rem at 98% 0%, rgba(124, 58, 237, .10), transparent 62%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+    background-attachment: fixed;
+    color: var(--text); margin: 0; min-height: 100vh; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+    background-image: linear-gradient(rgba(100,116,139,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100,116,139,.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(180deg, rgba(0,0,0,.55), transparent 65%); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.1rem; }
+  .brand { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+  .brand-mark { display: inline-flex; flex: 0 0 auto; width: 3.4rem; height: 3.4rem; border-radius: 18px; overflow: hidden; box-shadow: 0 12px 30px -12px rgba(79,70,229,.65), 0 0 0 1px rgba(255,255,255,.45) inset; }
   .brand-mark svg { width: 100%; height: 100%; display: block; }
-  header.top h1 { font-size: 1.35rem; margin: 0; letter-spacing: -.01em; }
-  #openSettings { position: absolute; inset-inline-end: 0; top: 0;
-    width: 2.5rem; height: 2.5rem; padding: 0; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; }
-  .subtitle { color: var(--muted); margin: .5rem 0 1.25rem; text-align: center; }
-  .subtitle code { background: var(--out-bg); border: 1px solid var(--border);
-    border-radius: 6px; padding: 0 .35rem; font-size: .9em; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 1.1rem 1.1rem 1rem; margin-bottom: 1rem; box-shadow: var(--card-shadow); }
-  .pane-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .45rem; }
-  label.lbl { font-weight: 650; font-size: .95rem; }
-  #stats { color: var(--muted); font-size: .85rem; white-space: nowrap; }
-  textarea { width: 100%; min-height: 132px; padding: .7rem .8rem; resize: vertical;
-    font-size: 1.1rem; color: var(--text); background: var(--card);
-    border: 1.5px solid var(--border); border-radius: 12px; transition: border-color .15s ease, box-shadow .15s ease; }
-  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+  .brand h1 { font-size: clamp(1.2rem, 2.1vw, 1.7rem); line-height: 1.2; letter-spacing: -.03em; margin: 0; }
+  .top-actions { display: flex; align-items: center; gap: .55rem; flex: 0 0 auto; }
+  .local-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .42rem .72rem; border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,.55); color: var(--muted); font-size: .78rem; font-weight: 650; backdrop-filter: blur(10px); }
+  html[data-theme="dark"] .local-pill { background: rgba(17,26,43,.65); }
+  .local-pill .ico { width: 1rem; height: 1rem; color: var(--success); }
+  #openSettings { width: 2.75rem; height: 2.75rem; padding: 0; border-radius: 14px; background: var(--card); border-color: var(--border); box-shadow: var(--card-shadow); }
+  #openSettings:hover { border-color: var(--accent); color: var(--accent); }
+  #openSettings svg { width: 1.2rem; height: 1.2rem; }
+  .hero { margin: 0 0 1.2rem; max-width: 72ch; }
+  .subtitle { color: var(--muted); margin: 0; font-size: 1rem; }
+  .subtitle code, .keyboard-hint code { background: var(--card); border: 1px solid var(--border); border-radius: 7px; padding: .08rem .4rem; color: var(--text); font-family: "Cascadia Code", "Segoe UI", monospace; font-size: .86em; }
+  .keyboard-hint { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .9rem; margin-top: .65rem; color: var(--muted); font-size: .8rem; }
+  .keyboard-hint .pair { display: inline-flex; align-items: center; gap: .38rem; }
+  .keyboard-hint .arrow { color: var(--accent); font-weight: 800; }
+  .keyboard-hint .sep { width: 1px; height: 1rem; background: var(--border); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.15rem; margin-bottom: 1rem; box-shadow: var(--card-shadow); }
+  .workspace { padding: 1.05rem; border-radius: var(--radius-lg); }
+  .editor-panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; align-items: stretch; }
+  .editor-pane { display: flex; flex-direction: column; min-width: 0; padding: .95rem; background: var(--out-bg); border: 1px solid var(--border); border-radius: 18px; transition: border-color .18s ease, background .18s ease; }
+  .editor-pane:focus-within { border-color: var(--border-strong); background: var(--card); }
+  .pane-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .55rem; min-height: 1.5rem; }
+  label.lbl { font-weight: 700; font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  #stats { color: var(--muted); font-size: .76rem; white-space: nowrap; background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: .18rem .5rem; }
+  #stats:has(small:empty) { visibility: hidden; }
+  textarea { width: 100%; min-height: 240px; padding: .85rem .95rem; resize: vertical; font: inherit; font-size: 1.1rem; color: var(--text); background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s ease, box-shadow .15s ease; }
+  textarea::placeholder { color: var(--muted); opacity: .9; }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); outline: none; }
   html[data-fontsize="small"] textarea, html[data-fontsize="small"] .out { font-size: .95rem; }
   html[data-fontsize="large"] textarea, html[data-fontsize="large"] .out { font-size: 1.35rem; }
-  .converter-bar { display: flex; align-items: center; gap: .6rem; margin: .8rem 0; }
-  .converter-bar::before, .converter-bar::after { content: ""; height: 1px; flex: 1; background: var(--border); }
-  #detect { margin: 0; color: var(--muted); font-size: .85rem; white-space: nowrap; }
+  .converter-bar { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: .7rem 0 0; flex-wrap: wrap; }
+  #detect { margin: 0; color: var(--muted); font-size: .8rem; min-height: 1.2rem; }
   #detect:empty { display: none; }
-  .converter-bar:has(#detect:empty)::before, .converter-bar:has(#detect:empty)::after { display: none; }
-  .converter-bar:has(#detect:empty) { margin: .3rem 0; }
-  #copy { white-space: nowrap; }
-  .out { background: var(--out-bg); padding: .8rem .9rem; white-space: pre-wrap;
-    word-break: break-word; min-height: 96px; border: 1.5px dashed var(--border);
-    border-radius: 12px; font-size: 1.15rem; }
+  .converter-bar:has(#detect:empty):has(.seg[hidden]) { display: none; }
+  .seg { display: flex; gap: .25rem; background: var(--card); border: 1px solid var(--border); border-radius: 11px; padding: .2rem; }
+  .seg button { font-size: .74rem; font-weight: 700; padding: .3rem .6rem; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); }
+  .seg button:hover { border-color: transparent; color: var(--text); background: var(--out-bg); }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: transparent; box-shadow: none; }
+  #layoutSuggest { align-items: center; margin: .7rem 0 0; padding: .55rem .65rem; background: var(--accent-softer); border: 1px solid var(--border); border-radius: 12px; gap: .45rem; }
+  #suggestText { font-size: .8rem; font-weight: 700; color: var(--muted); }
+  #suggestPreview { font-size: .82rem; color: var(--muted); display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  #suggestApply { font-size: .78rem; padding: .35rem .65rem; }
+  #suggestDismiss { width: 2rem; height: 2rem; padding: 0; border-radius: 9px; }
+  .out { background: var(--card); padding: .85rem .95rem; white-space: pre-wrap; word-break: break-word; min-height: 240px; flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 1.12rem; line-height: 1.6; }
   .out[dir="rtl"] { text-align: right; }
+  .out:empty::after { content: ""; display: block; width: 2.6rem; height: 3px; margin-top: .1rem; border-radius: 999px; background: var(--accent-soft); }
+  .workspace-actions { display: flex; justify-content: flex-end; margin-top: .85rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+  .actions { margin: 0; justify-content: flex-end; }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .9rem 0 0; align-items: center; }
-  button { padding: .55rem 1.05rem; cursor: pointer; font-size: .95rem; font-weight: 600;
-    border-radius: 999px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); transition: background .15s ease, border-color .15s ease, transform .05s ease; }
-  button:hover { border-color: var(--accent); }
+  button { display: inline-flex; align-items: center; justify-content: center; gap: .48rem; padding: .58rem .95rem; min-height: 2.45rem; cursor: pointer; font: inherit; font-size: .88rem; font-weight: 650; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: var(--text); transition: background .15s ease, border-color .15s ease, color .15s ease, transform .05s ease, box-shadow .15s ease; }
+  button:hover { border-color: var(--border-strong); background: var(--out-bg); }
   button:active { transform: translateY(1px); }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.primary:hover { background: var(--accent-hover); }
-  button.ghost { background: transparent; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: var(--primary-shadow); }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.ghost { background: transparent; border-color: transparent; color: var(--muted); box-shadow: none; }
+  button.ghost:hover { background: var(--out-bg); color: var(--text); }
   html[data-theme="dark"] button.primary { color: #101725; }
+  button .ico { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+  #copy { padding-inline: 1.1rem; }
+  #swap, #clear { color: var(--muted); }
+  #swap:hover, #clear:hover { color: var(--text); }
   input[type="radio"], input[type="checkbox"] { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
-  .chips button { font-size: .85rem; font-weight: 500; padding: .4rem .8rem; background: var(--out-bg); }
-  .chips button.primary { background: var(--accent); border-color: var(--accent); }
-  .chips button.primary:hover { background: var(--accent-hover); }
-  #layoutSuggest { align-items: center; margin-top: .6rem; }
-  #suggestText { font-size: .85rem; font-weight: 650; color: var(--muted); }
-  #suggestPreview { font-size: .85rem; color: var(--muted); display: inline-block;
-    max-width: 42ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
-  .card h2 { margin: 0 0 .6rem; font-size: 1rem; }
-  footer.foot { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 1.5rem; }
-  /* Settings panel */
-  #settingsOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.45);
-    display: none; z-index: 40; }
-  #settingsOverlay.open { display: block; }
-  #settingsPanel { position: fixed; top: 0; bottom: 0; inset-inline-end: 0; width: min(400px, 94vw);
-    background: var(--card); color: var(--text); border-inline-start: 1px solid var(--border);
-    box-shadow: var(--shadow); z-index: 41; transform: translateX(105%);
-    visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s;
-    display: flex; flex-direction: column; }
-  html[dir="rtl"] #settingsPanel { transform: translateX(-105%); }
-  #settingsPanel.open,
-  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); visibility: visible;
-    transition: transform .22s ease; }
-  .panel-head { display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem 1.1rem; border-bottom: 1px solid var(--border); }
-  .panel-head h2 { margin: 0; font-size: 1.1rem; }
-  .panel-body { padding: 1.1rem; overflow-y: auto; }
-  .panel-body fieldset { border: 0; padding: 0; margin: 0 0 1.2rem; min-width: 0; }
-  .panel-body legend { margin-bottom: .5rem; font-size: .8rem; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .06em; padding: 0; }
-  .radio-col { display: flex; flex-direction: column; gap: .4rem; }
-  .panel-foot { padding: 1rem 1.1rem; border-top: 1px solid var(--border);
-    display: flex; gap: .5rem; justify-content: flex-end; }
-  .check { display: flex; align-items: center; gap: .55rem; margin: .4rem 0; }
-  details summary { cursor: pointer; font-weight: 650; }
-  details[open] summary { margin-bottom: .6rem; }
-  .hist { display: block; width: 100%; text-align: start; margin-bottom: .4rem;
-    font-weight: 400; background: var(--out-bg); }
-  .hist-dir { font-size: .75rem; font-weight: 700; color: var(--accent); }
-  .hist-time { font-size: .75rem; color: var(--muted); margin-inline-start: .5rem; }
-  .hist-io { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sec-ico { margin-inline-end: .15rem; }
-  .ico { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor;
-    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  #openSettings svg { width: 1.2rem; height: 1.2rem; }
-  .flag { width: 1.2em; height: 1.2em; border-radius: 50%; vertical-align: -0.22em;
-    margin-inline-end: .3rem; box-shadow: 0 0 0 1px var(--border); }
+  .chips { margin-top: .15rem; }
+  .chips button { font-size: .8rem; font-weight: 550; padding: .45rem .7rem; background: var(--out-bg); border-radius: 10px; }
+  .chips button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chips button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .bottom-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1rem; align-items: start; }
+  .bottom-grid .card { margin-bottom: 0; }
+  .card h2 { margin: 0 0 .65rem; font-size: 1rem; letter-spacing: -.01em; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .section-head .ico { color: var(--accent); width: 1.05rem; height: 1.05rem; }
+  details summary { display: flex; align-items: center; justify-content: space-between; gap: .75rem; cursor: pointer; font-weight: 700; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: ""; width: .5rem; height: .5rem; flex: 0 0 auto; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); transition: transform .2s ease; }
+  details[open] summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+  details[open] summary { margin-bottom: .65rem; }
+  #historyEmpty { color: var(--muted); font-size: .84rem; }
+  .hist { display: block; width: 100%; text-align: start; margin-bottom: .4rem; font-weight: 400; background: var(--out-bg); border-radius: 10px; padding: .55rem .65rem; min-height: 0; }
+  .hist:hover { background: var(--accent-softer); }
+  .hist-dir { font-size: .72rem; font-weight: 800; color: var(--accent); letter-spacing: .03em; }
+  .hist-time { font-size: .72rem; color: var(--muted); margin-inline-start: .5rem; }
+  .hist-io { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .84rem; }
+  .foot { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 1.6rem; }
+  .ico { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .flag { width: 1.2em; height: 1.2em; border-radius: 50%; vertical-align: -0.22em; margin-inline-end: .3rem; box-shadow: 0 0 0 1px var(--border); }
   [hidden] { display: none !important; }
   fieldset:disabled { opacity: .45; }
   fieldset:disabled input { cursor: not-allowed; }
-  .seg { display: flex; gap: .3rem; background: var(--out-bg);
-    border: 1px solid var(--border); border-radius: 999px; padding: .22rem; }
-  .seg button { font-size: .78rem; font-weight: 650; padding: .32rem .7rem;
-    border: 1px solid transparent; background: transparent; color: var(--muted); }
-  .seg button:hover { border-color: transparent; color: var(--text); }
-  .seg button[aria-pressed="true"] { background: var(--card); color: var(--text);
-    border-color: var(--border); box-shadow: var(--card-shadow); }
-  @media (prefers-reduced-motion: reduce) { * { transition: none; } }
+  /* Settings panel */
+  #settingsOverlay { position: fixed; inset: 0; background: rgba(8, 15, 30, .42); backdrop-filter: blur(4px); display: none; z-index: 40; }
+  #settingsOverlay.open { display: block; }
+  #settingsPanel { position: fixed; top: 0; bottom: 0; inset-inline-end: 0; width: min(430px, 94vw); background: var(--card); color: var(--text); border-inline-start: 1px solid var(--border); border-radius: 24px 0 0 24px; box-shadow: var(--shadow); z-index: 41; transform: translateX(105%); visibility: hidden; transition: transform .24s cubic-bezier(.2,.8,.2,1), visibility 0s linear .24s; display: flex; flex-direction: column; overflow: hidden; }
+  html[dir="rtl"] #settingsPanel { transform: translateX(-105%); border-radius: 0 24px 24px 0; }
+  #settingsPanel.open,
+  html[dir="rtl"] #settingsPanel.open { transform: translateX(0); visibility: visible; transition: transform .24s cubic-bezier(.2,.8,.2,1); }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 1.15rem 1.2rem; border-bottom: 1px solid var(--border); background: var(--card); }
+  .panel-head h2 { margin: 0; font-size: 1.15rem; letter-spacing: -.02em; }
+  #closeSettings { padding: .4rem .7rem; font-size: .82rem; }
+  .panel-body { padding: 1rem 1.15rem 1.4rem; overflow-y: auto; background: var(--bg); }
+  .panel-body fieldset { border: 1px solid var(--border); border-radius: 14px; padding: .85rem .8rem .8rem; margin: 0 0 .8rem; min-width: 0; background: var(--card); }
+  .panel-body legend { margin-bottom: .55rem; font-size: .72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; padding: 0 .35rem; margin-inline-start: .2rem; }
+  .sec-ico { display: inline-flex; vertical-align: -2px; margin-inline-end: .25rem; color: var(--accent); }
+  .radio-col { display: flex; flex-direction: column; gap: .28rem; }
+  .radio-col label { display: flex; align-items: center; gap: .55rem; padding: .48rem .55rem; border: 1px solid transparent; border-radius: 10px; cursor: pointer; font-size: .9rem; transition: background .15s ease, border-color .15s ease; }
+  .radio-col label:hover { background: var(--out-bg); }
+  .radio-col label:has(input:checked) { background: var(--accent-softer); border-color: var(--border); }
+  .radio-col input[type="radio"] { appearance: none; -webkit-appearance: none; width: 1.05rem; height: 1.05rem; flex: 0 0 auto; border: 2px solid var(--border-strong); border-radius: 50%; display: grid; place-content: center; margin: 0; transition: border-color .15s ease; }
+  .radio-col input[type="radio"]::before { content: ""; width: .48rem; height: .48rem; border-radius: 50%; background: var(--accent); transform: scale(0); transition: transform .15s ease; }
+  .radio-col input[type="radio"]:checked { border-color: var(--accent); }
+  .radio-col input[type="radio"]:checked::before { transform: scale(1); }
+  .check { display: flex; align-items: center; gap: .7rem; margin: .3rem 0; padding: .35rem .1rem; cursor: pointer; font-size: .9rem; }
+  .check input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; width: 2.35rem; height: 1.3rem; flex: 0 0 auto; margin: 0; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--out-bg); transition: background .18s ease, border-color .18s ease; cursor: pointer; }
+  .check input[type="checkbox"]::after { content: ""; position: absolute; top: 2px; left: 2px; width: calc(1.3rem - 6px); height: calc(1.3rem - 6px); border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.25); transition: transform .18s ease; }
+  .check input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  .check input[type="checkbox"]:checked::after { transform: translateX(1.04rem); }
+  .panel-foot { padding: .9rem 1.15rem; border-top: 1px solid var(--border); display: flex; gap: .5rem; justify-content: flex-end; background: var(--card); }
+  @media (max-width: 820px) {
+    .editor-panes { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .editor-pane { padding: .8rem; }
+    textarea, .out { min-height: 190px; }
+  }
   @media (max-width: 560px) {
-    header.top h1 { font-size: 1.1rem; }
-    .card { padding: .9rem .9rem .85rem; }
+    .wrap { padding: 1.25rem .8rem 2.5rem; }
+    .brand-mark { width: 2.8rem; height: 2.8rem; border-radius: 15px; }
+    .brand h1 { font-size: 1.12rem; }
+    .local-pill { padding: .35rem .55rem; }
+    .local-pill span { display: none; }
+    #openSettings { width: 2.5rem; height: 2.5rem; }
+    .workspace { padding: .7rem; border-radius: 20px; }
+    .editor-pane { border-radius: 15px; }
+    .card { padding: .95rem; border-radius: 18px; }
+    .workspace-actions { justify-content: stretch; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+    #copy { grid-column: 1 / -1; }
     .converter-bar { flex-wrap: wrap; }
-    .converter-bar::before, .converter-bar::after { display: none; }
-    #detect { white-space: normal; text-align: center; }
+    #detect { white-space: normal; }
     .seg { flex-wrap: wrap; max-width: 100%; }
+    .keyboard-hint .sep { display: none; }
+    #settingsPanel { width: 100vw; border-radius: 0; }
+    html[dir="rtl"] #settingsPanel { border-radius: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
@@ -149,62 +224,84 @@
       <span class="brand-mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ckg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ckg)"/><rect x="12" y="16" width="40" height="32" rx="7" fill="#FFFFFF"/><text x="32" y="39" text-anchor="middle" font-family="system-ui,'Segoe UI',Arial,sans-serif" font-size="21" font-weight="bold" fill="#4F46E5">Aא</text></svg></span>
       <h1 data-i18n="title">Convertisseur clavier Français ⇄ Hébreu</h1>
     </div>
-    <button id="openSettings" class="ghost" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M9.91 5.32 L10.05 2.81 A9.40 9.40 0 0 1 13.95 2.81 L14.09 5.32 A7.00 7.00 0 0 1 16.74 6.85 L18.99 5.71 A9.40 9.40 0 0 1 20.94 9.10 L18.83 10.47 A7.00 7.00 0 0 1 18.83 13.53 L20.94 14.90 A9.40 9.40 0 0 1 18.99 18.29 L16.74 17.15 A7.00 7.00 0 0 1 14.09 18.68 L13.95 21.19 A9.40 9.40 0 0 1 10.05 21.19 L9.91 18.68 A7.00 7.00 0 0 1 7.26 17.15 L5.01 18.29 A9.40 9.40 0 0 1 3.06 14.90 L5.17 13.53 A7.00 7.00 0 0 1 5.17 10.47 L3.06 9.10 A9.40 9.40 0 0 1 5.01 5.71 L7.26 6.85 A7.00 7.00 0 0 1 9.91 5.32Z"/></svg></button>
-  </header>
-  <p class="subtitle"><span data-i18n="subtitle">Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.</span><br>
-    <small dir="ltr">AZERTY : <code>qkuo</code> ↔ <code>שלום</code> &nbsp;|&nbsp; QWERTY : <code>akuo</code> ↔ <code>שלום</code></small>
-  </p>
-
-  <div class="card">
-    <div class="pane-head">
-      <label class="lbl" for="input" data-i18n="inputLabel">Texte à convertir :</label>
-      <span id="stats"><small></small></span>
+    <div class="top-actions">
+      <span class="local-pill"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.9 7.6-7 9-4.1-1.4-7-4.5-7-9V6l7-3z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></svg><span data-i18n="localOnly">100 % local</span></span>
+      <button id="openSettings" aria-haspopup="dialog" aria-controls="settingsPanel" aria-expanded="false" data-i18n-aria="settings" aria-label="Réglages"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M9.91 5.32 L10.05 2.81 A9.40 9.40 0 0 1 13.95 2.81 L14.09 5.32 A7.00 7.00 0 0 1 16.74 6.85 L18.99 5.71 A9.40 9.40 0 0 1 20.94 9.10 L18.83 10.47 A7.00 7.00 0 0 1 18.83 13.53 L20.94 14.90 A9.40 9.40 0 0 1 18.99 18.29 L16.74 17.15 A7.00 7.00 0 0 1 14.09 18.68 L13.95 21.19 A9.40 9.40 0 0 1 10.05 21.19 L9.91 18.68 A7.00 7.00 0 0 1 7.26 17.15 L5.01 18.29 A9.40 9.40 0 0 1 3.06 14.90 L5.17 13.53 A7.00 7.00 0 0 1 5.17 10.47 L3.06 9.10 A9.40 9.40 0 0 1 5.01 5.71 L7.26 6.85 A7.00 7.00 0 0 1 9.91 5.32Z"/></svg></button>
     </div>
-    <textarea id="input" dir="auto" data-i18n-ph="placeholder" placeholder="Collez ici... ex: qkuo  ou  נםמחםור"></textarea>
-    <div class="converter-bar">
-      <p id="detect" dir="auto" aria-live="polite"></p>
-      <div class="seg" id="latinSeg" dir="ltr" hidden>
-        <button data-latindir="toAz" aria-pressed="true">QWERTY → AZERTY</button>
-        <button data-latindir="toQw" aria-pressed="false">AZERTY → QWERTY</button>
+  </header>
+
+  <section class="hero">
+    <p class="subtitle"><span data-i18n="subtitle">Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.</span></p>
+    <div class="keyboard-hint" dir="ltr">
+      <span class="pair"><b>AZERTY</b> <code>qkuo</code> <span class="arrow" aria-hidden="true">↔</span> <code>שלום</code></span>
+      <span class="sep" aria-hidden="true"></span>
+      <span class="pair"><b>QWERTY</b> <code>akuo</code> <span class="arrow" aria-hidden="true">↔</span> <code>שלום</code></span>
+    </div>
+  </section>
+
+  <section class="card workspace">
+    <div class="editor-panes">
+      <div class="editor-pane">
+        <div class="pane-head">
+          <label class="lbl" for="input" data-i18n="inputLabel">Texte à convertir :</label>
+          <span id="stats"><small></small></span>
+        </div>
+        <textarea id="input" dir="auto" data-i18n-ph="placeholder" placeholder="Collez ici... ex: qkuo  ou  נםמחםור"></textarea>
+        <div class="converter-bar">
+          <p id="detect" dir="auto" aria-live="polite"></p>
+          <div class="seg" id="latinSeg" dir="ltr" hidden>
+            <button data-latindir="toAz" aria-pressed="true">QWERTY → AZERTY</button>
+            <button data-latindir="toQw" aria-pressed="false">AZERTY → QWERTY</button>
+          </div>
+        </div>
+        <div id="layoutSuggest" class="row chips" hidden>
+          <span role="status"><span id="suggestText"></span> <bdi id="suggestPreview"></bdi></span>
+          <button id="suggestApply" class="primary" data-i18n="suggestApply" aria-keyshortcuts="ArrowDown">Afficher cette lecture (↓)</button>
+          <button id="suggestDismiss" class="ghost" data-i18n-aria="suggestDismiss" aria-label="Ignorer pour ce texte">✕</button>
+        </div>
+      </div>
+      <div class="editor-pane">
+        <div class="pane-head">
+          <span class="lbl" data-i18n="resultLabel">Résultat :</span>
+        </div>
+        <div id="output" class="out" dir="auto"></div>
       </div>
     </div>
-    <div id="layoutSuggest" class="row chips" hidden>
-      <span role="status"><span id="suggestText"></span> <bdi id="suggestPreview"></bdi></span>
-      <button id="suggestApply" class="primary" data-i18n="suggestApply" aria-keyshortcuts="ArrowDown">Afficher cette lecture (↓)</button>
-      <button id="suggestDismiss" class="ghost" data-i18n-aria="suggestDismiss" aria-label="Ignorer pour ce texte">✕</button>
+    <div class="workspace-actions">
+      <div class="row actions">
+        <button id="copy" class="primary" aria-keyshortcuts="Control+Enter Meta+Enter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy">Copier (Ctrl+Entrée)</span></button>
+        <button id="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/></svg><span data-i18n="swap">Inverser</span></button>
+        <button id="clear" data-i18n-title="clearTitle" title="Tout effacer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="clear">Effacer</span></button>
+      </div>
     </div>
-    <div class="pane-head">
-      <label class="lbl" data-i18n="resultLabel">Résultat :</label>
-    </div>
-    <div id="output" class="out" dir="auto"></div>
-    <div class="row">
-      <button id="copy" class="primary" data-i18n="copy" aria-keyshortcuts="Control+Enter Meta+Enter">📋 Copier (Ctrl+Entrée)</button>
-      <button id="swap" data-i18n="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie">⇄ Inverser</button>
-      <button id="clear" data-i18n="clear" data-i18n-title="clearTitle" title="Tout effacer">✕ Effacer</button>
-    </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <details id="historyBox">
-      <summary data-i18n="history">Historique</summary>
-      <p id="historyEmpty" data-i18n="historyEmpty">Aucun élément — copiez un résultat pour le mémoriser (stockage local uniquement).</p>
-      <div id="historyList"></div>
-      <div class="row"><button id="historyClear" data-i18n="historyClear">Tout effacer</button></div>
-    </details>
-  </div>
+  <div class="bottom-grid">
+    <section class="card">
+      <details id="historyBox">
+        <summary><span data-i18n="history">Historique</span></summary>
+        <p id="historyEmpty" data-i18n="historyEmpty">Aucun élément — copiez un résultat pour le mémoriser (stockage local uniquement).</p>
+        <div id="historyList"></div>
+        <div class="row"><button id="historyClear" data-i18n="historyClear">Tout effacer</button></div>
+      </details>
+    </section>
 
-  <div class="card">
-    <h2 style="margin-top:0" data-i18n="examples">Exemples pour tester</h2>
-    <div class="row chips" dir="ltr" id="heExamples">
-      <button data-ex="qkuo" data-mode="hebrew" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
-      <button data-ex="akuo" data-mode="hebrew" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
-      <button data-ex="נםמחםור" data-mode="hebrew">נםמחםור → bonjour ?</button>
-      <button data-ex="Bםמחםור" data-mode="hebrew" data-layout="azerty">Bםמחםור → Bonjour ?</button>
-    </div>
-    <div class="row chips" dir="ltr" id="latinExamples" hidden>
-      <button data-ex="qwerty" data-mode="latin" data-latindir="toAz">qwerty → azerty ?</button>
-      <button data-ex="azerty" data-mode="latin" data-latindir="toQw">azerty → qwerty ?</button>
-    </div>
+    <section class="card">
+      <div class="section-head">
+        <h2 data-i18n="examples">Exemples pour tester</h2>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg>
+      </div>
+      <div class="row chips" dir="ltr" id="heExamples">
+        <button data-ex="qkuo" data-mode="hebrew" data-layout="azerty">AZERTY : qkuo → שלום ?</button>
+        <button data-ex="akuo" data-mode="hebrew" data-layout="qwerty">QWERTY : akuo → שלום ?</button>
+        <button data-ex="נםמחםור" data-mode="hebrew">נםמחםור → bonjour ?</button>
+        <button data-ex="Bםמחםור" data-mode="hebrew" data-layout="azerty">Bםמחםור → Bonjour ?</button>
+      </div>
+      <div class="row chips" dir="ltr" id="latinExamples" hidden>
+        <button data-ex="qwerty" data-mode="latin" data-latindir="toAz">qwerty → azerty ?</button>
+        <button data-ex="azerty" data-mode="latin" data-latindir="toQw">azerty → qwerty ?</button>
+      </div>
+    </section>
   </div>
 
   <footer class="foot"><small data-i18n="footNote">100 % local — aucune donnée envoyée.</small></footer>
@@ -389,7 +486,7 @@ const I18N = {
     subtitle: "Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.",
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
-    swap: '⇄ Inverser', swapTitle: 'Échanger entrée et sortie', clear: '✕ Effacer', clearTitle: 'Tout effacer', copy: '📋 Copier (Ctrl+Entrée)',
+    swap: 'Inverser', swapTitle: 'Échanger entrée et sortie', clear: 'Effacer', clearTitle: 'Tout effacer', copy: 'Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
     secLang: "Langue d'interface", secMode: 'Mode de conversion',
     langFr: 'Français', langEn: 'Anglais', langHe: 'Hébreu',
@@ -408,14 +505,14 @@ const I18N = {
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
     dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
-    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture (↓)', suggestDismiss: 'Ignorer pour ce texte', footNote: '100 % local — aucune donnée envoyée.' },
+    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture (↓)', suggestDismiss: 'Ignorer pour ce texte', localOnly: '100 % local', footNote: '100 % local — aucune donnée envoyée.' },
   en: { title: '{la} ⇄ {he} keyboard converter', settings: 'Settings',
     docTitle: '{la} ⇄ {he} Keyboard Converter (AZERTY / QWERTY)',
     docDesc: '{la} ⇄ {he} keyboard converter (AZERTY / QWERTY), 100% local.',
     subtitle: 'Paste text typed with the wrong layout, it gets converted automatically.',
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
-    swap: '⇄ Swap', swapTitle: 'Swap input and output', clear: '✕ Clear', clearTitle: 'Clear everything', copy: '📋 Copy (Ctrl+Enter)',
+    swap: 'Swap', swapTitle: 'Swap input and output', clear: 'Clear', clearTitle: 'Clear everything', copy: 'Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
     secLang: 'Interface language', secMode: 'Conversion mode',
     langFr: 'French', langEn: 'English', langHe: 'Hebrew',
@@ -434,14 +531,14 @@ const I18N = {
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
     dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
-    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading (↓)', suggestDismiss: 'Ignore for this text', footNote: '100% local — no data sent.' },
+    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading (↓)', suggestDismiss: 'Ignore for this text', localOnly: '100% local', footNote: '100% local — no data sent.' },
   he: { title: 'ממיר מקלדת {la} ⇄ {he}', settings: 'הגדרות',
     docTitle: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY)',
     docDesc: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY), 100% מקומי.',
     subtitle: 'הדביקו טקסט שהוקלד עם פריסה שגויה, והוא יומר אוטומטית.',
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
-    swap: '⇄ החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: '✕ ניקוי', clearTitle: 'ניקוי הכל', copy: '📋 העתקה \u2066(Ctrl+Enter)\u2069',
+    swap: 'החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: 'ניקוי', clearTitle: 'ניקוי הכל', copy: 'העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
     secLang: 'שפת ממשק', secMode: 'מצב המרה',
     langFr: 'צרפתית', langEn: 'אנגלית', langHe: 'עברית',
@@ -460,7 +557,7 @@ const I18N = {
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
     dirLatinAz: 'הומר QWERTY ← AZERTY.', dirLatinQw: 'הומר AZERTY ← QWERTY.',
-    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו (↓)', suggestDismiss: 'התעלמות בטקסט זה', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
+    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו (↓)', suggestDismiss: 'התעלמות בטקסט זה', localOnly: '100% מקומי', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
