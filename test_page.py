@@ -19,6 +19,22 @@ REQUIRED_IDS = ['input', 'output', 'detect', 'stats', 'swap', 'clear', 'copy',
                 'layoutSuggest', 'suggestText', 'suggestPreview', 'suggestApply',
                 'suggestDismiss']
 
+
+def run_node(prog):
+    """Execute un script Node.js via un fichier temporaire (evite limite cmdline Windows)."""
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.js', delete=False) as tf:
+        tf.write(prog)
+        script_path = tf.name
+    try:
+        r = subprocess.run(['node', script_path], capture_output=True, text=True,
+                           encoding='utf-8', errors='replace', timeout=30)
+        return r
+    finally:
+        try:
+            os.unlink(script_path)
+        except OSError:
+            pass
+
 results = []
 
 
@@ -129,8 +145,7 @@ def main():
                     ' + JSON.stringify(r)); }\n'
                     '});\n'
                     'console.log(bad === 0 ? "OK" : "FAIL");\n')
-            r = subprocess.run(['node', '-e', prog], capture_output=True,
-                               text=True, encoding='utf-8', errors='replace')
+            r = run_node(prog)
             out = (r.stdout or '') + (r.stderr or '')
             check('migration reglages (node)',
                   r.returncode == 0 and (r.stdout or '').strip().endswith('OK'),
@@ -159,8 +174,7 @@ def main():
                     '  isHistDup([{ i: histInput(long) }], long) === true\n'
                     '];\n'
                     'console.log(r.every(Boolean) ? "OK" : "FAIL");\n')
-            r = subprocess.run(['node', '-e', prog], capture_output=True,
-                               text=True, encoding='utf-8', errors='replace')
+            r = run_node(prog)
             out = (r.stdout or '') + (r.stderr or '')
             check('historique helpers (node)',
                   r.returncode == 0 and (r.stdout or '').strip().endswith('OK'),
@@ -229,8 +243,7 @@ def main():
                     ' preview: r.preview} : null;\n'
                     '});\n'
                     'console.log("SUGGEST:" + JSON.stringify(out));\n')
-            r = subprocess.run(['node', '-e', prog], capture_output=True,
-                               text=True, encoding='utf-8', errors='replace')
+            r = run_node(prog)
             out_s = (r.stdout or '').strip()
             if r.returncode != 0 or 'SUGGEST:' not in out_s:
                 check('suggestion lecture (node)', False,
@@ -273,8 +286,7 @@ def main():
             prog = (mblk.group(0) + '\n' + mnorm.group(0) + '\n'
                     'console.log(JSON.stringify(%s.map(s => normalizeForModel(s))));\n'
                     % json.dumps(samples, ensure_ascii=True))
-            r = subprocess.run(['node', '-e', prog], capture_output=True,
-                               text=True, encoding='utf-8', errors='replace')
+            r = run_node(prog)
             detail = ''
             norm_ok = False
             try:
@@ -286,23 +298,25 @@ def main():
             except Exception as e:
                 detail = str(e)[:140]
             check('normalisation page/script identique', norm_ok, detail)
-            # integrite du bloc genere : alphabet et quantification identiques
-            # au generateur, et tables decodables en len(ALPHA)^2.
+            # integrite du bloc genere : alphabet, quantification et ordre identiques
+            # au generateur, et tables decodables en len(ALPHA)^ORDER.
             import base64 as _b64
             blk = mblk.group(0)
             m_alpha = re.search(r'const MODEL_ALPHA = "([^"]*)";', blk)
             m_scale = re.search(r'const MODEL_SCALE = (\d+), MODEL_OFFSET = (\d+);',
                                 blk)
+            m_order = re.search(r'const MODEL_ORDER = (\d+);', blk)
+            order = int(m_order.group(1)) if m_order else 2
             m_b64 = dict(re.findall(r"^  (\w+): '([A-Za-z0-9+/=]+)'", blk, re.M))
             integ = bool(m_alpha and m_scale and m_b64)
             if integ:
                 integ = (m_alpha.group(1) == gen_ngrams.ALPHA
                          and int(m_scale.group(1)) == gen_ngrams.SCALE
                          and int(m_scale.group(2)) == gen_ngrams.OFFSET
-                         and all(len(_b64.b64decode(v)) == len(gen_ngrams.ALPHA) ** 2
+                         and all(len(_b64.b64decode(v)) == len(gen_ngrams.ALPHA) ** order
                                  for v in m_b64.values()))
             check('bloc de modeles coherent avec gen_ngrams', bool(integ),
-                  '' if integ else str(sorted(m_b64) + [bool(m_alpha), bool(m_scale)]))
+                  '' if integ else str(sorted(m_b64) + [bool(m_alpha), bool(m_scale), order]))
     else:
         check('normalisation (node absent, ignore)', True, 'sans node')
 
