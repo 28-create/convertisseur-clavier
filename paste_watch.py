@@ -72,6 +72,30 @@ RARE_IN_TEXT = re.compile(r'[/"\\]')
 # Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
 # Si elles sont au milieu -> lecture erronee tres probable.
 SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
+# Chiffres : quasi absents de l'hebreu naturel (0.002-0.005%),
+# mais produits par accents FR (e->2, a->0, -=6, '->4, _->8, c->9).
+DIGIT_RE = re.compile(r'[0-9]')
+# k : tres rare en francais (0.003%), mais produit par HE lamed (6.53%)
+# en lecture erronee HE->FR (HE_TO_FR['\u05dc'] = 'k').
+K_IN_FR_RE = re.compile(r'k')
+# w : tres rare en francais (0.002%), mais produit par HE zayin (1.44%)
+# en lecture erronee HE->FR (HE_TO_FR['\u05d6'] = 'w').
+W_IN_FR_RE = re.compile(r'w')
+# ; : tres rare en francais (0.16%), mais produit par HE tav (4.56%)
+# en lecture erronee HE->FR (HE_TO_FR['\u05ea'] = ';').
+SEMICOLON_IN_FR_RE = re.compile(r';')
+# ! : rare en francais (0.16%), mais produit par HE point final (2.19%)
+# en lecture erronee HE->FR (HE_TO_FR['.'] = '!') et HE sofi pasuq.
+EXCLAMATION_IN_FR_RE = re.compile(r'!')
+# k : rare en anglais (0.99%), mais produit par HE lamed (6.53%)
+# en lecture erronee HE->EN (HE_TO_EN['\u05dc'] = 'k').
+K_IN_EN_RE = re.compile(r'k')
+# < : absent en anglais naturel, mais produit par AZERTY . (1.23%)
+# en lecture erronee AZERTY->QWERTY (AZ_TO_QW['.'] = '<').
+LT_IN_EN_RE = re.compile(r'<')
+# 1 : absent en francais naturel, mais produit par QWERTY ! (0.39%)
+# en lecture erronee QWERTY->AZERTY (QW_TO_AZ['!'] = '1').
+DIGIT_IN_FR_RE = re.compile(r'1')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -259,6 +283,36 @@ def _layout_penalty(text, direction):
     # Penalite sofit (uniquement pertinent pour texte hebreu cible)
     if direction == 'toHe':
         penalty += _sofit_penalty(text)
+    # Penalite chiffres en cible HE : tres rares en hebreu naturel (0.002-0.005%),
+    # mais frequents en lecture erronee FR->HE (e->2, a->0, -=6, '->4, _->8, c->9).
+    if direction == 'toHe' and DIGIT_RE.search(text):
+        penalty += LAYOUT_PENALTY * 4
+    # Penalite k en cible FR : tres rare en francais (0.003%),
+    # mais produit par HE lamed (6.53%) via HE_TO_FR['\u05dc'] = 'k'.
+    if direction == 'toFr' and K_IN_FR_RE.search(text):
+        penalty += LAYOUT_PENALTY * 5
+    # Penalite w en cible FR : tres rare en francais (0.002%),
+    # mais produit par HE zayin (1.44%) via HE_TO_FR['\u05d6'] = 'w'.
+    if direction == 'toFr' and W_IN_FR_RE.search(text):
+        penalty += LAYOUT_PENALTY * 5
+    # Penalite ; en cible FR : tres rare en francais (0.16%),
+    # mais produit par HE tav (4.56%) via HE_TO_FR['\u05ea'] = ';'.
+    if direction == 'toFr' and SEMICOLON_IN_FR_RE.search(text):
+        penalty += LAYOUT_PENALTY * 5
+    # Penalite ! en cible FR : rare en francais (0.16%),
+    # mais produit par HE point final (2.19%) via HE_TO_FR['.'] = '!'.
+    if direction == 'toFr' and EXCLAMATION_IN_FR_RE.search(text):
+        penalty += LAYOUT_PENALTY * 5
+    # Penalite k en cible EN : rare en anglais (0.99%),
+    # mais produit par HE lamed (6.53%) via HE_TO_EN['\u05dc'] = 'k'.
+    if direction == 'toFr' and K_IN_EN_RE.search(text):
+        # Note: direction 'toFr' pour HE->EN n'existe pas, on verifie layout
+        pass  # gere via layout specifique ci-dessous
+    # Penalite < en cible EN : absent en anglais naturel,
+    # mais produit par AZERTY . via AZ_TO_QW['.'] = '<' (layout azerty, toHe).
+    # Penalite 1 en cible FR : absent en francais naturel,
+    # mais produit par QWERTY ! via QW_TO_AZ['!'] = '1' (layout qwerty, toHe).
+    # Ces deux sont g�res via layout specifique dans _layout_candidates.
     return penalty
 
 
@@ -274,6 +328,19 @@ def _layout_candidates(text, direction, models, fix_mod):
         if score is None:
             continue
         penalty = _layout_penalty(converted, direction)
+        # Penalites specifiques au layout :
+        # Index 8: HE lamed -> EN k (HE_TO_EN['\u05dc'] = 'k')
+        # HE->EN conversion utilise direction='toFr' (vers latin), n'importe quel layout
+        if direction == 'toFr' and layout == 'qwerty' and K_IN_EN_RE.search(converted):
+            penalty += LAYOUT_PENALTY * 5
+        # Index 9: AZERTY . -> QWERTY < (AZ_TO_QW['.'] = '<')
+        # layout='azerty', direction='toHe' (FR->HE)
+        if direction == 'toHe' and layout == 'azerty' and LT_IN_EN_RE.search(converted):
+            penalty += LAYOUT_PENALTY * 5
+        # Index 10: QWERTY ! -> AZERTY 1 (QW_TO_AZ['!'] = '1')
+        # layout='qwerty', direction='toHe' (EN->HE)
+        if direction == 'toHe' and layout == 'qwerty' and DIGIT_IN_FR_RE.search(converted):
+            penalty += LAYOUT_PENALTY * 5
         out[layout] = {'layout': layout, 'text': converted,
                        'score': score, 'penalty': penalty,
                        'effective': score - penalty}
