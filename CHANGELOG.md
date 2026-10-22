@@ -1,5 +1,13 @@
 # Journal des modifications
 
+## Non publié
+- Détection `Ctrl+V` : les artefacts de ponctuation des tables (par exemple
+  `:` rendu en lettre finale `ף`) ne bloquent plus une lecture correcte. Deux
+  lettres finales de suite sont ignorées et le poids d'un sofit isolé est
+  réduit, sans retirer la surveillance des sofits au milieu d'un mot.
+- Corpus de référence : la détection correcte latin → hébreu passe de 93,8 %
+  à 97,5 % (AZERTY) et 98,8 % (QWERTY), avec 0 faux positif et 0 KEEPS.
+
 ## v1.13.0 - 22 oct. 2026
 - Détection des dispositions beaucoup plus fiable : modèles de **trigrammes**
   (au lieu de bigrammes) pour le français, l'anglais et l'hébreu, avec un

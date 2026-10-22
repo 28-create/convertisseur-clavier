@@ -32,7 +32,9 @@ ou sur votre machine Windows.
 - **Surveillance avant `Ctrl+V`** : si le texte collé se lit nettement mieux
   avec l'autre clavier, une proposition apparaît avant l'insertion
   (`Entrée` = convertir, `Maj+Entrée` = coller l'original, `Échap` = annuler).
-  Elle reste ouverte jusqu'à un choix ou un clic ailleurs.
+  Elle reste ouverte jusqu'à un choix ou un clic ailleurs. Les lettres finales
+  hébraïques restent surveillées ; les artefacts de ponctuation des tables ne
+  bloquent plus une lecture correcte.
 - Setup Windows (assistant, sans admin) : menu Démarrer, touches globales,
   menu clic droit de l'Explorateur et démarrage automatique de la surveillance.
 - Extension navigateur Chrome/Edge : clic droit sur une sélection,

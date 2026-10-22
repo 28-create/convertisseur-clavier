@@ -33,11 +33,12 @@ FLOOR = {
 }
 
 # Corpus de reference (eval/corpus.json) : 100 FR + 100 EN + 80 HE.
-# Mesure du 22 oct. 2026 : 93.8 / 93.8 / 95.0 / 99.0 %, 0 faux positif,
-# 0 KEEPS propose. Planchers volontairement un peu sous cette mesure.
+# Mesure du 22 oct. 2026 (penalite sofit) : 97.5 / 98.8 / 95.0 / 99.0 %,
+# 0 faux positif, 0 KEEPS propose. Planchers volontairement un peu sous
+# cette mesure.
 CORPUS_FLOOR = {
-    'latin_to_he|azerty': 0.92,
-    'latin_to_he|qwerty': 0.92,
+    'latin_to_he|azerty': 0.96,
+    'latin_to_he|qwerty': 0.97,
     'he_to_fr|azerty': 0.93,
     'he_to_en|qwerty': 0.97,
 }
