@@ -56,7 +56,7 @@ ou sur votre machine Windows.
 | `extension/` | Extension Chrome/Edge (Manifest V3) : clic droit, `Ctrl+Maj+H`, popup. |
 | `PRIVACY.md` / `confidentialite.html` | Politique de confidentialité (page publiée par GitHub Pages). |
 | `gen_maps.py` | Régénère les tables du `.py` **et le cœur de l'extension** depuis le HTML. |
-| `gen_ngrams.py` | Régénère les modèles de bigrammes (suggestion de lecture). |
+| `gen_ngrams.py` | Régénère les modèles de trigrammes (suggestion de lecture). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
 | `test_paste.py` | Test de la surveillance : détection, modèle hébreu, parité page, démarrage auto. |
@@ -353,13 +353,13 @@ dans les deux installateurs.
 La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
 3.14) à chaque push.
 
-`gen_ngrams.py` régénère les modèles de bigrammes (textes du domaine public,
+`gen_ngrams.py` régénère les modèles de trigrammes (textes du domaine public,
 vérifiés par SHA-256) qui alimentent la suggestion de lecture :
 `python gen_ngrams.py` (téléchargement, ou `--corpus-dir` pour réutiliser
 des fichiers locaux). Ajouter une langue de détection = une entrée dans
 `LANGS`, puis relancer. Pour le guetteur, `python gen_ngrams.py --hebrew`
-régénère le modèle hébreu de `paste_watch.py` (même source Gutenberg
-épinglée, bloc généré à ne pas éditer à la main).
+régénère le modèle hébreu de `paste_watch.py` (sources Sefaria épinglées,
+Torah et Talmud, bloc généré à ne pas éditer à la main).
 
 ## Version et historique
 

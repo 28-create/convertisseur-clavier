@@ -1,5 +1,22 @@
 # Journal des modifications
 
+## v1.13.0 - 22 oct. 2026
+- Détection des dispositions beaucoup plus fiable : modèles de **trigrammes**
+  (au lieu de bigrammes) pour le français, l'anglais et l'hébreu, avec un
+  corpus hébreu élargi (Torah et Talmud, domaine public).
+- Moins de refus à tort : les pénalités de disposition trop sévères sont
+  retirées ; les symboles naturels (`%`, `&`, `+`, `_`, `*`), les guillemets
+  et les mots étrangers intégrés (`iOS`, `macOS`, `Berklee`) ne bloquent plus
+  une proposition justifiée.
+- Les lettres finales hébraïques (sofit) restent surveillées : une conversion
+  qui en produit au milieu d'un mot n'est pas proposée.
+- Résultats mesurés sur un corpus de 280 textes : la détection correcte passe
+  de 56 à 94 % (français → hébreu), de 63 à 94 % (anglais → hébreu), de 65 à
+  100 % (hébreu → français) et de 92 à 100 % (hébreu → anglais), sans aucun
+  faux positif.
+- Tests : nouveau harnais `test_ngrams.py` et cas de non-régression ajoutés
+  à `test_paste.py` (mots étrangers, symboles, guillemets hébreux, sofits).
+
 ## v1.12.5 - 21 oct. 2026
 - Interface principale modernisée : en-tête compact, espace de travail en
   deux panneaux (saisie / résultat), palette indigo-violet, cartes historique
