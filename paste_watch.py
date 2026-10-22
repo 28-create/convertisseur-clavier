@@ -65,10 +65,11 @@ LAYOUT_PENALTY = 2.5
 LAYOUTS = ('azerty', 'qwerty')
 DEFAULT_LAYOUT = 'azerty'
 SETTINGS_ENV = 'CONVERTISSEUR_PASTE_SETTINGS'
-SYMBOL_RE = re.compile(r'[@\\<>{}[\]|~^_=#$%&*+]')
-# CARACTERES RARES DANS LE TEXTE NATUREL MAIS FREQUENTS EN LECTURE ERROREE :
-# / (FR_TO_HE['a']) , " (gershayim), etc. On les penalise plus fort.
-RARE_IN_TEXT = re.compile(r'[/"\\]')
+# Symboles de code, de chemin, d'URL ou de balisage : on ne propose jamais de
+# conversion dessus. Les signes naturels (% & + _ *) sont volontairement
+# absents : le texte courant en contient ("50 %", "AT&T", "C++", "nom_prenom")
+# et les rejeter faisait perdre des lectures correctes.
+SYMBOL_RE = re.compile(r'[@\\<>{}[\]|~^=$`#]')
 # Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
 # Si elles sont au milieu -> lecture erronee tres probable.
 SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
@@ -234,25 +235,25 @@ def _sofit_penalty(text):
 def _layout_penalty(text, direction):
     """Penalise les restes de l'ecriture source et les symboles de code.
 
-    Une disposition erronee laisse souvent une lettre latine dans la sortie
-    hebraique (ou l'inverse), ou transforme une touche en / \ etc. Le modele
-    de bigrammes ne voit pas ces caracteres : on les compte a part.
+    En lecture toFr, une lettre hebraique dans la sortie signale une touche
+    non convertie. En toHe, les lettres latines viennent de la source (mots
+    etrangers, caracteres non mappes) : elles ne prouvent pas une erreur.
 
-    Certains symboles (/, ") sont tres rares dans le texte naturel mais
-    tres frequents en lecture erronee (ex: FR 'a' -> '/' en HE). On leur
-    applique une penalite renforcee.
+    Le slash reste penalise dans une cible hebraique : il trahit souvent une
+    touche 'a' francaise lue avec la mauvaise disposition. En toFr, les
+    caracteres rares (/, ") viennent de la source (FR 'a' -> '/', gershayim)
+    et ne discriminent pas : ils ne sont pas penalises.
 
     Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
     """
     penalty = 0
     for ch in text:
-        if ch.isalpha():
-            if direction == 'toHe' and not HEB_RE.match(ch):
-                penalty += LAYOUT_PENALTY
-            elif direction == 'toFr' and HEB_RE.match(ch):
-                penalty += LAYOUT_PENALTY
-        elif RARE_IN_TEXT.match(ch):
-            # / (FR a->HE) , " (gershayim), \ (code) : signal tres fort
+        if direction == 'toFr' and HEB_RE.match(ch):
+            penalty += LAYOUT_PENALTY
+        elif direction == 'toHe' and ch == '/':
+            # Un slash dans une cible hebraique trahit souvent la touche 'a'
+            # francaise lue avec la mauvaise disposition. Les guillemets, eux,
+            # sont normaux en hebreu et ne sont pas penalises.
             penalty += LAYOUT_PENALTY * 3
         elif SYMBOL_RE.match(ch):
             penalty += LAYOUT_PENALTY
@@ -262,11 +263,53 @@ def _layout_penalty(text, direction):
     return penalty
 
 
+def _preserve_token(token, uppercase_ratio):
+    """Mot latin deja correct (majuscule) : ne pas le reconvertir en hebreu.
+
+    Un mot etranger commence par une majuscule (Berklee, College) ou en
+    contient plusieurs (iOS, macOS). Une suite de touches hebraiques est en
+    minuscules ; une majuscule isolee en fin de mot vient souvent d'une
+    touche Maj enfoncee (ex. ':' -> 'M') et ne suffit donc pas.
+    """
+    if uppercase_ratio > 0.6:
+        return False
+    letters = [ch for ch in token if ch.isalpha()]
+    if not letters:
+        return False
+    if letters[0].isupper():
+        return True
+    uppers = sum(1 for ch in letters if ch.isupper())
+    return uppers >= 2 and uppers >= 0.4 * len(letters)
+
+
+def _convert_to_hebrew(text, layout, fix_mod):
+    """Convertit en hebreu en preservant les mots latins a majuscule.
+
+    Un texte hebreu colle contient souvent des mots etrangers (iOS, macOS,
+    Berklee...). Les convertir produirait du charabia et des lettres finales
+    au milieu des mots ; on les laisse tels quels.
+    """
+    letters = [ch for ch in text if ch.isalpha()]
+    uppercase_ratio = (sum(1 for ch in letters if ch.isupper()) / len(letters)
+                       if letters else 0.0)
+    parts = []
+    for token in re.split(r'(\s+)', text):
+        if token and not token.isspace() \
+                and _preserve_token(token, uppercase_ratio):
+            parts.append(token)
+        else:
+            parts.append(convert_for_layout(token, layout, 'toHe', fix_mod))
+    return ''.join(parts)
+
+
 def _layout_candidates(text, direction, models, fix_mod):
     """Note les deux dispositions : score modele et score effectif."""
     out = {}
     for layout in LAYOUTS:
-        converted = convert_for_layout(text, layout, direction, fix_mod)
+        if direction == 'toHe':
+            converted = _convert_to_hebrew(text, layout, fix_mod)
+        else:
+            converted = convert_for_layout(text, layout, direction, fix_mod)
         if direction == 'toHe':
             score = score_hebrew(models, converted)
         else:

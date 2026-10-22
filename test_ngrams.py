@@ -60,6 +60,10 @@ LATIN_CASES = [
     ('en', 'keep walking forward', 'qwerty'),
     ('en', 'i like this book', 'qwerty'),
     ('en', "the meeting starts at 9 o'clock. don't be late.", 'qwerty'),
+    # Le 'a' isole devient '/' avec la disposition hebraique : il ne doit pas
+    # faire rejeter la lecture (penalite des caracteres rares retiree en toFr).
+    ('fr', "il a dit a son ami qu'il partait demain matin", 'azerty'),
+    ('fr', 'il a dit "bonjour" a tous les enfants du village', 'azerty'),
 ]
 
 # Mots et phrases hebreu : (texte, disposition utilisee pour la frappe).
@@ -78,6 +82,18 @@ HEBREW_CASES = [
     ('\u05d4\u05e9\u05de\u05e9 \u05d6\u05d5\u05e8\u05d7\u05ea', 'azerty'),  # hashemesh zorachat
     ('\u05d1\u05e9\u05e0\u05ea 2009, \u05d4\u05e7\u05d1\u05d5\u05e6\u05d4 '
      '\u05d6\u05db\u05ea\u05d4 \u05d1\u05e4\u05e8\u05e1.', 'azerty'),
+    # Mot etranger integre : il doit rester en latin dans la proposition.
+    ('iOS \u05d4\u05d9\u05d0 \u05de\u05e2\u05e8\u05db\u05ea \u05d4\u05e4\u05e2\u05dc\u05d4',
+     'azerty'),
+    ('\u05de\u05e2\u05e8\u05db\u05ea \u05d4\u05d4\u05e4\u05e2\u05dc\u05d4 macOS '
+     '\u05d4\u05d9\u05d0', 'azerty'),
+    # Signes naturels (% et &) : ils ne doivent plus rejeter le texte.
+    ('\u05d4\u05e9\u05d9\u05e2\u05d5\u05e8 \u05d4\u05d5\u05d0 50 % '
+     '\u05de\u05d4\u05ea\u05dc\u05de\u05d9\u05d3\u05d9\u05dd', 'azerty'),
+    ('\u05d4\u05d7\u05d1\u05e8\u05d4 AT&T \u05d2\u05d3\u05dc\u05d4', 'azerty'),
+    # Guillemets hebreux : normaux, ils ne sont pas penalises.
+    ('\u05d4\u05d5\u05d0 \u05d0\u05de\u05e8 "\u05e9\u05dc\u05d5\u05dd" '
+     '\u05dc\u05db\u05d5\u05dc\u05dd', 'azerty'),
 ]
 
 # Textes deja corrects : la detection ne doit rien proposer.
@@ -89,6 +105,7 @@ KEEPS = [
     'le week-end', 'il est 9 heures.',
     "c'est un long voyage; il durera trois jours.",
     'nous avons 200 personnes.',
+    '#hashtag', 'AT&T', 'C++', '50 %', 'user_name',
 ]
 
 
