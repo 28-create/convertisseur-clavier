@@ -177,16 +177,14 @@ def detection_checks(models, fix):
         check('detection ambigue (zbhrun) n\'est plus proposee %s' % default,
               r is None,
               'obtient: %s' % r if r else 'OK')
-    # Indice 1 : un chiffre colle a une lettre signale une lecture erronee ;
-    # un nombre isole entre espaces peut etre une liste ou une date.
-    check('chiffre colle a une lettre penalise',
-          paste_watch._layout_penalty('\u05d04', 'toHe') > 0)
-    check('nombre isole non penalise',
-          paste_watch._layout_penalty('\u05d0 30 \u05d1', 'toHe') == 0)
-    check('liste de nombres non penalisee',
-          paste_watch._layout_penalty('1 2 3', 'toHe') == 0)
-    # Non-regression : l'anglais contient k (0.99%), w (2.4%) et ';'. Les
-    # penalites k/w/; ne doivent pas empecher la conversion HE -> EN.
+    # La ponctuation et les chiffres ne sont pas penalises : les tables
+    # ramenent '.' en ';' et ',' en tsadi, donc une penalite ferait rejeter
+    # des lectures correctes (couvert par test_ngrams.py).
+    check('ponctuation et chiffres non penalises',
+          paste_watch._layout_penalty('a;b', 'toFr') == 0
+          and paste_watch._layout_penalty('\u05d04', 'toHe') == 0)
+    # Non-regression : l'anglais contient k (0.99%), w (2.4%) et ';'. Il doit
+    # rester detecte sans penalite.
     english = ['hello world', 'the quick brown fox jumps over the lazy dog',
                'we know the answer', 'thank you very much']
     for text in english:
@@ -195,15 +193,6 @@ def detection_checks(models, fix):
         check('anglais preserve %s' % ascii(text),
               bool(r) and r['text'] == text,
               '' if not r else ascii(r['text']))
-    check('k penalise seulement en francais',
-          paste_watch._layout_penalty('kuo', 'toFr', 'fr') > 0
-          and paste_watch._layout_penalty('kuo', 'toFr', 'en') == 0)
-    check('w penalise seulement en francais',
-          paste_watch._layout_penalty('wow', 'toFr', 'fr') > 0
-          and paste_watch._layout_penalty('wow', 'toFr', 'en') == 0)
-    check('point-virgule penalise seulement en francais',
-          paste_watch._layout_penalty('a;b', 'toFr', 'fr') > 0
-          and paste_watch._layout_penalty('a;b', 'toFr', 'en') == 0)
 
     forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
     other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)
