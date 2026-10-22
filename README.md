@@ -60,6 +60,8 @@ ou sur votre machine Windows.
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
 | `test_paste.py` | Test de la surveillance : détection, modèle hébreu, parité page, démarrage auto. |
+| `test_ngrams.py` | Test de la détection : cas ciblés + corpus de référence. |
+| `eval/` | Corpus de référence (280 textes) et évaluation détaillée de la détection. |
 | `test_extension.py` | Test de l'extension : manifeste, icônes, CSP, câblage du clic droit, conversions. |
 | `test_store.py` | Test du paquet store : manifeste et ses limites, textes de fiche, zip reproductible. |
 | `store/` | Textes de la fiche (fr/en) et justifications de permissions, prêts à coller. |
@@ -334,6 +336,7 @@ python gen_maps.py
 python test_maps.py
 python test_app.py
 python test_paste.py
+python test_ngrams.py
 python test_extension.py
 python test_store.py
 python test_page.py
@@ -350,6 +353,10 @@ conversions réelles. `test_paste.py` couvre la détection prudente
 (`qkuo`/`akuo`/`נםמחםור`, faux positifs), le bloc de modèle hébreu, la
 parité des scores avec la page et la présence du démarrage automatique
 dans les deux installateurs.
+`test_ngrams.py` vérifie la détection sur des cas ciblés puis rejoue le
+corpus de référence `eval/` (100 textes français, 100 anglais, 80 hébreux) :
+taux par sens, zéro faux positif et aucune proposition sur un texte déjà
+correct. `python eval/eval_detection.py --details` affiche les échecs.
 La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
 3.14) à chaque push.
 

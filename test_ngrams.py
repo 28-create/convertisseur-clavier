@@ -32,6 +32,16 @@ FLOOR = {
     'he_to_en': 0.90,
 }
 
+# Corpus de reference (eval/corpus.json) : 100 FR + 100 EN + 80 HE.
+# Mesure du 22 oct. 2026 : 93.8 / 93.8 / 95.0 / 99.0 %, 0 faux positif,
+# 0 KEEPS propose. Planchers volontairement un peu sous cette mesure.
+CORPUS_FLOOR = {
+    'latin_to_he|azerty': 0.92,
+    'latin_to_he|qwerty': 0.92,
+    'he_to_fr|azerty': 0.93,
+    'he_to_en|qwerty': 0.97,
+}
+
 # Phrases latines : (langue, texte, disposition de l'utilisateur).
 # Les dernieres lignes couvrent la ponctuation, k/w et les chiffres : ce sont
 # les cas que les penalites de disposition ont casses (point -> ';', chiffre
@@ -174,6 +184,29 @@ def main():
         if not ok:
             failures.append('keep: %s -> %s' % (ascii_text(text), ascii_text(got['text'])))
         details.append('%s %-8s %s' % ('PASS' if ok else 'FAIL', 'keep', ascii_text(text)))
+
+    # 5. Corpus de reference : les quatre sens, puis la prudence.
+    corpus_eval = load_module('eval_detection', os.path.join('eval', 'eval_detection.py'))
+    corpus_stats, corpus_fp, corpus_keeps = corpus_eval.evaluate(
+        paste_watch, fix, models)
+    for key in sorted(CORPUS_FLOOR):
+        item = corpus_stats[key]
+        rate = float(item['ok']) / item['total']
+        ok = rate >= CORPUS_FLOOR[key]
+        print('%s corpus %-18s %d/%d (%.1f%%) plancher %.0f%%' % (
+            'PASS' if ok else 'FAIL', key, item['ok'], item['total'],
+            100.0 * rate, 100.0 * CORPUS_FLOOR[key]))
+        if not ok:
+            failures.append('corpus %s : %d/%d sous le plancher %.0f%%' % (
+                key, item['ok'], item['total'], 100.0 * CORPUS_FLOOR[key]))
+    ok = not corpus_fp
+    print('%s corpus faux positifs %d' % ('PASS' if ok else 'FAIL', len(corpus_fp)))
+    if not ok:
+        failures.append('corpus : %d faux positif(s)' % len(corpus_fp))
+    ok = not corpus_keeps
+    print('%s corpus KEEPS proposes %d' % ('PASS' if ok else 'FAIL', len(corpus_keeps)))
+    if not ok:
+        failures.append('corpus : %d texte(s) deja correct(s) propose(s)' % len(corpus_keeps))
 
     rates = {}
     for key, (ok, total) in stats.items():
