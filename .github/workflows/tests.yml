@@ -31,6 +31,8 @@ jobs:
         run: python test_app.py
       - name: Surveillance du presse-papiers (detection, modele, autostart)
         run: python test_paste.py
+      - name: Detection de lecture (evaluation anti-regression)
+        run: python test_ngrams.py
       - name: Extension (manifeste, CSP, cablage, conversions)
         run: python test_extension.py
       - name: Paquet store (coherence, sans zip)

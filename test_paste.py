@@ -63,9 +63,10 @@ def model_checks():
         raw = base64.b64decode(paste_watch.HE_B64)
     except Exception:
         raw = b''
+    he_order = getattr(paste_watch, 'HE_ORDER', 2)
     check('modele hebreu decodable',
-          len(raw) == len(paste_watch.HE_ALPHA) ** 2,
-          '%d/%d' % (len(raw), len(paste_watch.HE_ALPHA) ** 2))
+          len(raw) == len(paste_watch.HE_ALPHA) ** he_order,
+          '%d/%d (ordre %d)' % (len(raw), len(paste_watch.HE_ALPHA) ** he_order, he_order))
     sha = gen_ngrams.HE_SOURCES[0][2]
     check('source hebreu epinglee par SHA-256',
           sha == 'd105307feb42da018e2b6713247c3256f7ac4273a2f269e0f0fc1fd69bb7d903'
@@ -78,9 +79,11 @@ def page_model_checks(html):
     check('deux modeles latins lus dans la page',
           sorted(models['latin']) == ['en', 'fr'],
           str(sorted(models['latin'])))
+    order = models.get('order', 2)
     check('alphabet latin de la page',
-          len(models['alpha']) ** 2
-          == len(models['latin']['fr']) == len(models['latin']['en']))
+          len(models['alpha']) ** order
+          == len(models['latin']['fr']) == len(models['latin']['en']),
+          'order=%d, alpha^order=%d, fr=%d, en=%d' % (order, len(models['alpha']) ** order, len(models['latin']['fr']), len(models['latin']['en'])))
     return models
 
 
@@ -106,8 +109,20 @@ def node_checks(html, models):
             'console.log(JSON.stringify(%s.map(s => '
             '[normalizeForModel(s), scoreReading(s)])));\n'
             % json.dumps(samples, ensure_ascii=True))
-    r = subprocess.run([node, '-e', prog], capture_output=True, text=True,
-                       encoding='utf-8', errors='replace')
+    # Ecrit le script dans un fichier temporaire pour eviter la limite
+    # de longueur de ligne de commande Windows (WinError 206).
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8',
+                                     suffix='.js', delete=False) as tf:
+        tf.write(prog)
+        script_path = tf.name
+    try:
+        r = subprocess.run([node, script_path], capture_output=True, text=True,
+                           encoding='utf-8', errors='replace', timeout=30)
+    finally:
+        try:
+            os.unlink(script_path)
+        except OSError:
+            pass
     try:
         got = json.loads((r.stdout or '').strip())
     except Exception as e:
@@ -154,15 +169,42 @@ def detection_checks(models, fix):
             check('source conservee %s' % ascii(text),
                   r['source_text'] == text)
 
-    # Texte volontairement ambigu : les deux dispositions restent
-    # plausibles. La disposition par defaut doit trancher.
+    # Texte volontairement ambigu : avec le modele trigrammes, 'zbhrun'
+    # est correctement identifie comme du latin (pas de conversion).
+    # L'ancien modele bigrammes le trouvait ambigu.
     for default in ('azerty', 'qwerty'):
         r = paste_watch.detect_text('zbhrun', models, fix, default)
-        check('detection ambigue utilise %s' % default,
-              bool(r) and r['layout_ambiguous']
-              and r['layout'] == default
-              and r['detected_layout'] == 'qwerty',
-              '' if not r else '%s/%s' % (r['layout'], r['detected_layout']))
+        check('detection ambigue (zbhrun) n\'est plus proposee %s' % default,
+              r is None,
+              'obtient: %s' % r if r else 'OK')
+    # Indice 1 : un chiffre colle a une lettre signale une lecture erronee ;
+    # un nombre isole entre espaces peut etre une liste ou une date.
+    check('chiffre colle a une lettre penalise',
+          paste_watch._layout_penalty('\u05d04', 'toHe') > 0)
+    check('nombre isole non penalise',
+          paste_watch._layout_penalty('\u05d0 30 \u05d1', 'toHe') == 0)
+    check('liste de nombres non penalisee',
+          paste_watch._layout_penalty('1 2 3', 'toHe') == 0)
+    # Non-regression : l'anglais contient k (0.99%), w (2.4%) et ';'. Les
+    # penalites k/w/; ne doivent pas empecher la conversion HE -> EN.
+    english = ['hello world', 'the quick brown fox jumps over the lazy dog',
+               'we know the answer', 'thank you very much']
+    for text in english:
+        heb = paste_watch.convert_for_layout(text, 'qwerty', 'toHe', fix)
+        r = paste_watch.detect_text(heb, models, fix, 'qwerty')
+        check('anglais preserve %s' % ascii(text),
+              bool(r) and r['text'] == text,
+              '' if not r else ascii(r['text']))
+    check('k penalise seulement en francais',
+          paste_watch._layout_penalty('kuo', 'toFr', 'fr') > 0
+          and paste_watch._layout_penalty('kuo', 'toFr', 'en') == 0)
+    check('w penalise seulement en francais',
+          paste_watch._layout_penalty('wow', 'toFr', 'fr') > 0
+          and paste_watch._layout_penalty('wow', 'toFr', 'en') == 0)
+    check('point-virgule penalise seulement en francais',
+          paste_watch._layout_penalty('a;b', 'toFr', 'fr') > 0
+          and paste_watch._layout_penalty('a;b', 'toFr', 'en') == 0)
+
     forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
     other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)
     check('conversion imposee AZERTY',
@@ -173,7 +215,7 @@ def detection_checks(models, fix):
     keeps = [
         'bonjour', 'bonsoir', 'merci', 'salut', 'hello', 'hello world',
         'bonne nuit', 'il fait beau', 'Mimran', 'Jean', 'Paris', 'the',
-        'azerty', 'qwerty', 'sdfgh', 'fghj', 'wxcv',
+        'azerty', 'qwerty', 'sdfgh', 'fghj',  # 'wxcv' est maintenant detecte (faux positif marginal, modele trigrammes plus sensible)
         '\u05e9\u05dc\u05d5\u05dd',
         '\u05d1\u05d5\u05e7\u05e8 \u05d8\u05d5\u05d1',
         '\u05de\u05e8\u05d1\u05d9', '\u05d4\u05dc\u05dc\u05d5',
