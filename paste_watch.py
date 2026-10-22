@@ -72,22 +72,6 @@ RARE_IN_TEXT = re.compile(r'[/"\\]')
 # Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
 # Si elles sont au milieu -> lecture erronee tres probable.
 SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
-# Chiffre colle a une lettre (hebraique ou latine) : lecture erronee probable
-# (accents FR -> chiffres : e->2, a->0, apostrophe->4, _->8, c->9).
-# Un nombre isole entre espaces peut etre une liste ou une date : on le laisse.
-DIGIT_GLUED_RE = re.compile(r'[A-Za-z\u0590-\u05ff][0-9]|[0-9][A-Za-z\u0590-\u05ff]')
-# k : tres rare en francais naturel (0.003%), mais produit par HE lamed
-# (6.53%) en lecture erronee HE->FR (HE_TO_FR['\u05dc'] = 'k'). En anglais,
-# k est courant (0.99%) : la penalite ne s'applique qu'a la cible francaise.
-K_IN_FR_RE = re.compile(r'k')
-# w : tres rare en francais naturel (0.002%), mais produit par HE zayin
-# (1.44%) en lecture erronee HE->FR (HE_TO_FR['\u05d6'] = 'w'). En anglais,
-# w est courant (2.4%) : la penalite ne s'applique qu'a la cible francaise.
-W_IN_FR_RE = re.compile(r'w')
-# ; : rare en francais naturel (0.16%), mais produit par HE tav (4.56%)
-# en lecture erronee HE->FR (HE_TO_FR['\u05ea'] = ';'). La ponctuation
-# anglaise utilise aussi ; : la penalite ne vise que la cible francaise.
-SEMICOLON_IN_FR_RE = re.compile(r';')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -190,42 +174,13 @@ def _score(raw, alpha, scale, offset, text, normalize, order=2):
     return acc / (len(t) - order + 1)
 
 
-def latin_scores(models, text):
-    """Note de chaque langue latine disponible ({'fr': x, 'en': y})."""
-    order = models.get('order', 2)
-    out = {}
-    for lang, raw in models['latin'].items():
-        value = _score(raw, models['alpha'], models['scale'],
-                       models['offset'], text, normalize_latin, order)
-        if value is not None:
-            out[lang] = value
-    return out
-
-
 def score_latin(models, text):
-    vals = latin_scores(models, text)
-    return max(vals.values()) if vals else None
-
-
-def _pick_language(vals, margin=0.3):
-    """Meilleure langue latine, ou None si l'ecart est sous la marge.
-
-    Une marge evite d'appliquer une penalite francaise a un texte anglais
-    court (ex: 'hello world' : le modele fr ne gagne que de 0.18).
-    """
-    if not vals:
-        return None
-    best = max(vals, key=vals.get)
-    if len(vals) > 1:
-        ordered = sorted(vals.values(), reverse=True)
-        if ordered[0] - ordered[1] < margin:
-            return None
-    return best
-
-
-def latin_language(models, text, margin=0.3):
-    """Langue latine la plus probable ('fr' ou 'en'), ou None si ambigu."""
-    return _pick_language(latin_scores(models, text), margin)
+    order = models.get('order', 2)
+    vals = [_score(raw, models['alpha'], models['scale'], models['offset'],
+                   text, normalize_latin, order)
+            for raw in models['latin'].values()]
+    vals = [v for v in vals if v is not None]
+    return max(vals) if vals else None
 
 
 def score_hebrew(models, text):
@@ -276,23 +231,18 @@ def _sofit_penalty(text):
     return penalty
 
 
-def _layout_penalty(text, direction, latin_lang=None):
+def _layout_penalty(text, direction):
     """Penalise les restes de l'ecriture source et les symboles de code.
 
     Une disposition erronee laisse souvent une lettre latine dans la sortie
     hebraique (ou l'inverse), ou transforme une touche en / \ etc. Le modele
-    de n-grammes ne voit pas ces caracteres : on les compte a part.
+    de bigrammes ne voit pas ces caracteres : on les compte a part.
 
     Certains symboles (/, ") sont tres rares dans le texte naturel mais
     tres frequents en lecture erronee (ex: FR 'a' -> '/' en HE). On leur
     applique une penalite renforcee.
 
     Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
-
-    latin_lang indique la langue latine visee ('fr'/'en'). Les lettres et
-    la ponctuation rares en francais (k, w, ;) ne sont penalisees que si la
-    cible est le francais : en anglais, elles sont courantes et la penalite
-    serait un faux positif.
     """
     penalty = 0
     for ch in text:
@@ -309,19 +259,6 @@ def _layout_penalty(text, direction, latin_lang=None):
     # Penalite sofit (uniquement pertinent pour texte hebreu cible)
     if direction == 'toHe':
         penalty += _sofit_penalty(text)
-    # Chiffres colles a des lettres en cible HE : tres rares en hebreu naturel,
-    # frequents en lecture erronee FR->HE. Les nombres isoles (listes, dates)
-    # ne sont pas penalises.
-    if direction == 'toHe' and DIGIT_GLUED_RE.search(text):
-        penalty += LAYOUT_PENALTY * 4
-    # k, w et ; en cible francaise : rares en francais (0.003% / 0.002% /
-    # 0.16%), mais produits par HE lamed (6.53%), zayin (1.44%) et tav
-    # (4.56%) via HE_TO_FR. Jamais en anglais, ou k (0.99%), w (2.4%) et
-    # la ponctuation ; sont courants.
-    if direction == 'toFr' and latin_lang == 'fr' and (
-            K_IN_FR_RE.search(text) or W_IN_FR_RE.search(text)
-            or SEMICOLON_IN_FR_RE.search(text)):
-        penalty += LAYOUT_PENALTY * 5
     return penalty
 
 
@@ -330,16 +267,13 @@ def _layout_candidates(text, direction, models, fix_mod):
     out = {}
     for layout in LAYOUTS:
         converted = convert_for_layout(text, layout, direction, fix_mod)
-        latin_lang = None
         if direction == 'toHe':
             score = score_hebrew(models, converted)
         else:
-            vals = latin_scores(models, converted)
-            score = max(vals.values()) if vals else None
-            latin_lang = _pick_language(vals)
+            score = score_latin(models, converted)
         if score is None:
             continue
-        penalty = _layout_penalty(converted, direction, latin_lang)
+        penalty = _layout_penalty(converted, direction)
         out[layout] = {'layout': layout, 'text': converted,
                        'score': score, 'penalty': penalty,
                        'effective': score - penalty}
