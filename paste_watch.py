@@ -84,6 +84,10 @@ K_IN_FR_RE = re.compile(r'k')
 # (1.44%) en lecture erronee HE->FR (HE_TO_FR['\u05d6'] = 'w'). En anglais,
 # w est courant (2.4%) : la penalite ne s'applique qu'a la cible francaise.
 W_IN_FR_RE = re.compile(r'w')
+# ; : rare en francais naturel (0.16%), mais produit par HE tav (4.56%)
+# en lecture erronee HE->FR (HE_TO_FR['\u05ea'] = ';'). La ponctuation
+# anglaise utilise aussi ; : la penalite ne vise que la cible francaise.
+SEMICOLON_IN_FR_RE = re.compile(r';')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -285,10 +289,10 @@ def _layout_penalty(text, direction, latin_lang=None):
 
     Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
 
-    latin_lang indique la langue latine visee ('fr'/'en'). Les lettres
-    rares en francais (k, w) ne sont penalisees que si la cible est le
-    francais : en anglais, elles sont courantes et la penalite serait un faux
-    positif.
+    latin_lang indique la langue latine visee ('fr'/'en'). Les lettres et
+    la ponctuation rares en francais (k, w, ;) ne sont penalisees que si la
+    cible est le francais : en anglais, elles sont courantes et la penalite
+    serait un faux positif.
     """
     penalty = 0
     for ch in text:
@@ -310,11 +314,13 @@ def _layout_penalty(text, direction, latin_lang=None):
     # ne sont pas penalises.
     if direction == 'toHe' and DIGIT_GLUED_RE.search(text):
         penalty += LAYOUT_PENALTY * 4
-    # k et w en cible francaise : tres rares en francais (0.003% / 0.002%),
-    # mais produits par HE lamed (6.53%) et zayin (1.44%) via HE_TO_FR.
-    # Jamais en anglais, ou k (0.99%) et w (2.4%) sont courants.
+    # k, w et ; en cible francaise : rares en francais (0.003% / 0.002% /
+    # 0.16%), mais produits par HE lamed (6.53%), zayin (1.44%) et tav
+    # (4.56%) via HE_TO_FR. Jamais en anglais, ou k (0.99%), w (2.4%) et
+    # la ponctuation ; sont courants.
     if direction == 'toFr' and latin_lang == 'fr' and (
-            K_IN_FR_RE.search(text) or W_IN_FR_RE.search(text)):
+            K_IN_FR_RE.search(text) or W_IN_FR_RE.search(text)
+            or SEMICOLON_IN_FR_RE.search(text)):
         penalty += LAYOUT_PENALTY * 5
     return penalty
 
