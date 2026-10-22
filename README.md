@@ -67,6 +67,7 @@ ou sur votre machine Windows.
 | `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
 | `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
 | `gen_version.py` | Régénère `version_info.txt` (tampon de version de l'exe). |
+| `release.py` | Automatise une release : bump, tests, commit, tag, build, empreintes et publication GitHub. |
 | `test_installer.ps1` | Test bout-en-bout de l'installeur (bac à sable). |
 
 ## 1. Page web
@@ -365,8 +366,26 @@ Torah et Talmud, bloc généré à ne pas éditer à la main).
 
 Version affichée dans le pied de page (`APP_VERSION`), alignée sur le
 tag git (`test_page.py` le vérifie : entre un bump et la création du tag,
-le test échoue volontairement). Ordre de release : bump → `python
-gen_version.py` → entrée CHANGELOG → commit `Release vX.Y.Z` → tag.
+le test échoue volontairement).
+
+Release automatisée (section `## vX.Y.Z` déjà rédigée dans le
+`CHANGELOG.md`, arbre propre par ailleurs) :
+
+```sh
+python release.py --check                  # environnement, sans rien modifier
+python release.py --bump minor --summary "detection plus fiable"
+```
+
+Le script enchaîne : bump de `APP_VERSION`, `gen_version.py`, suites de
+tests, commit `Release vX.Y.Z`, tag, `test_page.py`, build de l'exe / du
+Setup / de l'extension, `SHA256SUMS-X.Y.Z.txt`, push et release GitHub
+(corps extrait du CHANGELOG, notes UTF-8 via l'API). Options :
+`--dry-run`, `--skip-tests`, `--skip-build`, `--skip-publish`,
+`--notes-file`, `--version X.Y.Z`, `--yes`. Hors Windows, l'exe et le
+Setup sont ignorés ; l'extension est toujours construite.
+
+Ordre manuel équivalent : bump → `python gen_version.py` → entrée
+CHANGELOG → commit `Release vX.Y.Z` → tag.
 Historique : voir
 [CHANGELOG.md](CHANGELOG.md) et `git log`.
 
