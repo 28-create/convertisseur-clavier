@@ -177,6 +177,15 @@ def detection_checks(models, fix):
         check('detection ambigue (zbhrun) n\'est plus proposee %s' % default,
               r is None,
               'obtient: %s' % r if r else 'OK')
+    # Indice 1 : un chiffre colle a une lettre signale une lecture erronee ;
+    # un nombre isole entre espaces peut etre une liste ou une date.
+    check('chiffre colle a une lettre penalise',
+          paste_watch._layout_penalty('\u05d04', 'toHe') > 0)
+    check('nombre isole non penalise',
+          paste_watch._layout_penalty('\u05d0 30 \u05d1', 'toHe') == 0)
+    check('liste de nombres non penalisee',
+          paste_watch._layout_penalty('1 2 3', 'toHe') == 0)
+
     forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
     other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)
     check('conversion imposee AZERTY',
