@@ -72,6 +72,10 @@ RARE_IN_TEXT = re.compile(r'[/"\\]')
 # Lettres finales (sofit) : ne doivent apparaitre qu'en fin de mot.
 # Si elles sont au milieu -> lecture erronee tres probable.
 SOFIT_RE = re.compile(r'[\u05da\u05dd\u05df\u05e3\u05e5]')
+# Chiffre colle a une lettre (hebraique ou latine) : lecture erronee probable
+# (accents FR -> chiffres : e->2, a->0, apostrophe->4, _->8, c->9).
+# Un nombre isole entre espaces peut etre une liste ou une date : on le laisse.
+DIGIT_GLUED_RE = re.compile(r'[A-Za-z\u0590-\u05ff][0-9]|[0-9][A-Za-z\u0590-\u05ff]')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -259,6 +263,11 @@ def _layout_penalty(text, direction):
     # Penalite sofit (uniquement pertinent pour texte hebreu cible)
     if direction == 'toHe':
         penalty += _sofit_penalty(text)
+    # Chiffres colles a des lettres en cible HE : tres rares en hebreu naturel,
+    # frequents en lecture erronee FR->HE. Les nombres isoles (listes, dates)
+    # ne sont pas penalises.
+    if direction == 'toHe' and DIGIT_GLUED_RE.search(text):
+        penalty += LAYOUT_PENALTY * 4
     return penalty
 
 
