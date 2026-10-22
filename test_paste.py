@@ -183,6 +183,31 @@ def detection_checks(models, fix):
     check('ponctuation et chiffres non penalises',
           paste_watch._layout_penalty('a;b', 'toFr') == 0
           and paste_watch._layout_penalty('\u05d04', 'toHe') == 0)
+    # Les signes naturels ne doivent plus faire rejeter le texte ; les
+    # symboles de code, de chemin et de balisage restent refuses.
+    check('symboles naturels acceptes',
+          not paste_watch.SYMBOL_RE.search('%&+_*')
+          and all(paste_watch.SYMBOL_RE.search(ch)
+                  for ch in '@\\<>{}[]|~^=$`#'))
+    # Un caractere rare venu de la source (FR 'a' -> '/', gershayim) ne
+    # prouve pas une mauvaise disposition ; un slash dans une cible hebraique
+    # reste en revanche un signal utile pour departager les dispositions.
+    check('rare non penalise en toFr',
+          paste_watch._layout_penalty('a/b "c"', 'toFr') == 0)
+    check('slash penalise en toHe',
+          paste_watch._layout_penalty('\u05e9/\u05dc', 'toHe') > 0)
+    check('guillemets hebreux non penalises',
+          paste_watch._layout_penalty('\u05e9"\u05dc', 'toHe') == 0)
+    check('latin non penalise en toHe',
+          paste_watch._layout_penalty('iOS', 'toHe') == 0)
+    # Un mot etranger a majuscule est conserve tel quel dans la proposition.
+    heb = ('iOS \u05d4\u05d9\u05d0 \u05de\u05e2\u05e8\u05db\u05ea '
+           '\u05d4\u05e4\u05e2\u05dc\u05d4')
+    src = paste_watch.convert_for_layout(heb, 'azerty', 'toFr', fix)
+    r = paste_watch.detect_text(src, models, fix, 'azerty')
+    check('mot anglais integre preserve',
+          bool(r) and r['direction'] == 'toHe' and 'iOS' in r['text'],
+          '' if not r else ascii(r['text']))
     # Non-regression : l'anglais contient k (0.99%), w (2.4%) et ';'. Il doit
     # rester detecte sans penalite.
     english = ['hello world', 'the quick brown fox jumps over the lazy dog',
@@ -210,6 +235,7 @@ def detection_checks(models, fix):
         '\u05de\u05e8\u05d1\u05d9', '\u05d4\u05dc\u05dc\u05d5',
         'https://example.com', 'user@example.com', 'C:\\Users\\x',
         'const x = 1;', 'a/b', 'test123', 'abc', 'ok',
+        '#hashtag', 'AT&T', 'C++', '50 %', 'user_name',
         'bonjour \u05e9\u05dc\u05d5\u05dd', '', '   ', None,
     ]
     for text in keeps:
