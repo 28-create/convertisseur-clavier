@@ -177,6 +177,20 @@ def detection_checks(models, fix):
         check('detection ambigue (zbhrun) n\'est plus proposee %s' % default,
               r is None,
               'obtient: %s' % r if r else 'OK')
+    # Non-regression : l'anglais contient k (0.99%) et w (2.4%). La penalite
+    # k ne doit pas empecher la conversion HE -> EN.
+    english = ['hello world', 'the quick brown fox jumps over the lazy dog',
+               'we know the answer', 'thank you very much']
+    for text in english:
+        heb = paste_watch.convert_for_layout(text, 'qwerty', 'toHe', fix)
+        r = paste_watch.detect_text(heb, models, fix, 'qwerty')
+        check('anglais preserve %s' % ascii(text),
+              bool(r) and r['text'] == text,
+              '' if not r else ascii(r['text']))
+    check('k penalise seulement en francais',
+          paste_watch._layout_penalty('kuo', 'toFr', 'fr') > 0
+          and paste_watch._layout_penalty('kuo', 'toFr', 'en') == 0)
+
     forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
     other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)
     check('conversion imposee AZERTY',
