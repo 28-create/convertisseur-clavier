@@ -200,6 +200,15 @@ def detection_checks(models, fix):
           paste_watch._layout_penalty('\u05e9"\u05dc', 'toHe') == 0)
     check('latin non penalise en toHe',
           paste_watch._layout_penalty('iOS', 'toHe') == 0)
+    # Deux lettres finales de suite sont impossibles en hebreu : c'est un
+    # artefact de ponctuation des tables (ex. ':' -> final pe), pas une preuve
+    # de mauvaise disposition. Une seule lettre finale au milieu d'un mot
+    # reste un signal, avec un poids faible.
+    check('sofit suivi d un sofit non penalise',
+          paste_watch._layout_penalty('\u05e9\u05dd\u05e3', 'toHe') == 0)
+    check('sofit au milieu d un mot reste penalise',
+          paste_watch._layout_penalty('\u05e9\u05dd\u05e6', 'toHe')
+          == paste_watch.SOFIT_PENALTY)
     # Un mot etranger a majuscule est conserve tel quel dans la proposition.
     heb = ('iOS \u05d4\u05d9\u05d0 \u05de\u05e2\u05e8\u05db\u05ea '
            '\u05d4\u05e4\u05e2\u05dc\u05d4')
@@ -208,6 +217,16 @@ def detection_checks(models, fix):
     check('mot anglais integre preserve',
           bool(r) and r['direction'] == 'toHe' and 'iOS' in r['text'],
           '' if not r else ascii(r['text']))
+    # Un ':' de la source devient un final pe dans la cible ; il ne doit pas
+    # faire croire a un sofit au milieu d'un mot et rejeter la lecture.
+    heb = ('\u05ea\u05e8\u05d2\u05d5\u05dd: '
+           '\u05de\u05d4 \u05e9\u05dc\u05d5\u05de\u05da')
+    src = paste_watch.convert_for_layout(heb, 'azerty', 'toFr', fix)
+    r = paste_watch.detect_text(src, models, fix, 'azerty')
+    check('ponctuation artefact sofit acceptee',
+          bool(r) and r['direction'] == 'toHe' and r['layout'] == 'azerty',
+          '' if not r else '%s/%s %s' % (r['direction'], r['layout'],
+                                        ascii(r['text'])))
     # Non-regression : l'anglais contient k (0.99%), w (2.4%) et ';'. Il doit
     # rester detecte sans penalite.
     english = ['hello world', 'the quick brown fox jumps over the lazy dog',

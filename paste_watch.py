@@ -62,6 +62,7 @@ SHORT_MARGIN = 1.0
 SHORT_LETTERS = 8
 LAYOUT_MARGIN = 0.8
 LAYOUT_PENALTY = 2.5
+SOFIT_PENALTY = 1.0
 LAYOUTS = ('azerty', 'qwerty')
 DEFAULT_LAYOUT = 'azerty'
 SETTINGS_ENV = 'CONVERTISSEUR_PASTE_SETTINGS'
@@ -218,17 +219,26 @@ def _sofit_penalty(text):
     """Penalise les lettres finales (sofit) au milieu des mots.
 
     En hebreu, les lettres finales (ך ם ן ף ץ) n'apparaissent qu'en fin de mot.
-    Si elles sont precedees et suivies d'une lettre hebreu, c'est un signal
-    tres fort de lecture erronee (ex: conversion avec mauvaise disposition).
+    Une lettre finale entouree de deux lettres hebraiques est un signal de
+    lecture erronee. Deux lettres finales de suite sont impossibles : c'est un
+    artefact de ponctuation des tables (ex. ':' -> final pe), pas une preuve de
+    mauvaise disposition. Le poids reste faible : le score du modele et la
+    marge avec la source restent les signaux principaux.
     """
-    penalty = 0
+    penalty = 0.0
     for i, ch in enumerate(text):
-        if SOFIT_RE.match(ch):
-            # Verifie si on est au milieu d'un mot hebreu
-            prev_heb = i > 0 and HEB_RE.match(text[i - 1])
-            next_heb = i + 1 < len(text) and HEB_RE.match(text[i + 1])
-            if prev_heb and next_heb:
-                penalty += LAYOUT_PENALTY * 5  # signal tres fort
+        if not SOFIT_RE.match(ch):
+            continue
+        # Verifie si on est au milieu d'un mot hebreu
+        prev_heb = i > 0 and HEB_RE.match(text[i - 1])
+        next_heb = i + 1 < len(text) and HEB_RE.match(text[i + 1])
+        if not (prev_heb and next_heb):
+            continue
+        # Deux lettres finales de suite : artefact de ponctuation, pas une
+        # preuve de mauvaise disposition.
+        if SOFIT_RE.match(text[i + 1]):
+            continue
+        penalty += SOFIT_PENALTY
     return penalty
 
 
@@ -244,7 +254,8 @@ def _layout_penalty(text, direction):
     caracteres rares (/, ") viennent de la source (FR 'a' -> '/', gershayim)
     et ne discriminent pas : ils ne sont pas penalises.
 
-    Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
+    Lettres finales (sofit) au milieu d'un mot : signal faible, et ignore
+    quand deux lettres finales se suivent (artefact de ponctuation).
     """
     penalty = 0
     for ch in text:
