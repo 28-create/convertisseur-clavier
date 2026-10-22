@@ -185,8 +185,8 @@ def detection_checks(models, fix):
           paste_watch._layout_penalty('\u05d0 30 \u05d1', 'toHe') == 0)
     check('liste de nombres non penalisee',
           paste_watch._layout_penalty('1 2 3', 'toHe') == 0)
-    # Non-regression : l'anglais contient k (0.99%) et w (2.4%). La penalite
-    # k ne doit pas empecher la conversion HE -> EN.
+    # Non-regression : l'anglais contient k (0.99%) et w (2.4%). Les penalites
+    # k/w ne doivent pas empecher la conversion HE -> EN.
     english = ['hello world', 'the quick brown fox jumps over the lazy dog',
                'we know the answer', 'thank you very much']
     for text in english:
@@ -198,6 +198,9 @@ def detection_checks(models, fix):
     check('k penalise seulement en francais',
           paste_watch._layout_penalty('kuo', 'toFr', 'fr') > 0
           and paste_watch._layout_penalty('kuo', 'toFr', 'en') == 0)
+    check('w penalise seulement en francais',
+          paste_watch._layout_penalty('wow', 'toFr', 'fr') > 0
+          and paste_watch._layout_penalty('wow', 'toFr', 'en') == 0)
 
     forced = paste_watch.convert_for_layout('qkuo', 'azerty', 'toHe', fix)
     other = paste_watch.convert_for_layout('qkuo', 'qwerty', 'toHe', fix)

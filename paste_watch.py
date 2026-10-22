@@ -80,6 +80,10 @@ DIGIT_GLUED_RE = re.compile(r'[A-Za-z\u0590-\u05ff][0-9]|[0-9][A-Za-z\u0590-\u05
 # (6.53%) en lecture erronee HE->FR (HE_TO_FR['\u05dc'] = 'k'). En anglais,
 # k est courant (0.99%) : la penalite ne s'applique qu'a la cible francaise.
 K_IN_FR_RE = re.compile(r'k')
+# w : tres rare en francais naturel (0.002%), mais produit par HE zayin
+# (1.44%) en lecture erronee HE->FR (HE_TO_FR['\u05d6'] = 'w'). En anglais,
+# w est courant (2.4%) : la penalite ne s'applique qu'a la cible francaise.
+W_IN_FR_RE = re.compile(r'w')
 HEB_RE = re.compile(r'[\u0590-\u05ff]')
 
 # <he_model:generated>
@@ -282,8 +286,8 @@ def _layout_penalty(text, direction, latin_lang=None):
     Lettres finales (sofit) au milieu d'un mot : signal tres fort d'erreur.
 
     latin_lang indique la langue latine visee ('fr'/'en'). Les lettres
-    rares en francais (k) ne sont penalisees que si la cible est le
-    francais : en anglais, k est courant et la penalite serait un faux
+    rares en francais (k, w) ne sont penalisees que si la cible est le
+    francais : en anglais, elles sont courantes et la penalite serait un faux
     positif.
     """
     penalty = 0
@@ -306,9 +310,11 @@ def _layout_penalty(text, direction, latin_lang=None):
     # ne sont pas penalises.
     if direction == 'toHe' and DIGIT_GLUED_RE.search(text):
         penalty += LAYOUT_PENALTY * 4
-    # k en cible francaise : tres rare en francais (0.003%), mais produit
-    # par HE lamed (6.53%) via HE_TO_FR['\u05dc'] = 'k'. Jamais en anglais.
-    if direction == 'toFr' and latin_lang == 'fr' and K_IN_FR_RE.search(text):
+    # k et w en cible francaise : tres rares en francais (0.003% / 0.002%),
+    # mais produits par HE lamed (6.53%) et zayin (1.44%) via HE_TO_FR.
+    # Jamais en anglais, ou k (0.99%) et w (2.4%) sont courants.
+    if direction == 'toFr' and latin_lang == 'fr' and (
+            K_IN_FR_RE.search(text) or W_IN_FR_RE.search(text)):
         penalty += LAYOUT_PENALTY * 5
     return penalty
 
