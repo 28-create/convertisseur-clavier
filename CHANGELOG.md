@@ -1,6 +1,6 @@
 # Journal des modifications
 
-## Non publié
+## v1.14.0 - 3 nov. 2026
 - Détection `Ctrl+V` : les artefacts de ponctuation des tables (par exemple
   `:` rendu en lettre finale `ף`) ne bloquent plus une lecture correcte. Deux
   lettres finales de suite sont ignorées et le poids d'un sofit isolé est
