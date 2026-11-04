@@ -1,6 +1,6 @@
 # Journal des modifications
 
-## Non publié
+## v1.14.1 - 4 nov. 2026
 - Démarrage de l'application nettement plus rapide : le Setup installe la
   version en dossier (PyInstaller `--onedir`) au lieu d'un exécutable
   auto-extractible. Plus rien n'est décompressé dans `%TEMP%` à chaque
