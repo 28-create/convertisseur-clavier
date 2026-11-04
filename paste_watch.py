@@ -602,6 +602,8 @@ def _win32():
     u32.BringWindowToTop.argtypes = [vp]
     u32.IsWindow.restype = ctypes.c_int
     u32.IsWindow.argtypes = [vp]
+    u32.IsIconic.restype = ctypes.c_int
+    u32.IsIconic.argtypes = [vp]
     u32.ShowWindow.argtypes = [vp, ctypes.c_int]
     u32.GetCursorPos.argtypes = [ctypes.POINTER(POINT)]
     u32.ClientToScreen.argtypes = [vp, ctypes.POINTER(POINT)]
@@ -1144,7 +1146,10 @@ class Watcher:
             if tid_fg and tid_fg != tid_me:
                 attached = bool(u32.AttachThreadInput(tid_me, tid_fg, True))
             try:
-                u32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                # SW_RESTORE demagnifie aussi une fenetre maximisee : ne
+                # restaurer que si la cible est reellement minimisee.
+                if u32.IsIconic(hwnd):
+                    u32.ShowWindow(hwnd, 9)  # SW_RESTORE
                 u32.BringWindowToTop(hwnd)
                 u32.SetForegroundWindow(hwnd)
             finally:

@@ -326,6 +326,69 @@ def proposal_state_checks():
           and not watcher.overlay_open and not watcher.block_v)
 
 
+def focus_checks():
+    """La cible ne doit pas etre demagnifiee avant le Ctrl+V injecte."""
+
+    class FakeUser32:
+        def __init__(self, iconic):
+            self.iconic = iconic
+            self.calls = []
+            self.foreground = 0
+
+        def IsWindow(self, hwnd):
+            return True
+
+        def IsIconic(self, hwnd):
+            return self.iconic
+
+        def GetForegroundWindow(self):
+            return self.foreground
+
+        def GetWindowThreadProcessId(self, hwnd, proc):
+            return 1
+
+        def AttachThreadInput(self, first, second, attach):
+            return 1
+
+        def ShowWindow(self, hwnd, command):
+            self.calls.append(('ShowWindow', hwnd, command))
+
+        def BringWindowToTop(self, hwnd):
+            self.calls.append(('BringWindowToTop', hwnd))
+            return 1
+
+        def SetForegroundWindow(self, hwnd):
+            self.calls.append(('SetForegroundWindow', hwnd))
+            self.foreground = hwnd
+            return 1
+
+    class FakeKernel32:
+        def GetCurrentThreadId(self):
+            return 2
+
+    def focus(iconic):
+        u32 = FakeUser32(iconic)
+        k32 = FakeKernel32()
+        original = paste_watch._win32
+        paste_watch._win32 = lambda: (u32, k32)
+        try:
+            watcher = object.__new__(paste_watch.Watcher)
+            ok = watcher._focus(1234)
+        finally:
+            paste_watch._win32 = original
+        return ok, [call[0] for call in u32.calls]
+
+    ok, calls = focus(False)
+    check('fenetre normale : pas de restauration',
+          ok and calls == ['BringWindowToTop', 'SetForegroundWindow'],
+          str(calls))
+    ok, calls = focus(True)
+    check('fenetre minimisee : restauration avant le collage',
+          ok and calls == ['ShowWindow', 'BringWindowToTop',
+                           'SetForegroundWindow'],
+          str(calls))
+
+
 def _relative_luminance(color):
     color = color.lstrip('#')
     values = [int(color[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
@@ -441,6 +504,7 @@ def main():
     node_checks(html, models)
     settings_checks()
     proposal_state_checks()
+    focus_checks()
     popup_checks()
     installer_checks()
 
