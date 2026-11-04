@@ -68,7 +68,7 @@ ou sur votre machine Windows.
 | `test_store.py` | Test du paquet store : manifeste et ses limites, textes de fiche, zip reproductible. |
 | `store/` | Textes de la fiche (fr/en) et justifications de permissions, prêts à coller. |
 | `test_page.py` | Test d'intégrité : hors ligne, ids, i18n, RTL, syntaxe JS, version. |
-| `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z.exe` (nom versionné, icône `app.ico`). |
+| `build_exe.py` | Construit `dist\ConvertisseurClavier-X.Y.Z\` (dossier installé par le Setup, démarrage rapide) et `dist\ConvertisseurClavier-X.Y.Z.exe` (portable, un seul fichier). |
 | `app.ico` | Icône de l'exe (dérivée de `logo.svg`). |
 | `gen_version.py` | Régénère `version_info.txt` (tampon de version de l'exe). |
 | `release.py` | Automatise une release : bump, tests, commit, tag, build, empreintes et publication GitHub. |
@@ -195,6 +195,11 @@ touche `Ctrl+Alt+H`, sans Python installé.
 3. Désinstallation : Paramètres Windows → Applications (ménage complet,
    menu clic droit et démarrage automatique inclus).
 
+L'application installée démarre plus vite que l'exe portable : le Setup
+installe la version en dossier, qui ne décompresse rien à chaque lancement,
+et un petit écran de lancement s'affiche tout de suite pendant que la fenêtre
+se prépare.
+
 ### Menu clic droit (Explorateur Windows)
 
 - Clic droit sur un **fichier** : *Ouvrir avec Convertisseur Clavier*
@@ -255,11 +260,21 @@ Construire soi-même (nom versionné automatiquement) :
 
 ```sh
 pip install pywebview pyinstaller
-python build_exe.py
+python build_exe.py            # les deux artefacts
+python build_exe.py --onedir   # seulement le dossier (Setup)
+python build_exe.py --onefile  # seulement le .exe portable
 ```
 
-Le `.exe` est dans `dist\` (non versionné, voir `.gitignore`).
-Puis le Setup (Windows, Inno Setup 6 requis) :
+Deux sorties dans `dist\` (non versionné, voir `.gitignore`) :
+
+- `ConvertisseurClavier-X.Y.Z\ConvertisseurClavier.exe` : version en dossier
+  (`--onedir`), celle que le Setup installe. Rien n'est extrait au lancement :
+  c'est la plus rapide à ouvrir.
+- `ConvertisseurClavier-X.Y.Z.exe` : portable (`--onefile`), un seul fichier
+  à copier, mais qui se décompresse dans `%TEMP%` à chaque ouverture (plus
+  lent, et le premier lancement peut être freiné par l'antivirus).
+
+Puis le Setup (Windows, Inno Setup 6 requis), qui embarque le dossier :
 
 ```sh
 python build_setup.py

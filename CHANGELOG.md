@@ -1,6 +1,13 @@
 # Journal des modifications
 
 ## Non publié
+- Démarrage de l'application nettement plus rapide : le Setup installe la
+  version en dossier (PyInstaller `--onedir`) au lieu d'un exécutable
+  auto-extractible. Plus rien n'est décompressé dans `%TEMP%` à chaque
+  lancement (environ 2 s de gagnées, et plus de premier démarrage bloqué
+  par l'antivirus). Le `.exe` portable, lui, reste disponible.
+- Un petit écran de lancement s'affiche immédiatement pendant que la fenêtre
+  WebView2 se prépare, puis laisse place à la fenêtre réelle.
 - « Convertir et coller » ne rapetisse plus la fenêtre cible : le guetteur ne
   restaure une fenêtre que si elle est minimisée, au lieu de la restaurer à
   chaque collage.

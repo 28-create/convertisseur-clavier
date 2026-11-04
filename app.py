@@ -34,8 +34,8 @@ MAX_PRELOAD = 100000
 
 
 def bundle_dir():
-    # PyInstaller (onefile) : fichiers embarques sous sys._MEIPASS ;
-    # sinon : meme dossier que ce script.
+    # PyInstaller (onefile et onedir) : fichiers embarques sous sys._MEIPASS
+    # (_internal pour un build --onedir) ; sinon : dossier de ce script.
     if getattr(sys, '_MEIPASS', None):
         return sys._MEIPASS
     return os.path.dirname(os.path.abspath(__file__))
@@ -192,27 +192,55 @@ def preload_js(text):
             % json.dumps(text))
 
 
-def cmd_gui(preload_text=None):
+def start_splash():
+    # Ecran de lancement Win32 (win32_splash) : purement visuel. Hors
+    # Windows, ou si le module echoue, on renvoie None et rien ne change.
     try:
-        import webview
-    except ImportError:
-        show_msg('pywebview manquant : pip install pywebview', error=True)
-        return 1
+        import win32_splash
+        return win32_splash.show(APP_TITLE, 'Chargement de la page...')
+    except Exception:
+        return None
+
+
+def close_splash(splash):
+    if splash is None:
+        return
+    try:
+        splash.close()
+    except Exception:
+        pass
+
+
+def cmd_gui(preload_text=None):
     page = page_path()
     if not os.path.exists(page):
         show_msg('Introuvable : %s' % page, error=True)
+        return 1
+    # Ecran de lancement : WebView2 met plusieurs secondes a creer sa
+    # fenetre. On affiche tout de suite une petite fenetre native (Win32,
+    # sans dependance) qu'on ferme des que la fenetre reelle apparait.
+    splash = start_splash()
+    try:
+        import webview
+    except ImportError:
+        close_splash(splash)
+        show_msg('pywebview manquant : pip install pywebview', error=True)
         return 1
     window = webview.create_window(APP_TITLE, url=page, width=980, height=780,
                                    min_size=(640, 520))
     if preload_text:
         window.events.loaded += (lambda: window.evaluate_js(
             preload_js(preload_text)))
+    if splash is not None:
+        window.events.shown += (lambda: close_splash(splash))
     try:
         webview.start()
     except Exception as e:  # ex. WebView2 absent de la machine
         show_msg('Demarrage impossible (WebView2 requis sur Windows) : %s' % e,
                  error=True)
         return 1
+    finally:
+        close_splash(splash)
     return 0
 
 

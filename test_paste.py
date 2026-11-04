@@ -459,7 +459,10 @@ def installer_checks():
     iss = read('installer.iss')
     for tok in ('--paste-watch', '--paste-stop',
                 'CurrentVersion\\Run', 'Tasks: surveillance',
-                '[UninstallRun]', 'PrepareToInstall'):
+                '[UninstallRun]', 'PrepareToInstall',
+                '#define MyAppFolder',
+                'Source: "dist\\{#MyAppFolder}\\*"',
+                'recursesubdirs createallsubdirs'):
         check('installer.iss : %s' % tok, tok in iss)
     ps = read('installer.ps1')
     for tok in ('--paste-watch', '--paste-stop', 'CurrentVersion\\Run',
@@ -469,7 +472,8 @@ def installer_checks():
     for tok in ('--paste-stop', 'CurrentVersion\\Run', 'RunName'):
         check('desinstaller.ps1 : %s' % tok, tok in des)
     bs = read('build_setup.py')
-    for tok in ('--paste-watch', '--paste-stop', 'surveillance'):
+    for tok in ('--paste-watch', '--paste-stop', 'surveillance',
+                'ConvertisseurClavier.exe', 'onedir'):
         check('build_setup.py : %s' % tok, tok in bs)
     be = read('build_exe.py')
     check('build_exe.py embarque app.ico',
@@ -479,6 +483,9 @@ def installer_checks():
     check('build_exe.py embarque paste_watch/win32_clip',
           be.count('--hidden-import') >= 2
           and 'paste_watch' in be and 'win32_clip' in be)
+    check('build_exe.py : dossier onedir + portable onefile',
+          '--onedir' in be and '--onefile' in be
+          and 'ConvertisseurClavier-%s' in be and 'SHORT_NAME' in be)
     ap = read('app.py')
     check('app.py : verbes de surveillance',
           '--paste-watch' in ap and '--paste-stop' in ap)
