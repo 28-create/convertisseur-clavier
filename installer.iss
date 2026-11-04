@@ -3,7 +3,9 @@
 ; La version ci-dessous est GENEREE depuis convertisseur.html :
 ;   python gen_version.py   (ne pas la modifier a la main).
 #define MyAppVersion "1.14.0"
-#define MyAppExe "ConvertisseurClavier-" + MyAppVersion + ".exe"
+; Dossier --onedir produit par build_exe.py : aucun fichier n'est extrait au
+; lancement (demarrage nettement plus rapide que le --onefile portable).
+#define MyAppFolder "ConvertisseurClavier-" + MyAppVersion
 
 [Setup]
 AppId=ConvertisseurClavier
@@ -72,7 +74,8 @@ Name: "surveillance"; Description: "{cm:TaskSurveillance}"; GroupDescription: "{
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "dist\{#MyAppExe}"; DestDir: "{app}"; DestName: "ConvertisseurClavier.exe"; Flags: ignoreversion
+; Application complete (exe + _internal) : demarrage rapide.
+Source: "dist\{#MyAppFolder}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\Convertisseur Clavier"; Filename: "{app}\ConvertisseurClavier.exe"; HotKey: "ctrl+alt+k"; Comment: "{cm:IconAppComment}"

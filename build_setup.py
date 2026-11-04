@@ -8,7 +8,9 @@ Usage :
                                   surveillance au demarrage)
 
 Etapes : gen_version.py (synchronise installer.iss) -> ISCC installer.iss.
-Le .exe versionne doit exister dans dist\\ (voir build_exe.py).
+Le dossier versionne dist\\ConvertisseurClavier-<version>\\ (build --onedir)
+doit exister : il est copie tel quel dans le dossier d'installation, ce qui
+evite l'extraction PyInstaller a chaque lancement (voir build_exe.py).
 Inno Setup 6 : https://jrsoftware.org/isdl.php (ISCC.exe ajoute au PATH
 ou dans C:\\Program Files (x86)\\Inno Setup 6\\).
 """
@@ -22,6 +24,9 @@ ISS_FILE = 'installer.iss'
 
 REQUIRED_TOKENS = [
     '#define MyAppVersion',
+    '#define MyAppFolder',
+    'Source: "dist\\{#MyAppFolder}\\*"',
+    'recursesubdirs createallsubdirs',
     'PrivilegesRequired=lowest',
     'SetupIconFile=app.ico',
     'UninstallDisplayIcon={app}\\ConvertisseurClavier.exe',
@@ -106,8 +111,9 @@ def check():
         for p in problems:
             print('MANQUE : %s' % p)
         return 1
-    print('OK : installer.iss coherent (version %s, logo haute resolution, '
-          'hebreu, taches par defaut, menu contextuel, surveillance)' % ver)
+    print('OK : installer.iss coherent (version %s, dossier --onedir, logo '
+          'haute resolution, hebreu, taches par defaut, menu contextuel, '
+          'surveillance)' % ver)
     return 0
 
 
@@ -137,7 +143,8 @@ def main(argv=None):
     if gen_version.main() != 0:
         raise SystemExit('gen_version.py a echoue')
     ver = read_version()
-    exe = os.path.join('dist', 'ConvertisseurClavier-%s.exe' % ver)
+    folder = os.path.join('dist', 'ConvertisseurClavier-%s' % ver)
+    exe = os.path.join(folder, 'ConvertisseurClavier.exe')
     if not os.path.exists(exe):
         raise SystemExit('introuvable : %s (lance python build_exe.py)' % exe)
     iscc = find_iscc()

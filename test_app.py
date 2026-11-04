@@ -99,6 +99,38 @@ def main():
           lat == mod.convert('qkuo', mod.LATIN_MAPS['toAz']) and lat != 'qkuo',
           '%s %s' % (tag, ascii(lat)))
 
+    # 5. Ecran de lancement : module autonome (ni tkinter ni .NET), inactif
+    #    hors Windows, et sans effet si l'affichage echoue (la fenetre reelle
+    #    doit s'ouvrir quand meme).
+    import win32_splash
+    with open('win32_splash.py', encoding='utf-8') as f:
+        splash_src = f.read()
+    check('win32_splash sans dependance',
+          'import tkinter' not in splash_src
+          and 'webview' not in splash_src
+          and 'ctypes' in splash_src)
+    check('win32_splash inactif hors Windows',
+          win32_splash.IS_WINDOWS == (sys.platform == 'win32'))
+    if not win32_splash.IS_WINDOWS:
+        check('splash sans effet hors Windows',
+              win32_splash.Splash('test').show() is False)
+    app_src = open('app.py', encoding='utf-8').read()
+    check('app.py : ecran de lancement branche',
+          'start_splash()' in app_src and 'close_splash(splash)' in app_src
+          and 'window.events.shown' in app_src and 'finally:' in app_src)
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError('affichage impossible')
+
+    original = win32_splash.show
+    win32_splash.show = boom
+    try:
+        check('start_splash robuste', app.start_splash() is None)
+    finally:
+        win32_splash.show = original
+    app.close_splash(None)
+    check('close_splash(None) sans erreur', True)
+
     for name, passed, *_ in results:
         if not passed:
             ok = False
