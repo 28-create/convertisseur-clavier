@@ -148,6 +148,9 @@ clavier, une petite fenêtre propose la conversion avant l'insertion :
 - `Maj+Entrée` ou **Coller tel quel** : colle l'original ;
 - `Échap` ou **Annuler** : ne colle rien (le presse-papiers reste intact).
 
+La fenêtre cible garde sa taille : une fenêtre maximisée n'est pas rapetissée,
+et elle n'est restaurée que si elle était minimisée.
+
 La fenêtre affiche la disposition détectée dans un petit menu **AZERTY ▾** :
 on peut y choisir **AZERTY** ou **QWERTY**, et l'aperçu comme le texte collé
 suivent immédiatement le choix. Le même menu propose **Défaut si ambigu :
