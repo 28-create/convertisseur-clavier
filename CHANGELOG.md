@@ -1,5 +1,10 @@
 # Journal des modifications
 
+## Non publié
+- « Convertir et coller » ne rapetisse plus la fenêtre cible : le guetteur ne
+  restaure une fenêtre que si elle est minimisée, au lieu de la restaurer à
+  chaque collage.
+
 ## v1.14.0 - 3 nov. 2026
 - Détection `Ctrl+V` : les artefacts de ponctuation des tables (par exemple
   `:` rendu en lettre finale `ף`) ne bloquent plus une lecture correcte. Deux
