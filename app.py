@@ -32,6 +32,20 @@ FIX_NAME = 'fix-presse-papiers.py'
 # Limite de prechargement (texte injecte dans la fenetre apres chargement).
 MAX_PRELOAD = 100000
 
+# Page de chargement minimale : s'affiche instantanement pour que la fenetre
+# soit visible sans attendre l'initialisation complete de WebView2 (~2-3 s).
+# Une fois visible, cmd_gui navigue vers convertisseur.html.
+LOADING_HTML = ('<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">'
+                '<title>Convertisseur Clavier</title></head>'
+                '<body style="font-family:system-ui,sans-serif;'
+                'display:flex;flex-direction:column;align-items:center;'
+                'justify-content:center;height:100vh;margin:0;'
+                'background:#f4f6fb;color:#0b1f3a;">'
+                '<div style="font-size:1.2rem;font-weight:600;">'
+                'Convertisseur Clavier</div>'
+                '<div style="margin-top:.75rem;color:#475569;">Chargement...</div>'
+                '</body></html>')
+
 
 def bundle_dir():
     # PyInstaller (onefile et onedir) : fichiers embarques sous sys._MEIPASS
@@ -226,11 +240,24 @@ def cmd_gui(preload_text=None):
         close_splash(splash)
         show_msg('pywebview manquant : pip install pywebview', error=True)
         return 1
-    window = webview.create_window(APP_TITLE, url=page, width=980, height=780,
-                                   min_size=(640, 520))
-    if preload_text:
-        window.events.loaded += (lambda: window.evaluate_js(
-            preload_js(preload_text)))
+    # Page de chargement minimale : la fenetre apparait immediatement sans
+    # attendre l'initialisation de WebView2 (~2-3 s). Une fois visible, on
+    # navigue vers convertisseur.html pour charger l'interface complete.
+    real_loaded = False
+
+    def on_loaded():
+        nonlocal real_loaded
+        if not real_loaded:
+            # Premiere page chargee : c'est le chargement rapide.
+            real_loaded = True
+            window.load_url(page)
+        elif preload_text:
+            # La vraie page est chargee : on injecte le texte precharge.
+            window.evaluate_js(preload_js(preload_text))
+
+    window = webview.create_window(APP_TITLE, html=LOADING_HTML,
+                                   width=980, height=780, min_size=(640, 520))
+    window.events.loaded += on_loaded
     if splash is not None:
         window.events.shown += (lambda: close_splash(splash))
     try:
