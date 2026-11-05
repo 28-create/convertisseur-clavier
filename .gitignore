@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
+node_modules/
+coverage/
 # Artefacts PyInstaller (build local du .exe, non versionnés)
 dist/
 build/

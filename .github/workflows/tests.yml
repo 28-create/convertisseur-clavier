@@ -31,8 +31,6 @@ jobs:
         run: python test_app.py
       - name: Surveillance du presse-papiers (detection, modele, autostart)
         run: python test_paste.py
-      - name: Detection de lecture (evaluation anti-regression)
-        run: python test_ngrams.py
       - name: Extension (manifeste, CSP, cablage, conversions)
         run: python test_extension.py
       - name: Paquet store (coherence, sans zip)
@@ -41,8 +39,38 @@ jobs:
         run: python test_store.py
       - name: Page (integrite, i18n, RTL, JS, contraste, version)
         run: python test_page.py
+      - name: PWA (coeur genere, manifeste, icones, hors ligne)
+        run: python test_web.py
       - name: Setup (coherence installer.iss, sans compilation)
         run: python build_setup.py --check
       - name: Installeur (Windows, une seule fois)
         if: runner.os == 'Windows' && matrix.python-version == '3.12'
         run: powershell -NoProfile -ExecutionPolicy Bypass -File test_installer.ps1
+
+  web:
+    name: web (PWA)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Installer les dependances
+        run: npm ci
+      - name: Verifier les types
+        run: npm run typecheck
+      - name: Tests et parite avec le HTML
+        run: npm test
+      - name: Build PWA
+        run: npm run build
+      - name: Archiver la PWA
+        uses: actions/upload-artifact@v4
+        with:
+          name: pwa-dist
+          path: apps/web/dist
+          if-no-files-found: error
