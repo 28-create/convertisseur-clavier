@@ -273,6 +273,7 @@
         <button id="copy" class="primary" aria-keyshortcuts="Control+Enter Meta+Enter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy">Copier (Ctrl+Entrée)</span></button>
         <button id="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/></svg><span data-i18n="swap">Inverser</span></button>
         <button id="clear" data-i18n-title="clearTitle" title="Tout effacer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="clear">Effacer</span></button>
+        <button id="layoutBtn" data-i18n-title="layoutSwitchTitle" title="Changer le clavier physique"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zM3 10h18v2H3zM3 14h18v2H3z"/><path d="M7 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2H7z"/></svg><span data-i18n="layoutSwitch">Clavier</span></button>
       </div>
     </div>
   </section>
@@ -506,7 +507,7 @@ const I18N = {
     detectedFr: 'Détecté : texte latin → converti vers hébreu (mode {layout}).',
     forcedHe: 'Converti vers hébreu (mode {layout}).', forcedFr: 'Converti vers {layout}.',
     dirLatinAz: 'Converti QWERTY → AZERTY.', dirLatinQw: 'Converti AZERTY → QWERTY.',
-    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture (↓)', suggestDismiss: 'Ignorer pour ce texte', localOnly: '100 % local', footNote: '100 % local — aucune donnée envoyée.' },
+    copied: 'Copié !', copyFail: 'Copie impossible dans ce navigateur.', chars: '{n} caractères', suggestRead: 'Se lit mieux en clavier {layout} :', suggestApply: 'Afficher cette lecture (↓)', suggestDismiss: 'Ignorer pour ce texte', layoutSwitch: 'Clavier', layoutSwitchTitle: 'Changer le clavier physique', localOnly: '100 % local', footNote: '100 % local — aucune donnée envoyée.' },
   en: { title: '{la} ⇄ {he} keyboard converter', settings: 'Settings',
     docTitle: '{la} ⇄ {he} Keyboard Converter (AZERTY / QWERTY)',
     docDesc: '{la} ⇄ {he} keyboard converter (AZERTY / QWERTY), 100% local.',
@@ -532,7 +533,7 @@ const I18N = {
     detectedFr: 'Detected: Latin text → converted to Hebrew ({layout} mode).',
     forcedHe: 'Converted to Hebrew ({layout} mode).', forcedFr: 'Converted to {layout}.',
     dirLatinAz: 'Converted QWERTY → AZERTY.', dirLatinQw: 'Converted AZERTY → QWERTY.',
-    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading (↓)', suggestDismiss: 'Ignore for this text', localOnly: '100% local', footNote: '100% local — no data sent.' },
+    copied: 'Copied!', copyFail: 'Copy failed in this browser.', chars: '{n} characters', suggestRead: 'Reads better with a {layout} keyboard:', suggestApply: 'Show this reading (↓)', suggestDismiss: 'Ignore for this text', layoutSwitch: 'Keyboard', layoutSwitchTitle: 'Switch physical keyboard', localOnly: '100% local', footNote: '100% local — no data sent.' },
   he: { title: 'ממיר מקלדת {la} ⇄ {he}', settings: 'הגדרות',
     docTitle: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY)',
     docDesc: 'ממיר מקלדת {la} ⇄ {he} (AZERTY / QWERTY), 100% מקומי.',
@@ -558,7 +559,7 @@ const I18N = {
     detectedFr: 'זוהה: טקסט לטיני ← הומר לעברית (מצב {layout}).',
     forcedHe: 'הומר לעברית (מצב {layout}).', forcedFr: 'הומר ל-{layout}.',
     dirLatinAz: 'הומר QWERTY ← AZERTY.', dirLatinQw: 'הומר AZERTY ← QWERTY.',
-    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו (↓)', suggestDismiss: 'התעלמות בטקסט זה', localOnly: '100% מקומי', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
+    copied: 'הועתק!', copyFail: 'ההעתקה נכשלה בדפדפן זה.', chars: '{n} תווים', suggestRead: 'נקרא טוב יותר במקלדת {layout}:', suggestApply: 'הצגת קריאה זו (↓)', suggestDismiss: 'התעלמות בטקסט זה', layoutSwitch: 'מקלדת', layoutSwitchTitle: 'החלפת מקלדת פיזית', localOnly: '100% מקומי', footNote: '100% מקומי — הנתונים אינם נשלחים.' },
 };
 const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azerty', direction: 'auto', theme: 'light',
   fontsize: 'medium', live: true, autocopy: false, remember: true, history: true };
@@ -937,6 +938,14 @@ document.getElementById('swap').onclick = () => {
   doConvert();
 };
 document.getElementById('clear').onclick = () => { input.value = ''; doConvert(); input.focus(); };
+document.getElementById('layoutBtn').onclick = () => {
+  // Bascule manuelle du clavier physique (AZERTY <-> QWERTY), puis reconvertit.
+  settings.layout = settings.layout === 'azerty' ? 'qwerty' : 'azerty';
+  applySettingsToUI();
+  saveSettings();
+  doConvert();
+  input.focus();
+};
 document.getElementById('copy').onclick = copyResult;
 input.addEventListener('input', () => { if (settings.live) doConvert(); else { scheduleSave(); scheduleSuggestion(); } });
 input.addEventListener('keydown', e => {
@@ -1069,7 +1078,6 @@ try {
 } catch {}
 applySettingsToUI();
 doConvert();
-input.focus();
 renderHistory();
 </script>
 </body>
