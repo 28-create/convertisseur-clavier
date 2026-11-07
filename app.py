@@ -225,6 +225,46 @@ def close_splash(splash):
         pass
 
 
+class LoadingFlow:
+    """Sequence page de chargement -> vraie page -> injection du texte.
+
+    Le clic droit / la touche globale ouvrent la fenetre avec un fichier a
+    precharger : le texte ne peut etre injecte qu'une fois la vraie page
+    chargee. La sequence est isolee de pywebview pour rester testable
+    (test_app.py) sans ouvrir de fenetre : `window` expose seulement
+    `load_url(url)` et `evaluate_js(js)`.
+
+    L'evenement `loaded` de pywebview peut se declencher plusieurs fois et
+    sur une page intermediaire (serveur local) : on ne se fie donc pas au
+    nombre d'evenements, on verifie que le champ #input existe vraiment.
+    """
+
+    def __init__(self, page, preload_text=None):
+        self.page = page
+        self.preload_text = preload_text
+        self.navigated = False
+        self.preloaded = False
+
+    def on_loaded(self, window):
+        if not self.navigated:
+            # Page de chargement affichee : on navigue vers la vraie page.
+            self.navigated = True
+            window.load_url(self.page)
+            return
+        if self.preloaded:
+            return
+        try:
+            ready = bool(window.evaluate_js(
+                "!!document.getElementById('input')"))
+        except Exception:
+            ready = False
+        if not ready:
+            return  # page intermediaire : attendre le vrai document
+        self.preloaded = True
+        if self.preload_text:
+            window.evaluate_js(preload_js(self.preload_text))
+
+
 def cmd_gui(preload_text=None):
     page = page_path()
     if not os.path.exists(page):
@@ -241,23 +281,12 @@ def cmd_gui(preload_text=None):
         show_msg('pywebview manquant : pip install pywebview', error=True)
         return 1
     # Page de chargement minimale : la fenetre apparait immediatement sans
-    # attendre l'initialisation de WebView2 (~2-3 s). Une fois visible, on
+    # attendre l'initialisation de WebView2 (~2-3 s). Une fois affichee, on
     # navigue vers convertisseur.html pour charger l'interface complete.
-    real_loaded = False
-
-    def on_loaded():
-        nonlocal real_loaded
-        if not real_loaded:
-            # Premiere page chargee : c'est le chargement rapide.
-            real_loaded = True
-            window.load_url(page)
-        elif preload_text:
-            # La vraie page est chargee : on injecte le texte precharge.
-            window.evaluate_js(preload_js(preload_text))
-
+    flow = LoadingFlow(page, preload_text)
     window = webview.create_window(APP_TITLE, html=LOADING_HTML,
                                    width=980, height=780, min_size=(640, 520))
-    window.events.loaded += on_loaded
+    window.events.loaded += (lambda: flow.on_loaded(window))
     if splash is not None:
         window.events.shown += (lambda: close_splash(splash))
     try:
