@@ -131,6 +131,54 @@ def main():
     app.close_splash(None)
     check('close_splash(None) sans erreur', True)
 
+    # 6. Page de chargement : aucune ressource reseau, et sequence
+    #    page -> vraie page -> preload robuste aux evenements en trop
+    #    (pywebview peut signaler une page intermediaire sans #input).
+    check('page de chargement sans ressource http',
+          'http://' not in app.LOADING_HTML
+          and 'https://' not in app.LOADING_HTML)
+
+    class FakeWindow:
+        def __init__(self, has_input=False, fail=False):
+            self.urls = []
+            self.scripts = []
+            self.has_input = has_input
+            self.fail = fail
+
+        def load_url(self, url):
+            self.urls.append(url)
+
+        def evaluate_js(self, js):
+            if js == "!!document.getElementById('input')":
+                if self.fail:
+                    raise RuntimeError('pas de document')
+                return self.has_input
+            self.scripts.append(js)
+            return None
+
+    flow = app.LoadingFlow('page.html', 'qkuo')
+    win = FakeWindow()
+    flow.on_loaded(win)
+    check('LoadingFlow : navigation une seule fois',
+          win.urls == ['page.html'] and not win.scripts)
+    flow.on_loaded(win)  # page intermediaire : pas encore de #input
+    check('LoadingFlow : page intermediaire ignoree',
+          win.scripts == [] and not flow.preloaded)
+    win.has_input = True
+    flow.on_loaded(win)
+    check('LoadingFlow : preload sur la vraie page',
+          len(win.scripts) == 1 and 'qkuo' in win.scripts[0]
+          and flow.preloaded)
+    flow.on_loaded(win)
+    check('LoadingFlow : pas de preload en double',
+          len(win.scripts) == 1 and len(win.urls) == 1)
+    crashed = FakeWindow(has_input=True, fail=True)
+    flow2 = app.LoadingFlow('page.html')
+    flow2.on_loaded(crashed)
+    flow2.on_loaded(crashed)  # evaluate_js leve : aucun crash attendu
+    check('LoadingFlow : evaluate_js en erreur sans crash',
+          not flow2.preloaded and crashed.urls == ['page.html'])
+
     for name, passed, *_ in results:
         if not passed:
             ok = False

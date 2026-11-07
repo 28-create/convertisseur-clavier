@@ -32,6 +32,20 @@ FIX_NAME = 'fix-presse-papiers.py'
 # Limite de prechargement (texte injecte dans la fenetre apres chargement).
 MAX_PRELOAD = 100000
 
+# Page de chargement minimale : s'affiche instantanement pour que la fenetre
+# soit visible sans attendre l'initialisation complete de WebView2 (~2-3 s).
+# Une fois visible, cmd_gui navigue vers convertisseur.html.
+LOADING_HTML = ('<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">'
+                '<title>Convertisseur Clavier</title></head>'
+                '<body style="font-family:system-ui,sans-serif;'
+                'display:flex;flex-direction:column;align-items:center;'
+                'justify-content:center;height:100vh;margin:0;'
+                'background:#f4f6fb;color:#0b1f3a;">'
+                '<div style="font-size:1.2rem;font-weight:600;">'
+                'Convertisseur Clavier</div>'
+                '<div style="margin-top:.75rem;color:#475569;">Chargement...</div>'
+                '</body></html>')
+
 
 def bundle_dir():
     # PyInstaller (onefile et onedir) : fichiers embarques sous sys._MEIPASS
@@ -211,6 +225,46 @@ def close_splash(splash):
         pass
 
 
+class LoadingFlow:
+    """Sequence page de chargement -> vraie page -> injection du texte.
+
+    Le clic droit / la touche globale ouvrent la fenetre avec un fichier a
+    precharger : le texte ne peut etre injecte qu'une fois la vraie page
+    chargee. La sequence est isolee de pywebview pour rester testable
+    (test_app.py) sans ouvrir de fenetre : `window` expose seulement
+    `load_url(url)` et `evaluate_js(js)`.
+
+    L'evenement `loaded` de pywebview peut se declencher plusieurs fois et
+    sur une page intermediaire (serveur local) : on ne se fie donc pas au
+    nombre d'evenements, on verifie que le champ #input existe vraiment.
+    """
+
+    def __init__(self, page, preload_text=None):
+        self.page = page
+        self.preload_text = preload_text
+        self.navigated = False
+        self.preloaded = False
+
+    def on_loaded(self, window):
+        if not self.navigated:
+            # Page de chargement affichee : on navigue vers la vraie page.
+            self.navigated = True
+            window.load_url(self.page)
+            return
+        if self.preloaded:
+            return
+        try:
+            ready = bool(window.evaluate_js(
+                "!!document.getElementById('input')"))
+        except Exception:
+            ready = False
+        if not ready:
+            return  # page intermediaire : attendre le vrai document
+        self.preloaded = True
+        if self.preload_text:
+            window.evaluate_js(preload_js(self.preload_text))
+
+
 def cmd_gui(preload_text=None):
     page = page_path()
     if not os.path.exists(page):
@@ -226,11 +280,13 @@ def cmd_gui(preload_text=None):
         close_splash(splash)
         show_msg('pywebview manquant : pip install pywebview', error=True)
         return 1
-    window = webview.create_window(APP_TITLE, url=page, width=980, height=780,
-                                   min_size=(640, 520))
-    if preload_text:
-        window.events.loaded += (lambda: window.evaluate_js(
-            preload_js(preload_text)))
+    # Page de chargement minimale : la fenetre apparait immediatement sans
+    # attendre l'initialisation de WebView2 (~2-3 s). Une fois affichee, on
+    # navigue vers convertisseur.html pour charger l'interface complete.
+    flow = LoadingFlow(page, preload_text)
+    window = webview.create_window(APP_TITLE, html=LOADING_HTML,
+                                   width=980, height=780, min_size=(640, 520))
+    window.events.loaded += (lambda: flow.on_loaded(window))
     if splash is not None:
         window.events.shown += (lambda: close_splash(splash))
     try:
