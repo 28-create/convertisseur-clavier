@@ -15,8 +15,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # L'action a ete renommee openrouter-github-action -> diffguard et sa
+      # branche main n'embarque plus dist/index.js : on epingle la version
+      # publiee (tag v1.0.0), qui contient bien le bundle compile.
       - name: AI PR Review
-        uses: jonit-dev/openrouter-github-action@main
+        uses: jonit-dev/diffguard@v1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           open_router_key: ${{ secrets.OPEN_ROUTER_KEY }} # Utilise le secret créé à l'instant
