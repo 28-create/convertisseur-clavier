@@ -15,12 +15,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # L'action a ete renommee openrouter-github-action -> diffguard et sa
+      # branche main n'embarque plus dist/index.js : on epingle la version
+      # publiee (tag v1.0.0), qui contient bien le bundle compile.
       - name: AI PR Review
-        uses: jonit-dev/openrouter-github-action@main
+        uses: jonit-dev/diffguard@v1.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          open_router_key: ${{ secrets.OPEN_ROUTER_KEY }} # Utilise le secret créé à l'instant
-          model_id: 'google/gemini-2.5-flash:free' # Modèle gratuit et puissant
+          open_router_key: ${{ secrets.OPEN_ROUTER_KEY }} # Secret du depot
+          # google/gemini-2.5-flash:free n'est plus disponible gratuitement
+          # (404 "model unavailable for free") : on prend un modele gratuit
+          # actuellement propose par OpenRouter.
+          model_id: 'nvidia/nemotron-3-ultra-550b-a55b:free'
           max_tokens: '4096'
           custom_prompt: |
             Agis comme un auditeur de sécurité senior et un relecteur de code impitoyable.
