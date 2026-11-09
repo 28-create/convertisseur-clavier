@@ -190,6 +190,7 @@ def main():
             'heblock': re.search(
                 r'// <he_score:generated>[\s\S]*?// </he_score:generated>', h),
             'norm': re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', h),
+            'normchars': re.search(r'function normalizeChars\(s, alpha\) \{[\s\S]*?\n\}', h),
             'lang': re.search(r'function scoreLang\(text, lang\) \{[\s\S]*?\n\}', h),
             'read': re.search(r'function scoreReading\(text\) \{[\s\S]*?\n\}', h),
             'henorm': re.search(r'function normalizeHebrew\(s\) \{[\s\S]*?\n\}', h),
@@ -208,10 +209,12 @@ def main():
             'shorth': re.search(r'const SUGGEST_SHORT_HEB = \d+;', h),
             'shortm': re.search(r'const SUGGEST_SHORT_MARGIN = [\d.]+;', h),
             'hemarg': re.search(r'const SUGGEST_HE_MARGIN = [\d.]+;', h),
+            'maxlen': re.search(r'const SUGGEST_MAX_LEN = \d+;', h),
         }
         missing = sorted(k for k, m in mm.items() if not m)
         if missing:
-            check('suggestion lecture testable', False, str(missing))
+            check('suggestion lecture testable', False,
+                  'regex introuvable : ' + ', '.join(missing))
         else:
             tables = parse_js_maps(h)
             # Assemblage dans l'ORDRE DU FICHIER : un bug d'ordre de
@@ -231,6 +234,7 @@ def main():
                                 for c in 'salut ca va')
             t_goodnight = ''.join(dict(tables['EN_TO_HE']).get(c, c)
                                   for c in 'call me')
+            maxlen = int(re.search(r'SUGGEST_MAX_LEN = (\d+)', h).group(1))
             cases = [
                 [ex, 'azerty', 'qwerty'],
                 ['חק מ,קמ פקוס פךוד', 'azerty', 'qwerty'],
@@ -256,6 +260,8 @@ def main():
                 ['אמר רבי יוחנן משום רבי שמעון בן יוחאי', 'azerty', None],
                 ['יסוד היסודות ועמוד החכמות לידע שיש שם מצוי ראשון',
                  'azerty', None],
+                # texte trop long : le scoring est borne (cout O(n)).
+                ['\u05d0' * (maxlen + 1), 'azerty', None],
             ]
             prog = (prologue + '\nconst cases = %s;\n'
                     % json.dumps(cases, ensure_ascii=True)
@@ -295,6 +301,9 @@ def main():
                     bad.append('apercu=' + str(got[0]['preview'])[:40])
                 check('suggestion lecture (node)', not bad, '; '.join(bad)[:140])
                 check('marge du veto hebreu', hemarg == 0.8, str(hemarg))
+                check('apercu de suggestion sans HTML',
+                      'suggestPreview.textContent' in h
+                      and not re.search(r'suggestPreview\.(innerHTML|outerHTML)', h))
     else:
         check('suggestion lecture (node absent, ignore)', True, 'sans node')
 
@@ -303,12 +312,15 @@ def main():
         import gen_ngrams
         mblk = re.search(r'// <models:generated>[\s\S]*?// </models:generated>', h)
         mnorm = re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', h)
-        if not (mblk and mnorm):
-            check('normalisation testable', False, 'extraction impossible')
+        mchars = re.search(r'function normalizeChars\(s, alpha\) \{[\s\S]*?\n\}', h)
+        if not (mblk and mnorm and mchars):
+            check('normalisation testable', False,
+                  'extraction impossible (bloc/normalizeChars/normalizeForModel)')
         else:
             samples = ['Café  \u2019\u0153uf\u2026  ÉTÉ ', 'a\tb\nc', 'x',
                        'ÀBÇ 12', 'a\u2014b', '  espaces   multiples  ']
-            prog = (mblk.group(0) + '\n' + mnorm.group(0) + '\n'
+            prog = (mblk.group(0) + '\n' + mchars.group(0) + '\n'
+                    + mnorm.group(0) + '\n'
                     'console.log(JSON.stringify(%s.map(s => normalizeForModel(s))));\n'
                     % json.dumps(samples, ensure_ascii=True))
             r = run_node(prog)
@@ -348,6 +360,8 @@ def main():
             heblk = re.search(
                 r'// <he_score:generated>[\s\S]*?// </he_score:generated>', h)
             mhnorm = re.search(r'function normalizeHebrew\(s\) \{[\s\S]*?\n\}', h)
+            mhsc = re.search(r'function scoreHebrew\(text\) \{[\s\S]*?\n\}', h)
+            mlang = re.search(r'function scoreLang\(text, lang\) \{[\s\S]*?\n\}', h)
             he_ok = False
             detail = 'extraction impossible'
             if heblk and mhnorm:
@@ -374,7 +388,8 @@ def main():
                 if he_ok:
                     hsamples = ['שָׁלוֹם', 'בְּרֵאשִׁ֖ית', 'צ׳ק  \u05f4abc\u05f3',
                                 '  מילים   מרובות ', '\u216babc', 'אָבִינוּ']
-                    hprog = (blk_he + '\n' + mhnorm.group(0) + '\n'
+                    hprog = (blk_he + '\nconst heModelCache = {};\n'
+                             + mchars.group(0) + '\n' + mhnorm.group(0) + '\n'
                              'console.log(JSON.stringify(%s.map(s => '
                              'normalizeHebrew(s))));\n'
                              % json.dumps(hsamples, ensure_ascii=True))
@@ -389,6 +404,36 @@ def main():
                         he_ok = False
                         detail = str(e)[:140]
             check('modele hebreu de la page coherent', he_ok, detail)
+
+            # Base64 corrompu (edition manuelle, fichier tronque) : le score
+            # doit renvoyer null au lieu de faire planter la suggestion.
+            bad_ok = False
+            bad_detail = 'extraction impossible'
+            if mchars and mnorm and mlang and mhnorm and mhsc and heblk:
+                bad_lat = re.sub(r"(fr|en): '[^']*'", r"\1: '!!!'", blk)
+                bad_lat_prog = (
+                    bad_lat + '\nconst modelCache = {};\n'
+                    + mchars.group(0) + '\n' + mnorm.group(0) + '\n'
+                    + mlang.group(0) + '\n'
+                    'console.log(JSON.stringify(scoreLang("bonjour", "fr")));\n')
+                bad_he = re.sub(r"const HE_MODEL_B64 = '[^']*';",
+                                "const HE_MODEL_B64 = '!!!';", heblk.group(0))
+                bad_he_prog = (
+                    bad_he + '\nconst heModelCache = {};\n'
+                    + mchars.group(0) + '\n' + mhnorm.group(0) + '\n'
+                    + mhsc.group(0) + '\n'
+                    'console.log(JSON.stringify(scoreHebrew("\u05e9\u05dc\u05d5\u05dd")));\n')
+                bad_ok = True
+                bad_detail = ''
+                for bad_prog in (bad_lat_prog, bad_he_prog):
+                    br = run_node(bad_prog)
+                    try:
+                        bad_ok = bad_ok and json.loads(
+                            (br.stdout or '').strip()) is None
+                    except Exception as e:
+                        bad_ok = False
+                        bad_detail = str(e)[:140]
+            check('base64 de modele corrompu sans plantage', bad_ok, bad_detail)
     else:
         check('normalisation (node absent, ignore)', True, 'sans node')
 

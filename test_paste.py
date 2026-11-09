@@ -95,16 +95,18 @@ def node_checks(html, models):
     mblk = re.search(r'// <models:generated>[\s\S]*?// </models:generated>',
                      html)
     mnorm = re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', html)
+    mchars = re.search(r'function normalizeChars\(s, alpha\) \{[\s\S]*?\n\}',
+                       html)
     mscore = re.search(r'function scoreLang\(text, lang\) \{[\s\S]*?\n\}',
                        html)
     mread = re.search(r'function scoreReading\(text\) \{[\s\S]*?\n\}', html)
-    if not (mblk and mnorm and mscore and mread):
+    if not (mblk and mnorm and mchars and mscore and mread):
         check('parite page/guetteur (extraction impossible)', False)
         return
     samples = ['bonjour', 'qkuo', 'Caf\u00e9  \u2019\u0153uf',
                'hello world', 'abc', 'x', '\u00c9L\u00c8VE']
     prog = (mblk.group(0) + '\nconst modelCache = {};\n'
-            + mnorm.group(0) + '\n'
+            + mchars.group(0) + '\n' + mnorm.group(0) + '\n'
             + mscore.group(0) + '\n' + mread.group(0) + '\n'
             'console.log(JSON.stringify(%s.map(s => '
             '[normalizeForModel(s), scoreReading(s)])));\n'
