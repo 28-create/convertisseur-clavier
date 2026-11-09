@@ -9,7 +9,8 @@ Usage :
 Ajouter une langue de detection : une entree dans LANGS (code + sources
 verifiees par SHA-256), puis relancer. Rien d'autre a toucher : le score,
 l'UI et les tests iterent sur les donnees. --hebrew regenere le modele
-hebreu de paste_watch.py (guetteur Ctrl+V), separe des modeles latins.
+hebreu de paste_watch.py (guetteur Ctrl+V) et le petit bigramme de veto
+de la page (bloc <he_score:generated>), separes des modeles latins.
 
 Sources : textes du domaine public (Project Gutenberg, Sefaria), telecharges et
 verifies ; --corpus-dir reutilise des fichiers deja presents.
@@ -23,6 +24,7 @@ par des espaces, afin de ne pas couper les mots des textes vocalises.
 import argparse
 import base64
 import hashlib
+import json
 import math
 import os
 import re
@@ -45,6 +47,11 @@ HE_SCALE, HE_OFFSET = 8, 16
 HE_FILE = 'paste_watch.py'
 HE_BEGIN = '# <he_model:generated>'
 HE_END = '# </he_model:generated>'
+# Veto hebreu de la page (suggestReading) : petit bigramme separe du
+# trigramme du guetteur, pour ne pas alourdir convertisseur.html.
+HE_PAGE_ORDER = 2
+HE_PAGE_BEGIN = '// <he_score:generated>'
+HE_PAGE_END = '// </he_score:generated>'
 HE_SOURCES = [
     ('pg5139.txt',
      'https://www.gutenberg.org/cache/epub/5139/pg5139.txt',
@@ -75,9 +82,12 @@ LANGS = [
         ('pg17489.txt',
          'https://www.gutenberg.org/cache/epub/17489/pg17489.txt',
          'a5de514ba7b9f2e1790e7e259c4e8b7a35ae1d29e4bf9a5f8767039c58b80503'),
-        ('pg2600.txt',
-         'https://www.gutenberg.org/cache/epub/2600/pg2600.txt',
-         '2d5bb2ad5f422765e714617e21fa31bbaf8958aa79682c86fca6660fcc5d1b2b'),
+        ('pg17989.txt',
+         'https://www.gutenberg.org/cache/epub/17989/pg17989.txt',
+         '9ea7a8b127a9dfa36de0b0cf9c2e26293beea5c37a0fc988fb9308b63160f282'),
+        ('pg2650.txt',
+         'https://www.gutenberg.org/cache/epub/2650/pg2650.txt',
+         '9ebdb837f733f41d6a822e010d1ccbf14b4ddafad0131482461edb72b55b0936'),
     ]),
     ('en', [
         ('pg11.txt',
@@ -246,6 +256,38 @@ def sync_he_block(block):
         f.write(text)
 
 
+def emit_he_page_block(model, order):
+    label = 'bigrammes' if order == 2 else '%d-grammes' % order
+    lines = [HE_PAGE_BEGIN]
+    lines.append('// Modele de %s hebreu (veto de lecture) genere par' % label)
+    lines.append('// python gen_ngrams.py --hebrew. Ne pas editer a la main.')
+    lines.append('// Sources (domaine public) :')
+    for name, url, sha in HE_SOURCES:
+        lines.append('//   %s <- %s (sha256 %s)' % (name, url, sha[:16]))
+    lines.append('const HE_MODEL_ALPHA = %s;' % json.dumps(HE_ALPHA))
+    lines.append('const HE_MODEL_SCALE = %d, HE_MODEL_OFFSET = %d;'
+                 % (HE_SCALE, HE_OFFSET))
+    lines.append('const HE_MODEL_ORDER = %d;' % order)
+    lines.append("const HE_MODEL_B64 = '%s';"
+                 % base64.b64encode(model).decode('ascii'))
+    lines.append(HE_PAGE_END)
+    return '\n'.join(lines)
+
+
+def sync_html_he_block(block):
+    with open(HTML_FILE, encoding='utf-8') as f:
+        text = f.read()
+    m = re.search('^%s$.*?^%s$' % (re.escape(HE_PAGE_BEGIN),
+                                  re.escape(HE_PAGE_END)),
+                  text, re.S | re.M)
+    if not m:
+        raise SystemExit('marqueurs %s / %s introuvables dans %s'
+                         % (HE_PAGE_BEGIN, HE_PAGE_END, HTML_FILE))
+    text = text[:m.start()] + block + text[m.end():]
+    with open(HTML_FILE, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--corpus-dir', default='',
@@ -269,7 +311,11 @@ def main(argv=None):
             texts.append(raw)
         model = build_he_model(texts, args.order)
         sync_he_block(emit_he_block(model, args.order))
-        print('OK, modele hebreu regenere (%d valeurs, ordre %d)' % (len(model), args.order))
+        page_model = build_he_model(texts, HE_PAGE_ORDER)
+        sync_html_he_block(emit_he_page_block(page_model, HE_PAGE_ORDER))
+        print('OK, modele hebreu regenere : guetteur %d valeurs (ordre %d), '
+              'page %d valeurs (ordre %d)'
+              % (len(model), args.order, len(page_model), HE_PAGE_ORDER))
         return 0
 
     models = {}

@@ -187,9 +187,13 @@ def main():
         from gen_maps import parse_js_maps
         mm = {
             'block': re.search(r'// <models:generated>[\s\S]*?// </models:generated>', h),
+            'heblock': re.search(
+                r'// <he_score:generated>[\s\S]*?// </he_score:generated>', h),
             'norm': re.search(r'function normalizeForModel\(s\) \{[\s\S]*?\n\}', h),
             'lang': re.search(r'function scoreLang\(text, lang\) \{[\s\S]*?\n\}', h),
             'read': re.search(r'function scoreReading\(text\) \{[\s\S]*?\n\}', h),
+            'henorm': re.search(r'function normalizeHebrew\(s\) \{[\s\S]*?\n\}', h),
+            'hesc': re.search(r'function scoreHebrew\(text\) \{[\s\S]*?\n\}', h),
             'sugg': re.search(
                 r'function suggestReading\(text, currentLayout\) \{[\s\S]*?\n\}', h),
             'cv': re.search(
@@ -198,10 +202,12 @@ def main():
             'maps': re.search(r'const MAPS = \{[\s\S]*?\n\};', h),
             'caps': re.search(r'const CAPS_SWAP = [^\n]*;', h),
             'cache': re.search(r'const modelCache = \{\};', h),
+            'hecache': re.search(r'const heModelCache = \{\};', h),
             'minh': re.search(r'const SUGGEST_MIN_HEB = \d+;', h),
             'marg': re.search(r'const SUGGEST_MARGIN = [\d.]+;', h),
             'shorth': re.search(r'const SUGGEST_SHORT_HEB = \d+;', h),
             'shortm': re.search(r'const SUGGEST_SHORT_MARGIN = [\d.]+;', h),
+            'hemarg': re.search(r'const SUGGEST_HE_MARGIN = [\d.]+;', h),
         }
         missing = sorted(k for k, m in mm.items() if not m)
         if missing:
@@ -221,19 +227,35 @@ def main():
             en_qw = 'we should call the plumber tomorrow morning'
             t_fr_az = ''.join(dict(tables['FR_TO_HE']).get(c, c) for c in fr_az)
             t_en_qw = ''.join(dict(tables['EN_TO_HE']).get(c, c) for c in en_qw)
+            t_bonjour = ''.join(dict(tables['FR_TO_HE']).get(c, c)
+                                for c in 'salut ca va')
+            t_goodnight = ''.join(dict(tables['EN_TO_HE']).get(c, c)
+                                  for c in 'call me')
             cases = [
                 [ex, 'azerty', 'qwerty'],
                 ['חק מ,קמ פקוס פךוד', 'azerty', 'qwerty'],
-                # 11 lettres, marge mesuree ~0.36 (< seuil court 0.5) :
-                # la bonne lecture (azerty) ne doit PAS etre suggeree depuis
-                # l'autre clavier — c'est la tranche courte qui decide ici.
+                # 11 lettres, marge mesuree ~1.06 (>= seuil court 0.5) :
+                # la bonne lecture (azerty) est suggeree depuis l'autre
+                # clavier.
                 ['\u05e7\u05d0 \u05df\u05da \u05d3\u20192\u05da\u05dd\u05df\u05e2\u05de/\u05ea',
-                 'qwerty', None],
+                 'qwerty', 'azerty'],
                 [ex, 'qwerty', None],
                 ['שלום', 'azerty', None],
                 ['qkuo', 'azerty', None],
                 [t_fr_az, 'qwerty', 'azerty'],
                 [t_en_qw, 'azerty', 'qwerty'],
+                # phrases courtes (6-14 lettres) : le plancher a 6 les couvre,
+                # le veto hebreu garantit l'absence de faux positif.
+                [t_bonjour, 'qwerty', 'azerty'],
+                [t_goodnight, 'azerty', 'qwerty'],
+                # hebreu authentique (moderne, vocalise, talmudique,
+                # rabbinique) : le veto source doit empecher la suggestion.
+                ['שלום מה שלומך היום', 'azerty', None],
+                ['בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃',
+                 'azerty', None],
+                ['אמר רבי יוחנן משום רבי שמעון בן יוחאי', 'azerty', None],
+                ['יסוד היסודות ועמוד החכמות לידע שיש שם מצוי ראשון',
+                 'azerty', None],
             ]
             prog = (prologue + '\nconst cases = %s;\n'
                     % json.dumps(cases, ensure_ascii=True)
@@ -254,6 +276,8 @@ def main():
                 minh = int(re.search(r'SUGGEST_MIN_HEB = (\d+)', h).group(1))
                 shortm = float(re.search(r'SUGGEST_SHORT_MARGIN = ([\d.]+)',
                                          h).group(1))
+                hemarg = float(re.search(r'SUGGEST_HE_MARGIN = ([\d.]+)',
+                                         h).group(1))
                 bad = []
                 for (src, cur, exp), g in zip(cases, got):
                     gl = g['layout'] if g else None
@@ -270,6 +294,7 @@ def main():
                 if got[0] and not got[0]['preview'].startswith('vraiment'):
                     bad.append('apercu=' + str(got[0]['preview'])[:40])
                 check('suggestion lecture (node)', not bad, '; '.join(bad)[:140])
+                check('marge du veto hebreu', hemarg == 0.8, str(hemarg))
     else:
         check('suggestion lecture (node absent, ignore)', True, 'sans node')
 
@@ -317,6 +342,53 @@ def main():
                                  for v in m_b64.values()))
             check('bloc de modeles coherent avec gen_ngrams', bool(integ),
                   '' if integ else str(sorted(m_b64) + [bool(m_alpha), bool(m_scale), order]))
+
+            # Veto hebreu de la page : meme alphabet/quantification que le
+            # generateur, bigrammes, et normalisation identique a normalize_he().
+            heblk = re.search(
+                r'// <he_score:generated>[\s\S]*?// </he_score:generated>', h)
+            mhnorm = re.search(r'function normalizeHebrew\(s\) \{[\s\S]*?\n\}', h)
+            he_ok = False
+            detail = 'extraction impossible'
+            if heblk and mhnorm:
+                blk_he = heblk.group(0)
+                mha = re.search(r'const HE_MODEL_ALPHA = (".*");', blk_he)
+                mhs = re.search(
+                    r'const HE_MODEL_SCALE = (\d+), HE_MODEL_OFFSET = (\d+);',
+                    blk_he)
+                mho = re.search(r'const HE_MODEL_ORDER = (\d+);', blk_he)
+                mhb = re.search(r"const HE_MODEL_B64 = '([A-Za-z0-9+/=]+)';",
+                                blk_he)
+                he_ok = bool(mha and mhs and mho and mhb)
+                detail = 'bloc incomplet' if not he_ok else ''
+                if he_ok:
+                    alpha_he = json.loads(mha.group(1))
+                    he_ok = (alpha_he == gen_ngrams.HE_ALPHA
+                             and int(mhs.group(1)) == gen_ngrams.HE_SCALE
+                             and int(mhs.group(2)) == gen_ngrams.HE_OFFSET
+                             and int(mho.group(1)) == gen_ngrams.HE_PAGE_ORDER
+                             and len(_b64.b64decode(mhb.group(1)))
+                             == len(gen_ngrams.HE_ALPHA) ** int(mho.group(1)))
+                    if not he_ok:
+                        detail = 'alphabet/ordre/taille'
+                if he_ok:
+                    hsamples = ['שָׁלוֹם', 'בְּרֵאשִׁ֖ית', 'צ׳ק  \u05f4abc\u05f3',
+                                '  מילים   מרובות ', '\u216babc', 'אָבִינוּ']
+                    hprog = (blk_he + '\n' + mhnorm.group(0) + '\n'
+                             'console.log(JSON.stringify(%s.map(s => '
+                             'normalizeHebrew(s))));\n'
+                             % json.dumps(hsamples, ensure_ascii=True))
+                    hr = run_node(hprog)
+                    try:
+                        hgot = json.loads((hr.stdout or '').strip())
+                        hexp = [gen_ngrams.normalize_he(s) for s in hsamples]
+                        he_ok = hgot == hexp
+                        if not he_ok:
+                            detail = str(list(zip(hexp, hgot)))[:140]
+                    except Exception as e:
+                        he_ok = False
+                        detail = str(e)[:140]
+            check('modele hebreu de la page coherent', he_ok, detail)
     else:
         check('normalisation (node absent, ignore)', True, 'sans node')
 
