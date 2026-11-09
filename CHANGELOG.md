@@ -1,6 +1,6 @@
 # Journal des modifications
 
-## Non publié
+## v1.15.0 - 9 nov. 2026
 - Suggestion de lecture (hébreu → latin) : un veto compare désormais la
   lecture latine au score du texte hébreu source sous un petit modèle hébreu
   (bigrammes, 1,2 Ko). Les textes déjà hébreux ne sont plus proposés :
@@ -12,6 +12,12 @@
 - Modèle français corrigé : la source `pg2600` (*War and Peace*, en anglais)
   servait de corpus français. Remplacée par *Le Comte de Monte-Cristo* et
   *Du côté de chez Swann* ; la marge médiane française passe de 0,87 à 0,98.
+- Ouverture instantanée : une page de chargement locale s'affiche tout de
+  suite pendant l'initialisation de WebView2, puis l'interface réelle prend
+  le relais (séquence robuste, page intermédiaire ignorée).
+- Le champ de texte reçoit le focus automatiquement à l'ouverture.
+- Nouveau bouton **Clavier** dans la barre d'outils pour changer de clavier
+  physique (AZERTY / QWERTY) sans passer par les réglages.
 
 ## v1.14.1 - 4 nov. 2026
 - Démarrage de l'application nettement plus rapide : le Setup installe la
