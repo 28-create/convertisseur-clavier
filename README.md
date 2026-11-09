@@ -58,7 +58,7 @@ ou sur votre machine Windows.
 | `extension/` | Extension Chrome/Edge (Manifest V3) : clic droit, `Ctrl+Maj+H`, popup. |
 | `PRIVACY.md` / `confidentialite.html` | Politique de confidentialité (page publiée par GitHub Pages). |
 | `gen_maps.py` | Régénère les tables du `.py` **et le cœur de l'extension** depuis le HTML. |
-| `gen_ngrams.py` | Régénère les modèles de trigrammes (suggestion de lecture). |
+| `gen_ngrams.py` | Régénère les modèles de n-grammes (suggestion de lecture et veto hébreu). |
 | `test_maps.py` | Test anti-dérive + non-régression des mappings. |
 | `test_app.py` | Test de l'app : encodages `.txt`, injection du préchargement, verbes CLI. |
 | `test_paste.py` | Test de la surveillance : détection, modèle hébreu, parité page, démarrage auto. |
@@ -91,10 +91,13 @@ Ouvrir `convertisseur.html` dans un navigateur (un double-clic suffit).
   clavier physique (AZERTY / QWERTY, mode hébreu), sens par défaut, thème
   (clair / sombre / auto), taille du texte, conversion en direct,
   copie automatique, mémorisation du texte.
-- **Suggestion de lecture** : si un texte hébreu (≥ 11 lettres, marge de
-  confiance renforcée entre 11 et 14) se lit nettement mieux avec l'autre
+- **Suggestion de lecture** : si un texte hébreu (≥ 6 lettres, marge de
+  confiance renforcée entre 6 et 14) se lit nettement mieux avec l'autre
   disposition, un bandeau en propose un aperçu (« Afficher cette lecture »)
   — jamais appliqué automatiquement (touche `↓` dans le champ pour appliquer).
+  Un veto compare la lecture au score du texte hébreu source sous un petit
+  modèle hébreu : un texte déjà hébreu (moderne, biblique, talmudique ou
+  rabbinique) n'est jamais proposé, même vocalisé.
 
 Exemples hébreu : `qkuo` (AZERTY) / `akuo` (QWERTY) → `שלום`,
 `נםמחםור` → `bonjour`, `Bםמחםור` → `Bonjour`.
@@ -378,16 +381,21 @@ dans les deux installateurs.
 corpus de référence `eval/` (100 textes français, 100 anglais, 80 hébreux) :
 taux par sens, zéro faux positif et aucune proposition sur un texte déjà
 correct. `python eval/eval_detection.py --details` affiche les échecs.
+`test_page.py` vérifie en plus le veto hébreu de la suggestion : texte
+moderne, biblique vocalisé, talmudique et rabbinique (aucune suggestion),
+phrases courtes de 6 à 14 lettres (suggestion correcte), et la parité de
+`normalizeHebrew` avec `gen_ngrams.normalize_he`.
 La CI GitHub Actions rejoue les suites (Ubuntu + Windows, Python 3.11 à
 3.14) à chaque push.
 
-`gen_ngrams.py` régénère les modèles de trigrammes (textes du domaine public,
+`gen_ngrams.py` régénère les modèles de n-grammes (textes du domaine public,
 vérifiés par SHA-256) qui alimentent la suggestion de lecture :
 `python gen_ngrams.py` (téléchargement, ou `--corpus-dir` pour réutiliser
 des fichiers locaux). Ajouter une langue de détection = une entrée dans
-`LANGS`, puis relancer. Pour le guetteur, `python gen_ngrams.py --hebrew`
-régénère le modèle hébreu de `paste_watch.py` (sources Sefaria épinglées,
-Torah et Talmud, bloc généré à ne pas éditer à la main).
+`LANGS`, puis relancer. Pour l'hébreu, `python gen_ngrams.py --hebrew`
+régénère à la fois le modèle trigramme du guetteur (`paste_watch.py`) et le
+petit bigramme de veto de la page (sources Sefaria épinglées, Torah,
+Talmud et littérature rabbinique, blocs générés à ne pas éditer à la main).
 
 ## Version et historique
 

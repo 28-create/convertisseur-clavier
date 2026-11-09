@@ -1,5 +1,18 @@
 # Journal des modifications
 
+## Non publié
+- Suggestion de lecture (hébreu → latin) : un veto compare désormais la
+  lecture latine au score du texte hébreu source sous un petit modèle hébreu
+  (bigrammes, 1,2 Ko). Les textes déjà hébreux ne sont plus proposés :
+  aucune fausse suggestion sur le Tanakh (vocalisé ou non), le Talmud,
+  l'aggada, la Mishna, le Rambam et Rachi, contre 15 à 80 % auparavant.
+- Le plancher de suggestion passe de 11 à 6 lettres hébraïques : les phrases
+  courtes sont couvertes (17/30 en français et 17/30 en anglais, contre 4/30
+  et 6/30), toujours sans faux positif.
+- Modèle français corrigé : la source `pg2600` (*War and Peace*, en anglais)
+  servait de corpus français. Remplacée par *Le Comte de Monte-Cristo* et
+  *Du côté de chez Swann* ; la marge médiane française passe de 0,87 à 0,98.
+
 ## v1.14.1 - 4 nov. 2026
 - Démarrage de l'application nettement plus rapide : le Setup installe la
   version en dossier (PyInstaller `--onedir`) au lieu d'un exécutable
