@@ -1,5 +1,14 @@
 # Journal des modifications
 
+## Non publié
+- Robustesse de la suggestion de lecture : un modèle base64 corrompu ne fait
+  plus planter la page (score nul, aucune suggestion), les textes de plus de
+  10 000 caractères ne sont plus évalués (coût du scoring borné), et l'aperçu
+  reste inséré en texte brut, sans HTML.
+- Normalisation factorisée entre latin et hébreu : une seule fonction applique
+  le remplacement des caractères hors alphabet et la fusion des espaces, sans
+  changer les scores.
+
 ## v1.15.0 - 9 nov. 2026
 - Suggestion de lecture (hébreu → latin) : un veto compare désormais la
   lecture latine au score du texte hébreu source sous un petit modèle hébreu

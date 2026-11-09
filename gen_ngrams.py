@@ -48,7 +48,8 @@ HE_FILE = 'paste_watch.py'
 HE_BEGIN = '# <he_model:generated>'
 HE_END = '# </he_model:generated>'
 # Veto hebreu de la page (suggestReading) : petit bigramme separe du
-# trigramme du guetteur, pour ne pas alourdir convertisseur.html.
+# trigramme du guetteur. Ordre 2 fige : 1,2 Ko dans la page et une
+# separation suffisante (le guetteur garde son trigramme via --order).
 HE_PAGE_ORDER = 2
 HE_PAGE_BEGIN = '// <he_score:generated>'
 HE_PAGE_END = '// </he_score:generated>'

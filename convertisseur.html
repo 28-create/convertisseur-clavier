@@ -762,20 +762,30 @@ const HE_MODEL_B64 = 'OGVRYWRqW2dHa11tbWRWT1tRS2Vpb1FeVlQzdElLUEgwRDtpXllkaGpYYl
 // Quand un texte hebreu se lit nettement mieux avec une autre disposition,
 // proposer cette lecture (jamais l'appliquer seul). Ajouter une langue de
 // detection = un modele de plus : tout itere sur MODEL_B64 et sur MAPS.
-const SUGGEST_MIN_HEB = 15;        // au-dela : marge normale exigee
-const SUGGEST_MARGIN = 0.25;       // marge minimale a partir de 15 lettres
+// Seuils mesures sur les corpus de reference (test_page.py, test_ngrams.py).
+// Marge = ecart de vraisemblance entre la meilleure lecture et la seconde.
+const SUGGEST_MIN_HEB = 15;        // >= 15 lettres : marge normale
+const SUGGEST_MARGIN = 0.25;       // lectures correctes mesurees >= 0.16
 const SUGGEST_SHORT_HEB = 6;       // 6..14 lettres : marge forte exigee
-const SUGGEST_SHORT_MARGIN = 0.5;  // (mesures tenues a l'ecart : 0 faux)
-const SUGGEST_HE_MARGIN = 0.8;     // veto : la lecture doit battre le texte
-                                   // hebreu source sous le modele hebreu
+const SUGGEST_SHORT_MARGIN = 0.5;  // 0 faux positif sur le corpus court
+const SUGGEST_HE_MARGIN = 0.8;     // veto : vrai hebreu <= -1.40, frappe
+                                   // latine >= +1.40 ; 0.8 est au centre
+const SUGGEST_MAX_LEN = 10000;     // au-dela : pas de suggestion (cout O(n)
+                                   // x dispositions x caracteres)
 const modelCache = {};
+// Normalisation commune : ne garde que les caracteres de l'alphabet,
+// tout le reste devient une espace, puis les suites sont fusionnees.
+// Les deux normalisations ci-dessous gardent leurs signatures (tests).
+function normalizeChars(s, alpha) {
+  let out = '';
+  for (const ch of s) out += alpha.includes(ch) ? ch : ' ';
+  return out.replace(/\s+/g, ' ').trim();
+}
 // Normalisation avant scoring : miroir exact de normalize() dans
 // gen_ngrams.py (test_page.py verifie la parite). Signatures a garder.
 function normalizeForModel(s) {
   s = String(s).toLowerCase().replace(/\u2019/g, "'").replace(/\u0153/g, 'oe');
-  let out = '';
-  for (const ch of s) out += MODEL_ALPHA.includes(ch) ? ch : ' ';
-  return out.replace(/\s+/g, ' ').trim();
+  return normalizeChars(s, MODEL_ALPHA);
 }
 // Vraisemblance moyenne (nats par n-gramme) du texte sous un modele.
 // MODEL_ORDER = 2 (bigrammes) ou 3 (trigrammes). Index = somme_{k=0}^{ORDER-2} idx(t[i-ORDER+1+k]) * ALPHA^{ORDER-2-k} + idx(t[i])
@@ -785,10 +795,14 @@ function scoreLang(text, lang) {
   if (t.length < order) return null;
   let bytes = modelCache[lang];
   if (!bytes) {
-    const raw = atob(MODEL_B64[lang]);
-    bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    modelCache[lang] = bytes;
+    try {
+      const raw = atob(MODEL_B64[lang]);
+      bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      modelCache[lang] = bytes;
+    } catch (e) {
+      return null;  // base64 corrompu : pas de score plutot qu'un plantage
+    }
   }
   const V = MODEL_ALPHA.length;
   let acc = 0;
@@ -815,10 +829,10 @@ function scoreReading(text) {
 // gen_ngrams.py (suppression des points combinants, gershayim).
 function normalizeHebrew(s) {
   s = String(s).replace(/\p{Mn}/gu, '');
+  // toLowerCase comme normalize_he() : les lettres latines eventuelles
+  // suivent la meme regle que le generateur (l'hebreu n'a pas de casse).
   s = s.toLowerCase().replace(/\u05f3/g, "'").replace(/\u05f4/g, '"');
-  let out = '';
-  for (const ch of s) out += HE_MODEL_ALPHA.includes(ch) ? ch : ' ';
-  return out.replace(/\s+/g, ' ').trim();
+  return normalizeChars(s, HE_MODEL_ALPHA);
 }
 // Veto de lecture : vraisemblance du texte hebreu source sous son propre
 // modele (bigrammes). Un texte deja hebreu obtient un bon score, une suite
@@ -830,10 +844,14 @@ function scoreHebrew(text) {
   if (t.length < order) return null;
   let bytes = heModelCache.bytes;
   if (!bytes) {
-    const raw = atob(HE_MODEL_B64);
-    bytes = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    heModelCache.bytes = bytes;
+    try {
+      const raw = atob(HE_MODEL_B64);
+      bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      heModelCache.bytes = bytes;
+    } catch (e) {
+      return null;  // base64 corrompu : pas de veto plutot qu'un plantage
+    }
   }
   const V = HE_MODEL_ALPHA.length;
   let acc = 0;
@@ -851,6 +869,7 @@ function scoreHebrew(text) {
 // {layout, margin, preview}. Pure, extraite et rejouee sous node par
 // test_page.py — garder la signature telle quelle.
 function suggestReading(text, currentLayout) {
+  if (text.length > SUGGEST_MAX_LEN) return null;
   const heb = (text.match(/[\u0590-\u05FF]/g) || []).length;
   if (heb < SUGGEST_SHORT_HEB) return null;
   const source = scoreHebrew(text);
