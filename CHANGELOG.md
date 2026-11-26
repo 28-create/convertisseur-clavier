@@ -1,5 +1,46 @@
 # Journal des modifications
 
+## v1.16.0 - 26 nov. 2026
+- Moteur de conversion : passage en balayage linéaire unique (`\S+`, zéro
+  backtracking) pour éliminer les gels `O(N²)` sur les longs blocs sans espace,
+  correction du double-swap AZERTY+hébreu (`Qצ` → `A,`, `Aת` → `Q;`, `Wץ` → `Z:`)
+  et prise en compte des minuscules accentuées (`Aé` préservé).
+- Guetteur `Ctrl+V` et couche Win32 :
+  - Fin du polling presse-papiers toutes les 500 ms et de la spin-loop CPU.
+  - Exclusion des formats presse-papiers de gestionnaires de mots de passe
+    (`ExcludeClipboardContentFromMonitorProcessing`, `CanIncludeInClipboardHistory`,
+    `Clipboard Viewer Ignore`) et des champs `ES_PASSWORD`.
+  - Protection anti-blocage clavier global en cas d'exception dans `poll()`,
+    déport des actions bloquantes hors du thread du hook, attente du relâchement
+    des modificateurs avant `Ctrl+V`, et attente réelle de fin de processus dans
+    `--paste-stop`.
+  - Détection des phrases françaises/anglaises capitalisées tapées en clavier
+    hébreu Windows (`Bםמחםור` → `Bonjour`, `Hקךךם 'םרךג` → `Hello world`),
+    et préservation des mots étrangers (`iOS`, `macOS`) au changement de clavier
+    dans la popup.
+  - Écran de lancement (`win32_splash.py`) : dispatcher `WNDPROC` de durée de
+    vie module (fin de l'Use-After-Free) et libération GDI systématique
+    (`DeleteObject`) ; presse-papiers borné via `GlobalSize` et allocation avant
+    `EmptyClipboard()`.
+- Application Windows (`app.py`) : fermeture du splash avant les boîtes
+  d'erreur, garde taille max avant préchargement, écriture atomique pour
+  `--convert-file`, support UTF-16 BOM et correction du décodage `cp1252` sur
+  les textes français courts accentués (`été`, `à côté`, `âgé`).
+- Page web (`convertisseur.html`) : bouton **Convertir** lorsque la conversion
+  en direct est désactivée, durcissement contre un `localStorage` corrompu,
+  `Flèche Bas` respectant la navigation/sélection multiligne, restauration du
+  focus dans le repli copie, nettoyage de `?text=` dans l'URL et seuil absolu
+  sur la suggestion de lecture.
+- Extension navigateur : propagation de `frameId` dans les iframes, forçage
+  `mode: 'hebrew'` sur « Convertir en hébreu / en latin », correction de
+  l'auto-empoisonnement `lastEditable`, toast en Shadow DOM fermé et tronqué,
+  respect de `readOnly`/`disabled`, et contraste WCAG AA renforcé dans le popup.
+- Installeurs, scripts et CI : `-LiteralPath` et création littérale des clés
+  registre dans `installer.ps1`/`desinstaller.ps1`, commandes Explorer durcies
+  (`-- "%1"`, `--convert-file="%1"`), `CloseApplications=force` et
+  `skipifdoesntexist` dans `installer.iss`, durcissement de
+  `fix-presse-papiers.bat` et `release.py`, actions GitHub épinglées par SHA.
+
 ## v1.15.1 - 9 nov. 2026
 - Robustesse de la suggestion de lecture : un modèle base64 corrompu ne fait
   plus planter la page (score nul, aucune suggestion), les textes de plus de
