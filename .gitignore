@@ -5,5 +5,8 @@ dist/
 build/
 *.spec
 
+# Dependances Node (PWA apps/web)
+node_modules/
+
 # Script de generation du guide utilisateur PDF (a ne pas versionner)
 make_guide_pdf.py

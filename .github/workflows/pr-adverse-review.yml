@@ -8,21 +8,30 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   review:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # L'action a ete renommee openrouter-github-action -> diffguard et sa
       # branche main n'embarque plus dist/index.js : on epingle la version
       # publiee (tag v1.0.0), qui contient bien le bundle compile.
       - name: AI PR Review
-        uses: jonit-dev/diffguard@v1.0.0
+        if: env.OPEN_ROUTER_KEY != ''
+        uses: jonit-dev/diffguard@88f63615c769f8db6031973503c2c40a9a3f4feb # v1.0.0
+        env:
+          OPEN_ROUTER_KEY: ${{ secrets.OPEN_ROUTER_KEY }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          open_router_key: ${{ secrets.OPEN_ROUTER_KEY }} # Secret du depot
+          open_router_key: ${{ secrets.OPEN_ROUTER_KEY }}
           # google/gemini-2.5-flash:free n'est plus disponible gratuitement
           # (404 "model unavailable for free") : on prend un modele gratuit
           # actuellement propose par OpenRouter.

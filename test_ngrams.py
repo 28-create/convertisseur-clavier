@@ -186,6 +186,33 @@ def main():
             failures.append('keep: %s -> %s' % (ascii_text(text), ascii_text(got['text'])))
         details.append('%s %-8s %s' % ('PASS' if ok else 'FAIL', 'keep', ascii_text(text)))
 
+    # 4b. Non-regression P0 : separation reelle entre les modeles fr et en
+    #     (un texte anglais doit scorer plus haut en 'en' qu'en 'fr', et
+    #     inversement pour le francais), et strip_gutenberg appele.
+    def _score_one(lang, text):
+        return paste_watch._score(
+            models['latin'][lang], models['alpha'], models['scale'],
+            models['offset'], text, paste_watch.normalize_latin,
+            models.get('order', 2))
+
+    fr_sample = ('bonjour tout le monde nous sommes tres heureux de vous '
+                 'voir aujourd hui dans cette maison')
+    en_sample = ('war and peace prince andrew pierre natasha the quick brown '
+                 'fox jumps over the lazy dog')
+    fr_as_fr, fr_as_en = _score_one('fr', fr_sample), _score_one('en', fr_sample)
+    en_as_en, en_as_fr = _score_one('en', en_sample), _score_one('fr', en_sample)
+    ok_sep = (fr_as_fr > fr_as_en + 0.5) and (en_as_en > en_as_fr + 0.5)
+    print('%s separation modeles fr/en (fr=%.2f/%.2f en=%.2f/%.2f)' % (
+        'PASS' if ok_sep else 'FAIL', fr_as_fr, fr_as_en, en_as_en, en_as_fr))
+    if not ok_sep:
+        failures.append('separation fr/en insuffisante (modele corrompu ?)')
+    gen_src = io.open(os.path.join(ROOT, 'gen_ngrams.py'), encoding='utf-8').read()
+    ok_strip = gen_src.count('strip_gutenberg(') >= 3
+    print('%s strip_gutenberg appele dans gen_ngrams.py' % (
+        'PASS' if ok_strip else 'FAIL'))
+    if not ok_strip:
+        failures.append('strip_gutenberg non appele dans gen_ngrams.py')
+
     # 5. Corpus de reference : les quatre sens, puis la prudence.
     corpus_eval = load_module('eval_detection', os.path.join('eval', 'eval_detection.py'))
     corpus_stats, corpus_fp, corpus_keeps = corpus_eval.evaluate(

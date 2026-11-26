@@ -111,9 +111,19 @@ def main():
           and 'ctypes' in splash_src)
     check('win32_splash inactif hors Windows',
           win32_splash.IS_WINDOWS == (sys.platform == 'win32'))
+    check('win32_splash : dispatcher module + DeleteObject',
+          '_dispatch_wndproc' in splash_src and 'g32.DeleteObject(' in splash_src)
     if not win32_splash.IS_WINDOWS:
         check('splash sans effet hors Windows',
               win32_splash.Splash('test').show() is False)
+    else:
+        # Non-regression P0 : deux instances consecutives ne doivent pas
+        # provoquer d'UAF sur WNDCLASSW.lpfnWndProc.
+        s1 = win32_splash.show('Test 1', 'init')
+        app.close_splash(s1)
+        s2 = win32_splash.show('Test 2', 'init')
+        app.close_splash(s2)
+        check('splash : deux cycles show/close sans UAF', True)
     app_src = open('app.py', encoding='utf-8').read()
     check('app.py : ecran de lancement branche',
           'start_splash()' in app_src and 'close_splash(splash)' in app_src

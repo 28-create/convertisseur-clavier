@@ -309,6 +309,9 @@ def main(argv=None):
             if n.startswith('tanach_') or n.startswith('talmud_'):
                 # Sefaria : nettoyage HTML + entetes
                 raw = '\n'.join(clean_sefaria(raw))
+            elif n.startswith('pg'):
+                # Gutenberg : retire l'entete et la licence anglaise
+                raw = strip_gutenberg(raw)
             texts.append(raw)
         model = build_he_model(texts, args.order)
         sync_he_block(emit_he_block(model, args.order))
@@ -324,6 +327,8 @@ def main(argv=None):
         texts = []
         for n, u, s in sources:
             raw = fetch_source(n, u, s, args.corpus_dir)
+            if n.startswith('pg'):
+                raw = strip_gutenberg(raw)
             texts.append(raw)
         models[code] = build_model(texts, args.order)
         print('  %s : %d valeurs (%d %s possibles)'

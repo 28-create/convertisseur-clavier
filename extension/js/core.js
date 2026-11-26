@@ -134,7 +134,7 @@ const CAPS_SWAP = {"Q": "A", "A": "Q", "W": "Z", "Z": "W"};
 // <core:generated>
 function convertSmart(text, fullMap, swapCaps, toFrench) {
   const capsTok = tok => {
-    const letters = tok.replace(/[^A-Za-z]/g, '');
+    const letters = tok.replace(/[^A-Za-zéèêëàâäçîïôöùûüÿœæÉÈÊËÀÂÄÇÎÏÔÖÙÛÜŸŒÆ]/g, '');
     return (letters.length && letters === letters.toUpperCase())
       ? [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('')
       : tok;
@@ -143,19 +143,22 @@ function convertSmart(text, fullMap, swapCaps, toFrench) {
     // Sans hebreu, pas de segmentation : un seul passage.
     if (!toFrench) return [...text].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
     if (!swapCaps) return text;
-    return text.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
+    return text.replace(/\S+/g, tok => (/[A-Z]/.test(tok) ? capsTok(tok) : tok));
   }
   if (!toFrench) {
     // Sens inverse : seuls les mots 100 % latins sont convertis
     // ("abcש" reste intact : le contexte mot-entier compte).
-    return text.split(/(\s+)/).map(tok => {
-      if (!tok || /^\s+$/.test(tok) || /[\u0590-\u05FF]/.test(tok)) return tok;
-      return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
-    }).join('');
+    return text.replace(/\S+/g, tok => (
+      /[\u0590-\u05FF]/.test(tok) ? tok
+        : [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('')
+    ));
   }
-  let out = text.replace(/[^\s]*[\u0590-\u05FF][^\s]*/g, tok => [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join(''));
-  if (swapCaps) out = out.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
-  return out;
+  return text.replace(/\S+/g, tok => {
+    if (/[\u0590-\u05FF]/.test(tok)) {
+      return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
+    }
+    return (swapCaps && /[A-Z]/.test(tok)) ? capsTok(tok) : tok;
+  });
 }
 
 function detectDir(text) {

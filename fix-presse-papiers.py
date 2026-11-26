@@ -154,8 +154,14 @@ LATIN_MAPS = {
 }
 
 _HE_RE = re.compile(r'[\u0590-\u05FF]')
-_HE_TOKEN_RE = re.compile(r'[^\s]*[\u0590-\u05FF][^\s]*')
-_CAP_TOKEN_RE = re.compile(r'[^\s]*[A-Z][^\s]*')
+_CAP_RE = re.compile(r'[A-Z]')
+_TOKEN_RE = re.compile(r'\S+')
+_NON_LATIN_LETTER_RE = re.compile(
+    r'[^A-Za-z\u00e9\u00e8\u00ea\u00eb\u00e0\u00e2\u00e4\u00e7\u00ee\u00ef'
+    r'\u00f4\u00f6\u00f9\u00fb\u00fc\u00ff\u0153\u00e6'
+    r'\u00c9\u00c8\u00ca\u00cb\u00c0\u00c2\u00c4\u00c7\u00ce\u00cf'
+    r'\u00d4\u00d6\u00d9\u00db\u00dc\u0178\u0152\u00c6]'
+)
 
 # Tables de traduction C (str.translate), construites une fois par mapping.
 # Semantique identique a mapping.get(ch, ch) : cles = 1 caractere,
@@ -176,20 +182,18 @@ def _map_with(text, mapping):
 
 
 def _caps_tok(tok, swap_caps):
-    letters = re.sub(r'[^A-Za-z]', '', tok)
+    letters = _NON_LATIN_LETTER_RE.sub('', tok)
     if letters and letters == letters.upper():
         return _map_with(tok, swap_caps)
     return tok
 
 
 def convert_smart(text, full_map, swap_caps, to_french):
-    """Texte mixte : voir convertSmart dans convertisseur.html (miroir exact).
+    r"""Texte mixte : voir convertSmart dans convertisseur.html (miroir exact).
 
-    Sans segmentation : les substitutions preservent d'elles-memes les
-    separateurs. L'ordre des deux passages est sans effet : un mot
-    reconverti ne peut pas devenir "tout en capitales" (les lettres
-    hebraiques n'emettent que des minuscules), donc le second passage
-    ne retouche jamais le premier.
+    Un seul passage lineaire (\S+, zero backtracking) : chaque jeton suit
+    soit la branche hebreu soit la branche capitales, jamais les deux
+    (evite le double-swap sur 'Q' + tsadi -> 'A,').
     """
     if not _HE_RE.search(text):
         # Sans hebreu, pas de segmentation : un seul passage C.
@@ -197,21 +201,25 @@ def convert_smart(text, full_map, swap_caps, to_french):
             return _map_with(text, full_map)
         if not swap_caps:
             return text
-        return _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), text)
+        return _TOKEN_RE.sub(
+            lambda m: _caps_tok(m.group(0), swap_caps)
+            if _CAP_RE.search(m.group(0)) else m.group(0), text)
     if not to_french:
-        # Avec hebreu : boucle classique — le contexte mot-entier compte
-        # (ex. "abcש" reste intact : on ne convertit que les mots 100 % latins).
-        out = []
-        for tok in re.split(r'(\s+)', text):
-            if not tok or tok.isspace() or _HE_RE.search(tok):
-                out.append(tok)
-            else:
-                out.append(_map_with(tok, full_map))
-        return ''.join(out)
-    out = _HE_TOKEN_RE.sub(lambda m: _map_with(m.group(0), full_map), text)
-    if swap_caps:
-        out = _CAP_TOKEN_RE.sub(lambda m: _caps_tok(m.group(0), swap_caps), out)
-    return out
+        # Avec hebreu : seuls les mots 100 % latins sont convertis
+        # (ex. "abc" + shin reste intact : le contexte mot-entier compte).
+        return _TOKEN_RE.sub(
+            lambda m: m.group(0) if _HE_RE.search(m.group(0))
+            else _map_with(m.group(0), full_map), text)
+
+    def _he_or_caps(m):
+        tok = m.group(0)
+        if _HE_RE.search(tok):
+            return _map_with(tok, full_map)
+        if swap_caps and _CAP_RE.search(tok):
+            return _caps_tok(tok, swap_caps)
+        return tok
+
+    return _TOKEN_RE.sub(_he_or_caps, text)
 
 
 def convert(text, mapping):

@@ -60,6 +60,13 @@ $ok = $ok -and ($cmdt -eq ('"' + $exeAttendu + '" --convert-file "%1"'))
 $ok = $ok -and ($cmdd -eq ('"' + $exeAttendu + '" "%1"'))
 $ok = $ok -and ($cmdb -eq ('"' + $exeAttendu + '" "%V"'))
 Write-Host ('clic-droit=' + $cmda + ' | ' + $cmdt)
+# Reinstallation sur ruche deja peuplee : le joker '*' ne doit PAS polluer Directory.
+& (Join-Path $tmp 'installer.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -RunName $runName -ShellRoot $shellRoot -ShellName $shellName -SansDemarrage
+$dirProps = Get-ItemProperty -LiteralPath "$shellRoot\Directory\shell\$shellName"
+$ok = $ok -and ($null -eq $dirProps.Position)
+$starProps = Get-ItemProperty -LiteralPath "$shellRoot\*\shell\$shellName"
+$ok = $ok -and ($starProps.Position -eq 'Middle')
+Write-Host ('reinstall-literal=' + ($null -eq $dirProps.Position))
 Write-Host ('checks-install=' + $ok)
 
 & (Join-Path $tmp 'App\desinstaller.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -RunName $runName -ShellRoot $shellRoot -ShellName $shellName

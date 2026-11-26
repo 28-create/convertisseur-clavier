@@ -14,9 +14,21 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+function Assert-SafeName([string]$Label, [string]$Value) {
+  if ([string]::IsNullOrWhiteSpace($Value) -or $Value -match '[\\/:*?"<>|\[\]]') {
+    throw "Nom invalide pour $Label : $Value"
+  }
+}
+
+Assert-SafeName 'RegName' $RegName
+Assert-SafeName 'Nom' $Nom
+Assert-SafeName 'RunName' $RunName
+Assert-SafeName 'ShellName' $ShellName
+Assert-SafeName 'LnkPressePapiers' $LnkPressePapiers
+
 # Arrete le guetteur avant de supprimer son exe (fichier verrouille sinon).
 $exeInst = Join-Path $AppDir 'ConvertisseurClavier.exe'
-if (Test-Path $exeInst) {
+if (Test-Path -LiteralPath $exeInst) {
   try {
     Start-Process -FilePath $exeInst -ArgumentList '--paste-stop' -WindowStyle Hidden -Wait | Out-Null
   } catch {
@@ -24,14 +36,14 @@ if (Test-Path $exeInst) {
   }
 }
 # Retire le demarrage automatique de la surveillance.
-Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name $RunName -ErrorAction SilentlyContinue
+Remove-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name $RunName -ErrorAction SilentlyContinue
 
 $lnk = Join-Path $MenuDir ($Nom + '.lnk')
-if (Test-Path $lnk) { Remove-Item $lnk -Force }
+if (Test-Path -LiteralPath $lnk) { Remove-Item -LiteralPath $lnk -Force }
 $lnkClip = Join-Path $MenuDir ($LnkPressePapiers + '.lnk')
-if (Test-Path $lnkClip) { Remove-Item $lnkClip -Force }
+if (Test-Path -LiteralPath $lnkClip) { Remove-Item -LiteralPath $lnkClip -Force }
 $reg = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$RegName"
-if (Test-Path $reg) { Remove-Item $reg -Recurse -Force }
+if (Test-Path -LiteralPath $reg) { Remove-Item -LiteralPath $reg -Recurse -Force }
 $classes = if ($ShellRoot) { $ShellRoot } else { 'HKCU:\Software\Classes' }
 foreach ($k in @(
   "$classes\*\shell\$ShellName",
@@ -39,7 +51,7 @@ foreach ($k in @(
   "$classes\Directory\shell\$ShellName",
   "$classes\Directory\Background\shell\$ShellName"
 )) {
-  if (Test-Path $k) { Remove-Item $k -Recurse -Force }
+  if (Test-Path -LiteralPath $k) { Remove-Item -LiteralPath $k -Recurse -Force }
 }
-if (Test-Path $AppDir) { Remove-Item $AppDir -Recurse -Force }
+if (Test-Path -LiteralPath $AppDir) { Remove-Item -LiteralPath $AppDir -Recurse -Force }
 Write-Host 'Desinstalle.'

@@ -327,6 +327,70 @@ def proposal_state_checks():
           err is None and watcher.handled_seq == 42
           and not watcher.overlay_open and not watcher.block_v)
 
+    # Non-regression P0 : _worker ne relit pas le presse-papiers en boucle si
+    # la sequence n'a pas change (evite le polling infini toutes les 500 ms).
+    import threading
+    import time
+
+    class SeqUser32:
+        def __init__(self, seq):
+            self.seq = seq
+
+        def GetClipboardSequenceNumber(self):
+            return self.seq
+
+    reads = []
+    w = object.__new__(paste_watch.Watcher)
+    w.worker_stop = threading.Event()
+    w.worker_event = threading.Event()
+    w.update_seq = 0
+    w.pending_seq = -1
+    w.handled_seq = -1
+    w.self_set_text = None
+    w.proposal = None
+    w.models = {}
+    w.fix = None
+    w.default_layout = 'azerty'
+
+    def fake_get():
+        reads.append(1)
+        return ''
+
+    w._clip_get = fake_get
+    fake_u32 = SeqUser32(10)
+    original_win32 = paste_watch._win32
+    paste_watch._win32 = lambda: (fake_u32, None)
+    try:
+        t = threading.Thread(target=w._worker, daemon=True)
+        t.start()
+        w.worker_event.set()
+        time.sleep(0.08)
+        # Re-declenche plusieurs fois sans changement de sequence.
+        w.worker_event.set()
+        w.worker_event.set()
+        time.sleep(0.08)
+        w.worker_stop.set()
+        w.worker_event.set()
+        t.join(1.0)
+    finally:
+        paste_watch._win32 = original_win32
+    check('worker : une seule lecture par sequence (pas de polling infini)',
+          len(reads) == 1 and w.pending_seq == 10,
+          'reads=%d pending=%s' % (len(reads), w.pending_seq))
+
+    # Non-regression P0 : exclusion des formats presse-papiers sensibles,
+    # detection ES_PASSWORD et reinitialisation overlay sur erreur dans poll().
+    clip_src = read('win32_clip.py')
+    for tok in ('ExcludeClipboardContentFromMonitorProcessing',
+                'CanIncludeInClipboardHistory',
+                'Clipboard Viewer Ignore',
+                'GlobalSize'):
+        check('win32_clip : %s' % tok, tok in clip_src)
+    pw_src = read('paste_watch.py')
+    for tok in ('skip_sensitive=True', '_is_password_focus',
+                'ES_PASSWORD', '_reset_overlay', 'UnregisterClassW'):
+        check('paste_watch P0 : %s' % tok, tok in pw_src)
+
 
 def focus_checks():
     """La cible ne doit pas etre demagnifiee avant le Ctrl+V injecte."""

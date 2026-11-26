@@ -684,13 +684,13 @@ function applySettingsToUI() {
 // d'une frappe en hébreu (chaque touche shiftée donne une capitale) : il est
 // toujours préservé tel quel. Segments tout en capitales (ambigu : sigle
 // ou frappe shiftée ?) : seules Q/A/W/Z commutent (AZERTY).
-// Sans segmentation : les substitutions préservent d'elles-mêmes les
-// séparateurs, et un mot reconverti ne peut pas devenir tout en capitales
-// (l'hébreu n'émet que des minuscules).
-// Pure (sans JS) : extraction par test_maps.py pour exécution sous node.
+// Un seul passage lineaire (\S+, zero backtracking) : chaque jeton suit soit
+// la branche hebreu soit la branche capitales, jamais les deux (evite tout
+// double-swap sur "Qצ" -> "A,").
+// Pure (sans DOM) : extraction par test_maps.py pour exécution sous node.
 function convertSmart(text, fullMap, swapCaps, toFrench) {
   const capsTok = tok => {
-    const letters = tok.replace(/[^A-Za-z]/g, '');
+    const letters = tok.replace(/[^A-Za-zéèêëàâäçîïôöùûüÿœæÉÈÊËÀÂÄÇÎÏÔÖÙÛÜŸŒÆ]/g, '');
     return (letters.length && letters === letters.toUpperCase())
       ? [...tok].map(ch => (ch in swapCaps ? swapCaps[ch] : ch)).join('')
       : tok;
@@ -699,19 +699,22 @@ function convertSmart(text, fullMap, swapCaps, toFrench) {
     // Sans hebreu, pas de segmentation : un seul passage.
     if (!toFrench) return [...text].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
     if (!swapCaps) return text;
-    return text.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
+    return text.replace(/\S+/g, tok => (/[A-Z]/.test(tok) ? capsTok(tok) : tok));
   }
   if (!toFrench) {
     // Sens inverse : seuls les mots 100 % latins sont convertis
     // ("abcש" reste intact : le contexte mot-entier compte).
-    return text.split(/(\s+)/).map(tok => {
-      if (!tok || /^\s+$/.test(tok) || /[\u0590-\u05FF]/.test(tok)) return tok;
-      return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
-    }).join('');
+    return text.replace(/\S+/g, tok => (
+      /[\u0590-\u05FF]/.test(tok) ? tok
+        : [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('')
+    ));
   }
-  let out = text.replace(/[^\s]*[\u0590-\u05FF][^\s]*/g, tok => [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join(''));
-  if (swapCaps) out = out.replace(/[^\s]*[A-Z][^\s]*/g, capsTok);
-  return out;
+  return text.replace(/\S+/g, tok => {
+    if (/[\u0590-\u05FF]/.test(tok)) {
+      return [...tok].map(ch => (ch in fullMap ? fullMap[ch] : ch)).join('');
+    }
+    return (swapCaps && /[A-Z]/.test(tok)) ? capsTok(tok) : tok;
+  });
 }
 function detectDir(text) {
   // Doit rester identique a autodir() dans fix-presse-papiers.py

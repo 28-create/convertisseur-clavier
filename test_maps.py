@@ -306,9 +306,16 @@ def main():
             print('NON-REVERSIBLE AZ->QW->AZ: %r' % ch)
     # fuzz : chemin rapide (sans hebreu) == chemin lent, sur textes aleatoires
     import random
+    import time
     rng = random.Random(20261015)
     alphabet = ('abcdAQWZ ,;:.!?\'"()-_=+/*%$&0123456789 \t\n'
-                'éèçàùâäîïôöûü') + 'שלוםאבג'
+                'éèçàùâäîïôöûü') + 'שלוםאבגצתץ'
+    non_latin_re = re.compile(
+        r'[^A-Za-z\u00e9\u00e8\u00ea\u00eb\u00e0\u00e2\u00e4\u00e7\u00ee\u00ef'
+        r'\u00f4\u00f6\u00f9\u00fb\u00fc\u00ff\u0153\u00e6'
+        r'\u00c9\u00c8\u00ca\u00cb\u00c0\u00c2\u00c4\u00c7\u00ce\u00cf'
+        r'\u00d4\u00d6\u00d9\u00db\u00dc\u0178\u0152\u00c6]'
+    )
     def _slow(text, full_map, swap_caps, to_french):
         parts = re.split(r'(\s+)', text)
         out = []
@@ -325,7 +332,7 @@ def main():
                 if not swap_caps:
                     out.append(tok)
                     continue
-                letters = re.sub(r'[^A-Za-z]', '', tok)
+                letters = non_latin_re.sub('', tok)
                 if letters and letters == letters.upper():
                     out.append(''.join(swap_caps.get(ch, ch) for ch in tok))
                 else:
@@ -333,7 +340,32 @@ def main():
                 continue
             out.append(''.join(full_map.get(ch, ch) for ch in tok))
         return ''.join(out)
+    # Non-regression P0 : pas de double-swap sur ponctuation hebraique + majuscules,
+    # ni sur minuscules accentuees (A + e-aigu reste mixte).
+    smart_regressions = [
+        ('azerty', 'toFr', 'Q\u05e6', 'A,'),
+        ('azerty', 'toFr', 'A\u05ea', 'Q;'),
+        ('azerty', 'toFr', 'W\u05e5', 'Z:'),
+        ('azerty', 'toFr', 'Q\u05e62', 'A,\u00e9'),
+        ('azerty', 'toFr', 'A\u00e9', 'A\u00e9'),
+    ]
     fuzz_cases = []
+    for layout, direction, src, exp in smart_regressions:
+        to_he, to_fr = tables[layout]
+        got = fix_mod.convert_smart(src, to_fr, swap_az, True)
+        if got != exp:
+            ok = False
+            print('REGRESSION-SMART %s -> %s (attendu %s)' % (_safe(src), _safe(got), _safe(exp)))
+        fuzz_cases.append([layout, direction, src, exp])
+    # Non-regression P0 : pas de backtracking quadratique (ReDoS) sur long jeton.
+    redos_input = 'a' * 60000 + ' \u05e9'
+    t0 = time.monotonic()
+    redos_out = fix_mod.convert_smart(redos_input, tables['azerty'][1], swap_az, True)
+    dt = time.monotonic() - t0
+    if dt > 1.0 or not redos_out.endswith(' q'):
+        ok = False
+        print('REDOS-PY trop lent (%.3fs) ou sortie invalide' % dt)
+    fuzz_cases.append(['azerty', 'toFr', redos_input, redos_out])
     for trial in range(300):
         t = ''.join(rng.choice(alphabet) for _ in range(rng.randint(0, 120)))
         for layout in ('azerty', 'qwerty'):
