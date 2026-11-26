@@ -270,6 +270,7 @@
     </div>
     <div class="workspace-actions">
       <div class="row actions">
+        <button id="convertBtn" class="primary" hidden data-i18n="convert">Convertir</button>
         <button id="copy" class="primary" aria-keyshortcuts="Control+Enter Meta+Enter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy">Copier (Ctrl+Entrée)</span></button>
         <button id="swap" data-i18n-title="swapTitle" title="Échanger entrée/sortie"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/></svg><span data-i18n="swap">Inverser</span></button>
         <button id="clear" data-i18n-title="clearTitle" title="Tout effacer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="clear">Effacer</span></button>
@@ -488,7 +489,7 @@ const I18N = {
     subtitle: "Collez un texte tapé avec le mauvais clavier, il est converti automatiquement.",
     inputLabel: 'Texte à convertir :', resultLabel: 'Résultat :',
     placeholder: 'Collez ici... ex: qkuo  ou  נםמחםור',
-    swap: 'Inverser', swapTitle: 'Échanger entrée et sortie', clear: 'Effacer', clearTitle: 'Tout effacer', copy: 'Copier (Ctrl+Entrée)',
+    swap: 'Inverser', swapTitle: 'Échanger entrée et sortie', clear: 'Effacer', clearTitle: 'Tout effacer', convert: 'Convertir', copy: 'Copier (Ctrl+Entrée)',
     examples: 'Exemples pour tester', settingsTitle: 'Réglages', close: 'Fermer',
     secLang: "Langue d'interface", secMode: 'Mode de conversion',
     langFr: 'Français', langEn: 'Anglais', langHe: 'Hébreu',
@@ -514,7 +515,7 @@ const I18N = {
     subtitle: 'Paste text typed with the wrong layout, it gets converted automatically.',
     inputLabel: 'Text to convert:', resultLabel: 'Result:',
     placeholder: 'Paste here... e.g. akuo or שלום',
-    swap: 'Swap', swapTitle: 'Swap input and output', clear: 'Clear', clearTitle: 'Clear everything', copy: 'Copy (Ctrl+Enter)',
+    swap: 'Swap', swapTitle: 'Swap input and output', clear: 'Clear', clearTitle: 'Clear everything', convert: 'Convert', copy: 'Copy (Ctrl+Enter)',
     examples: 'Try with examples', settingsTitle: 'Settings', close: 'Close',
     secLang: 'Interface language', secMode: 'Conversion mode',
     langFr: 'French', langEn: 'English', langHe: 'Hebrew',
@@ -540,7 +541,7 @@ const I18N = {
     subtitle: 'הדביקו טקסט שהוקלד עם פריסה שגויה, והוא יומר אוטומטית.',
     inputLabel: 'טקסט להמרה:', resultLabel: 'תוצאה:',
     placeholder: 'הדביקו כאן... למשל akuo או שלום',
-    swap: 'החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: 'ניקוי', clearTitle: 'ניקוי הכל', copy: 'העתקה \u2066(Ctrl+Enter)\u2069',
+    swap: 'החלפה', swapTitle: 'החלפה בין קלט לתוצאה', clear: 'ניקוי', clearTitle: 'ניקוי הכל', convert: 'המרה', copy: 'העתקה \u2066(Ctrl+Enter)\u2069',
     examples: 'נסו עם דוגמאות', settingsTitle: 'הגדרות', close: 'סגירה',
     secLang: 'שפת ממשק', secMode: 'מצב המרה',
     langFr: 'צרפתית', langEn: 'אנגלית', langHe: 'עברית',
@@ -568,9 +569,10 @@ const DEFAULTS = { lang: 'auto', mode: 'hebrew', latinDir: 'toAz', layout: 'azer
 // 'fr' était l'ancien défaut forcé (avant l'auto) : la migration ne joue
 // qu'une fois (marqueur mig1), ensuite un choix 'fr' explicite est respecté.
 function migrateSettings(stored, legacy) {
-  const settings = Object.assign({}, DEFAULTS, stored || {});
-  let changed = false;
-  if (stored && !stored.mig1) {
+  const src = (stored && typeof stored === 'object' && !Array.isArray(stored)) ? stored : null;
+  const settings = Object.assign({}, DEFAULTS, src || {});
+  let changed = !!(stored && !src);
+  if (src && !src.mig1) {
     if (settings.lang === 'fr') settings.lang = 'auto';
     changed = true;
   }
@@ -578,8 +580,15 @@ function migrateSettings(stored, legacy) {
   if (!['auto', 'fr', 'en', 'he'].includes(settings.lang)) { settings.lang = 'auto'; changed = true; }
   if (!['hebrew', 'latin'].includes(settings.mode)) { settings.mode = 'hebrew'; changed = true; }
   if (!['toAz', 'toQw'].includes(settings.latinDir)) { settings.latinDir = 'toAz'; changed = true; }
+  if (!['azerty', 'qwerty'].includes(settings.layout)) { settings.layout = 'azerty'; changed = true; }
+  if (!['auto', 'toHe', 'toFr'].includes(settings.direction)) { settings.direction = 'auto'; changed = true; }
+  if (!['light', 'dark', 'auto'].includes(settings.theme)) { settings.theme = 'light'; changed = true; }
+  if (!['small', 'medium', 'large'].includes(settings.fontsize)) { settings.fontsize = 'medium'; changed = true; }
+  for (const k of ['live', 'autocopy', 'remember', 'history']) {
+    if (typeof settings[k] !== 'boolean') { settings[k] = DEFAULTS[k]; changed = true; }
+  }
   // migration des anciennes clés (uniquement sans réglages existants)
-  if (!stored && legacy) {
+  if (!src && legacy) {
     if (legacy.layout === 'qwerty' || legacy.layout === 'azerty') { settings.layout = legacy.layout; changed = true; }
     if (legacy.autocopy === '1') { settings.autocopy = true; changed = true; }
   }
@@ -671,6 +680,8 @@ function applySettingsToUI() {
   document.querySelectorAll('input[name="theme"]').forEach(r => { r.checked = r.value === settings.theme; });
   document.querySelectorAll('input[name="fontsize"]').forEach(r => { r.checked = r.value === settings.fontsize; });
   document.getElementById('optLive').checked = !!settings.live;
+  const convBtn = document.getElementById('convertBtn');
+  if (convBtn) convBtn.hidden = !!settings.live;
   document.getElementById('optAutocopy').checked = !!settings.autocopy;
   document.getElementById('optRemember').checked = !!settings.remember;
   document.getElementById('optHistory').checked = !!settings.history;
@@ -873,11 +884,12 @@ function scoreHebrew(text) {
 // test_page.py — garder la signature telle quelle.
 function suggestReading(text, currentLayout) {
   if (text.length > SUGGEST_MAX_LEN) return null;
-  const heb = (text.match(/[\u0590-\u05FF]/g) || []).length;
+  const heb = (text.match(/[\u05D0-\u05EA]/g) || []).length;
   if (heb < SUGGEST_SHORT_HEB) return null;
   const source = scoreHebrew(text);
   if (source === null) return null;
   const need = heb >= SUGGEST_MIN_HEB ? SUGGEST_MARGIN : SUGGEST_SHORT_MARGIN;
+  const minScore = -3.4;
   const scores = [];
   for (const lay of Object.keys(MAPS)) {
     const reading = convertSmart(text, MAPS[lay].toFr, MAPS[lay].capsSwap, true);
@@ -887,7 +899,7 @@ function suggestReading(text, currentLayout) {
   }
   scores.sort((a, b) => b.score - a.score);
   const best = scores[0], second = scores[1];
-  if (!best || !isFinite(best.score) || best.layout === currentLayout) return null;
+  if (!best || !isFinite(best.score) || best.score < minScore || best.layout === currentLayout) return null;
   if (best.score - source < SUGGEST_HE_MARGIN) return null;
   if (!second || best.score - second.score < need) return null;
   let pv = best.preview;
@@ -903,7 +915,8 @@ function dirMessage(dir) {
   if (settings.direction !== 'auto') return (dir === 'toFr' ? t('forcedFr') : t('forcedHe')).replace('{layout}', lbl);
   return (dir === 'toFr' ? t('detectedHe') : t('detectedFr')).replace('{layout}', lbl);
 }
-function doConvert() {
+function doConvert(opts) {
+  const cfg = opts || {};
   let out, msg;
   if (settings.mode === 'latin') {
     const m = settings.latinDir === 'toAz' ? QW_TO_AZ : AZ_TO_QW;
@@ -914,19 +927,20 @@ function doConvert() {
   } else {
     const dir = settings.direction !== 'auto' ? settings.direction : detectDir(input.value);
     const toFrench = dir === 'toFr';
-    const full = toFrench ? MAPS[settings.layout].toFr : MAPS[settings.layout].toHe;
-    const swap = MAPS[settings.layout].capsSwap;
+    const lay = Object.prototype.hasOwnProperty.call(MAPS, settings.layout) ? settings.layout : 'azerty';
+    const full = toFrench ? MAPS[lay].toFr : MAPS[lay].toHe;
+    const swap = MAPS[lay].capsSwap;
     out = convertSmart(input.value, full, swap, toFrench);
     output.setAttribute('dir', /[\u0590-\u05FF]/.test(out) ? 'rtl' : 'ltr');
     msg = dirMessage(dir);
-    lastConv = { mode: 'hebrew', layout: settings.layout, dir };
+    lastConv = { mode: 'hebrew', layout: lay, dir };
   }
   output.textContent = out;
   detect.textContent = input.value ? msg : '';
   const n = input.value.length;
   document.querySelector('#stats small').textContent = n ? t('chars').replace('{n}', n) : '';
-  if (settings.autocopy && out) copyText(out);
-  scheduleSave();
+  if (settings.autocopy && out && !cfg.skipAutocopy) copyText(out);
+  if (!cfg.skipSave) scheduleSave();
   scheduleSuggestion();
 }
 async function copyText(str) {
@@ -935,17 +949,29 @@ async function copyText(str) {
     return true;
   } catch {}
   // repli pour contextes sans API Clipboard (fichier local ancien, iframe...)
+  const prev = document.activeElement;
+  const ss = (prev && typeof prev.selectionStart === 'number') ? prev.selectionStart : null;
+  const se = (prev && typeof prev.selectionEnd === 'number') ? prev.selectionEnd : null;
   try {
     const ta = document.createElement('textarea');
     ta.value = str;
     ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0;';
     document.body.appendChild(ta);
     ta.select();
     const ok = document.execCommand('copy');
     ta.remove();
     return ok;
-  } catch { return false; }
+  } catch { return false; } finally {
+    try {
+      if (prev && prev.isConnected && typeof prev.focus === 'function') {
+        prev.focus({ preventScroll: true });
+        if (ss !== null && se !== null && typeof prev.setSelectionRange === 'function') {
+          prev.setSelectionRange(ss, se);
+        }
+      }
+    } catch {}
+  }
 }
 const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 1000;
 // Entrée telle que stockée et comparée dans l'historique (pure, rejouée
@@ -953,6 +979,7 @@ const HIST_KEY = 'conv-history-v1', HIST_MAX = 20, HIST_CUT = 1000;
 function histInput(text) { return text.slice(0, HIST_CUT); }
 function isHistDup(history, text) { return history.length > 0 && history[0].i === histInput(text); }
 async function copyResult() {
+  if (!settings.live) doConvert({ skipAutocopy: true });
   if (!output.textContent) return;
   const ok = await copyText(output.textContent);
   detect.textContent = ok ? t('copied') : t('copyFail');
@@ -967,7 +994,13 @@ async function copyResult() {
   }
 }
 let history = [];
-try { const rawH = localStorage.getItem(HIST_KEY); history = rawH ? JSON.parse(rawH) : []; if (!Array.isArray(history)) history = []; } catch { history = []; }
+try {
+  const rawH = localStorage.getItem(HIST_KEY);
+  const parsedH = rawH ? JSON.parse(rawH) : [];
+  history = Array.isArray(parsedH)
+    ? parsedH.filter(e => e && typeof e === 'object' && typeof e.i === 'string' && typeof e.o === 'string')
+    : [];
+} catch { history = []; }
 let lastConv = null;
 function saveHistory() { try { localStorage.setItem(HIST_KEY, JSON.stringify(history)); } catch {} }
 function histLabel(e) {
@@ -1003,8 +1036,8 @@ function renderHistory() {
 function restoreHistory(idx) {
   const e = history[idx]; if (!e) return;
   settings.mode = e.mode === 'latin' ? 'latin' : 'hebrew';
-  if (e.layout) settings.layout = e.layout;
-  if (e.latinDir) settings.latinDir = e.latinDir;
+  if (Object.prototype.hasOwnProperty.call(MAPS, e.layout)) settings.layout = e.layout;
+  if (e.latinDir === 'toAz' || e.latinDir === 'toQw') settings.latinDir = e.latinDir;
   input.value = e.i;
   applySettingsToUI(); doConvert(); input.focus();
 }
@@ -1026,11 +1059,15 @@ document.getElementById('layoutBtn').onclick = () => {
   doConvert();
   input.focus();
 };
+document.getElementById('convertBtn').onclick = () => { doConvert(); input.focus(); };
 document.getElementById('copy').onclick = copyResult;
 input.addEventListener('input', () => { if (settings.live) doConvert(); else { scheduleSave(); scheduleSuggestion(); } });
 input.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); copyResult(); }
-  else if (e.key === 'ArrowDown' && !suggestBox.hidden) { e.preventDefault(); applySuggestion(); }
+  else if (e.key === 'ArrowDown' && !suggestBox.hidden && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const after = input.value.slice(input.selectionEnd);
+    if (!after.includes('\n')) { e.preventDefault(); applySuggestion(); }
+  }
 });
 document.querySelectorAll('[data-ex]').forEach(b => {
   b.onclick = () => {
@@ -1130,7 +1167,13 @@ bindRadio('direction', 'direction', () => doConvert());
 bindRadio('mode', 'mode', () => doConvert());
 bindRadio('theme', 'theme');
 bindRadio('fontsize', 'fontsize');
-document.getElementById('optLive').onchange = e => { settings.live = e.target.checked; saveSettings(); if (settings.live) doConvert(); };
+document.getElementById('optLive').onchange = e => {
+  settings.live = e.target.checked;
+  const convBtn = document.getElementById('convertBtn');
+  if (convBtn) convBtn.hidden = !!settings.live;
+  saveSettings();
+  if (settings.live) doConvert();
+};
 document.getElementById('optAutocopy').onchange = e => { settings.autocopy = e.target.checked; saveSettings(); };
 document.getElementById('optRemember').onchange = e => { settings.remember = e.target.checked; saveSettings(); };
 document.getElementById('optHistory').onchange = e => { settings.history = e.target.checked; saveSettings(); };
@@ -1151,13 +1194,22 @@ window.addEventListener('pagehide', () => { clearTimeout(saveTimer); saveSetting
 if (settings.remember && savedText) input.value = savedText;
 // Ouverture depuis l'explorateur : l'exe (app.py) injecte le texte apres
 // chargement, car WebView2 refuse une URL file://...?text=... (page
-// d'erreur). ?text= reste accepte pour un lien direct dans un navigateur.
+// d'erreur). ?text= reste accepte pour un lien direct dans un navigateur,
+// puis nettoye de la barre d'adresse pour eviter la persistance en historique.
+let fromQuery = false;
 try {
   const q = new URLSearchParams(location.search).get('text');
-  if (q) input.value = q;
+  if (q) {
+    input.value = q;
+    fromQuery = true;
+    if (window.history && typeof window.history.replaceState === 'function') {
+      window.history.replaceState(null, '', location.pathname + location.hash);
+    }
+  }
 } catch {}
 applySettingsToUI();
-doConvert();
+doConvert({ skipAutocopy: true, skipSave: fromQuery });
+input.focus();
 renderHistory();
 </script>
 </body>

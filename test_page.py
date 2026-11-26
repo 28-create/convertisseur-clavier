@@ -129,6 +129,11 @@ def main():
                 [{'lang': 'xx'}, None, {'lang': 'auto'}, True],
                 [{'mode': 'zzz', 'latinDir': 'nope'}, None,
                  {'mode': 'hebrew', 'latinDir': 'toAz'}, True],
+                [{'layout': 'dvorak', 'direction': 'bad', 'theme': 123,
+                  'fontsize': 'huge', 'live': 'yes', 'mig1': True}, None,
+                 {'layout': 'azerty', 'direction': 'auto', 'theme': 'light',
+                  'fontsize': 'medium', 'live': True}, True],
+                [[1, 2], None, {'layout': 'azerty', 'mig1': True}, True],
                 [None, {'layout': 'qwerty', 'autocopy': '1'},
                  {'layout': 'qwerty', 'autocopy': True, 'mig1': True}, True],
                 [None, None, {'layout': 'azerty', 'mig1': True}, False],
@@ -246,6 +251,10 @@ def main():
                 [ex, 'qwerty', None],
                 ['שלום', 'azerty', None],
                 ['qkuo', 'azerty', None],
+                # Vrai hebreu (>= 11 lettres) : ne doit pas declencher de
+                # fausse suggestion QWERTY (plancher minScore = -4.5).
+                ['קיימות משמעויות נוספות ובנייני מילים שונים בשפה העברית', 'azerty', None],
+                ['רבקה גריכטר הייתה מורה סופרת ומשוררת ישראלית ידועה', 'azerty', None],
                 [t_fr_az, 'qwerty', 'azerty'],
                 [t_en_qw, 'azerty', 'qwerty'],
                 # phrases courtes (6-14 lettres) : le plancher a 6 les couvre,

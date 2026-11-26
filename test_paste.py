@@ -388,8 +388,30 @@ def proposal_state_checks():
         check('win32_clip : %s' % tok, tok in clip_src)
     pw_src = read('paste_watch.py')
     for tok in ('skip_sensitive=True', '_is_password_focus',
-                'ES_PASSWORD', '_reset_overlay', 'UnregisterClassW'):
-        check('paste_watch P0 : %s' % tok, tok in pw_src)
+                'ES_PASSWORD', '_reset_overlay', 'UnregisterClassW',
+                '_wait_modifiers_up', 'OpenProcess', '_convert_to_hebrew('):
+        check('paste_watch P0/P1 : %s' % tok, tok in pw_src)
+
+    # Non-regression P1 (E2) : phrases capitalisees tapees en clavier hebreu
+    # sous Windows (Shift+lettre -> majuscule ASCII attachee a l'hebreu).
+    html = read('convertisseur.html')
+    models = paste_watch.load_models(html)
+    fix = load_fix()
+    for src, exp in (
+        ('B\u05dd\u05de\u05d7\u05dd\u05d5\u05e8', 'Bonjour'),
+        ('B\u05dd\u05de\u05d7\u05dd\u05d5\u05e8 \u05d0\u05dd\u05d5\u05d0 \u05da\u05e7 \u05e3\u05dd\u05de\u05d2\u05e7',
+         'Bonjour tout le monde'),
+        ("H\u05e7\u05da\u05da\u05dd '\u05dd\u05e8\u05da\u05d2", 'Hello world'),
+    ):
+        got = paste_watch.detect_text(src, models, fix)
+        check('detection capitalisee %s' % ascii(src),
+              bool(got) and got['direction'] == 'toFr' and got['text'] == exp,
+              '' if not got else ascii(got['text']))
+    for keep in ('bonjour \u05e9\u05dc\u05d5\u05dd',
+                 'iOS \u05d4\u05d9\u05d0 \u05de\u05e2\u05e8\u05db\u05ea \u05d4\u05e4\u05e2\u05dc\u05d4',
+                 'AT&T \u05e9\u05dc\u05d5\u05dd'):
+        check('mixte reel toujours ignore %s' % ascii(keep),
+              paste_watch.detect_text(keep, models, fix) is None)
 
 
 def focus_checks():

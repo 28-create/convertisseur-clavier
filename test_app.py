@@ -49,6 +49,11 @@ def main():
          'cp1255', 'cp1255'),
         ('fr1252.txt', '\u00e9l\u00e8ve fran\u00e7ais \u0153uvre',
          'cp1252', 'cp1252'),
+        ('utf16.txt', 'Bonjour \u05e9\u05dc\u05d5\u05dd',
+         'utf-16', 'utf-16'),
+        ('fr1252_ete.txt', '\u00e9t\u00e9', 'cp1252', 'cp1252-court-ete'),
+        ('fr1252_cote.txt', '\u00e0 c\u00f4t\u00e9', 'cp1252', 'cp1252-court-cote'),
+        ('fr1252_age.txt', '\u00e2g\u00e9', 'cp1252', 'cp1252-court-age'),
     ]
     tmp = tempfile.mkdtemp(prefix='conv_app_')
     try:
@@ -57,6 +62,20 @@ def main():
             with open(path, 'wb') as f:
                 f.write(txt.encode(enc))
             check('lecture %s' % label, app.read_text_file(path) == txt)
+        big_p = os.path.join(tmp, 'big.txt')
+        with open(big_p, 'wb') as f:
+            f.write(b'a' * 2048)
+        check('lecture bornee max_bytes',
+              app.read_text_file(big_p, max_bytes=1024) == '')
+        conv_p = os.path.join(tmp, 'note.converti.txt')
+        with open(conv_p, 'w', encoding='utf-8') as f:
+            f.write('qkuo')
+        rc = app.cmd_file(load_fix(), app.build_parser().parse_args(
+            ['--convert-file', conv_p]))
+        with open(conv_p, encoding='utf-8') as f:
+            got_conv = f.read()
+        check('cmd_file atomique sur .converti.txt',
+              rc == 0 and got_conv == '\u05e9\u05dc\u05d5\u05dd', ascii(got_conv))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

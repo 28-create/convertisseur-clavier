@@ -146,28 +146,28 @@ if (-not $SansMenuContextuel) {
   New-ItemProperty -LiteralPath $k -Name 'Icon' -Value "$exeInst,0" -PropertyType String -Force | Out-Null
   New-ItemProperty -LiteralPath $k -Name 'Position' -Value 'Middle' -PropertyType String -Force | Out-Null
   New-LiteralRegKey "$k\command"
-  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" "%1"') -PropertyType String -Force | Out-Null
+  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" -- "%1"') -PropertyType String -Force | Out-Null
   # Fichiers .txt : conversion directe vers .converti.txt.
   $k = "$classes\SystemFileAssociations\.txt\shell\$ShellName.Convertir"
   New-LiteralRegKey $k
   New-ItemProperty -LiteralPath $k -Name 'MUIVerb' -Value 'Convertir avec Convertisseur Clavier' -PropertyType String -Force | Out-Null
   New-ItemProperty -LiteralPath $k -Name 'Icon' -Value "$exeInst,0" -PropertyType String -Force | Out-Null
   New-LiteralRegKey "$k\command"
-  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" --convert-file "%1"') -PropertyType String -Force | Out-Null
+  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" --convert-file="%1"') -PropertyType String -Force | Out-Null
   # Dossiers : ouvrir l'application.
   $k = "$classes\Directory\shell\$ShellName"
   New-LiteralRegKey $k
   New-ItemProperty -LiteralPath $k -Name 'MUIVerb' -Value 'Ouvrir avec Convertisseur Clavier' -PropertyType String -Force | Out-Null
   New-ItemProperty -LiteralPath $k -Name 'Icon' -Value "$exeInst,0" -PropertyType String -Force | Out-Null
   New-LiteralRegKey "$k\command"
-  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" "%1"') -PropertyType String -Force | Out-Null
+  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '"') -PropertyType String -Force | Out-Null
   # Fond d'un dossier : ouvrir l'application ici.
   $k = "$classes\Directory\Background\shell\$ShellName"
   New-LiteralRegKey $k
   New-ItemProperty -LiteralPath $k -Name 'MUIVerb' -Value 'Ouvrir Convertisseur Clavier ici' -PropertyType String -Force | Out-Null
   New-ItemProperty -LiteralPath $k -Name 'Icon' -Value "$exeInst,0" -PropertyType String -Force | Out-Null
   New-LiteralRegKey "$k\command"
-  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '" "%V"') -PropertyType String -Force | Out-Null
+  New-ItemProperty -LiteralPath "$k\command" -Name '(Default)' -Value ('"' + $exeInst + '"') -PropertyType String -Force | Out-Null
   Write-Host "Menu clic droit : installe ($ShellName)"
 } else {
   Write-Host 'Menu clic droit : ignore (-SansMenuContextuel)'

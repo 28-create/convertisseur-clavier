@@ -21,6 +21,7 @@ VersionInfoProductVersion={#MyAppVersion}
 VersionInfoVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\ConvertisseurClavier
 PrivilegesRequired=lowest
+CloseApplications=force
 OutputDir=dist
 OutputBaseFilename=Setup_ConvertisseurClavier-{#MyAppVersion}
 Compression=lzma2/max
@@ -87,19 +88,19 @@ Name: "{autodesktop}\Convertisseur Clavier"; Filename: "{app}\ConvertisseurClavi
 Root: HKCU; Subkey: "Software\Classes\*\shell\ConvertisseurClavier"; ValueType: string; ValueName: "MUIVerb"; ValueData: "{cm:ContextOpen}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\*\shell\ConvertisseurClavier"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\ConvertisseurClavier.exe,0"; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\*\shell\ConvertisseurClavier"; ValueType: string; ValueName: "Position"; ValueData: "Middle"; Tasks: contextmenu
-Root: HKCU; Subkey: "Software\Classes\*\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" ""%1"""; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\*\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" -- ""%1"""; Tasks: contextmenu
 ; Clic droit sur un .txt : conversion directe vers .converti.txt.
 Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.txt\shell\ConvertirClavier"; ValueType: string; ValueName: "MUIVerb"; ValueData: "{cm:ContextConvert}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.txt\shell\ConvertirClavier"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\ConvertisseurClavier.exe,0"; Tasks: contextmenu
-Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.txt\shell\ConvertirClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" --convert-file ""%1"""; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.txt\shell\ConvertirClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" --convert-file=""%1"""; Tasks: contextmenu
 ; Clic droit sur un dossier : ouvrir l'application.
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ConvertisseurClavier"; ValueType: string; ValueName: "MUIVerb"; ValueData: "{cm:ContextOpen}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ConvertisseurClavier"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\ConvertisseurClavier.exe,0"; Tasks: contextmenu
-Root: HKCU; Subkey: "Software\Classes\Directory\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" ""%1"""; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"""; Tasks: contextmenu
 ; Clic droit sur le fond d'un dossier : ouvrir l'application ici.
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier"; ValueType: string; ValueName: "MUIVerb"; ValueData: "{cm:ContextOpenHere}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\ConvertisseurClavier.exe,0"; Tasks: contextmenu
-Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"" ""%V"""; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\ConvertisseurClavier\command"; ValueType: string; ValueData: """{app}\ConvertisseurClavier.exe"""; Tasks: contextmenu
 ; Surveillance du presse-papiers au demarrage de session (option).
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ConvertisseurClavier"; ValueData: """{app}\ConvertisseurClavier.exe"" --paste-watch"; Flags: uninsdeletevalue; Tasks: surveillance
 
@@ -109,7 +110,7 @@ Filename: "{app}\ConvertisseurClavier.exe"; Parameters: "--paste-watch"; Descrip
 
 [UninstallRun]
 ; Arrete le guetteur avant de supprimer l'exe (sinon le fichier reste verrouille).
-Filename: "{app}\ConvertisseurClavier.exe"; Parameters: "--paste-stop"; Flags: runhidden waituntilterminated; RunOnceId: "StopSurveillance"
+Filename: "{app}\ConvertisseurClavier.exe"; Parameters: "--paste-stop"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "StopSurveillance"
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;

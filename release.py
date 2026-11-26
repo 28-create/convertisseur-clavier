@@ -120,7 +120,12 @@ def check_clean():
 
 
 def check_sync(branch):
-    """origin/<branch> doit etre un ancetre de HEAD (pas de commit distant en avance)."""
+    """HEAD doit etre sur <branch> et contenir origin/<branch>."""
+    current = git('rev-parse', '--abbrev-ref', 'HEAD').strip()
+    if current != branch:
+        raise SystemExit(
+            'branche active %s != branche cible %s : basculer sur %s avant de publier.'
+            % (current, branch, branch))
     git('fetch', 'origin', '--tags')
     try:
         git('rev-parse', '--verify', 'origin/' + branch)
@@ -164,11 +169,11 @@ def check_build_tools():
 
 
 def changelog_section(text, version):
-    marker = '## v%s' % version
-    start = text.find(marker)
-    if start < 0:
+    m = re.search(r'^## v%s(?:\s|$)' % re.escape(version), text, re.M)
+    if not m:
         return None
-    end = text.find('\n## ', start + len(marker))
+    start = m.start()
+    end = text.find('\n## ', m.end())
     section = text[start:end if end >= 0 else len(text)]
     return section.strip()
 
@@ -194,13 +199,18 @@ def replace_version(version):
 
 
 def expected_files(version, dist):
-    return [
-        os.path.join(dist, 'Setup_ConvertisseurClavier-%s.exe' % version),
-        os.path.join(dist, 'ConvertisseurClavier-%s.exe' % version),
+    files = []
+    if sys.platform == 'win32':
+        files.extend([
+            os.path.join(dist, 'Setup_ConvertisseurClavier-%s.exe' % version),
+            os.path.join(dist, 'ConvertisseurClavier-%s.exe' % version),
+        ])
+    files.extend([
         os.path.join(dist, 'ConvertisseurClavier-extension-%s.zip' % version),
         'installer.ps1',
         'desinstaller.ps1',
-    ]
+    ])
+    return files
 
 
 def write_checksums(version, dist, assets):
@@ -227,6 +237,13 @@ def build_assets(version, dist):
     else:
         print('INFO : exe et Setup ignores (Windows uniquement).')
     run([sys.executable, 'build_extension.py'])
+    if os.path.abspath(os.path.join(ROOT, dist)) != os.path.abspath(os.path.join(ROOT, 'dist')):
+        for asset in expected_files(version, dist):
+            if asset.startswith(dist + os.sep) or asset.startswith(dist + '/'):
+                src_file = os.path.join(ROOT, 'dist', os.path.basename(asset))
+                dst_file = os.path.join(ROOT, asset)
+                if os.path.exists(src_file):
+                    shutil.copy2(src_file, dst_file)
     assets = expected_files(version, dist)
     checksums = write_checksums(version, dist, assets)
     return assets + [checksums]
@@ -236,10 +253,12 @@ def publish(version, body, assets):
     slug = subprocess.check_output(
         ['gh', 'repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'],
         cwd=ROOT, text=True, encoding='utf-8', errors='replace').strip()
+    # Cree la release en brouillon, charge les binaires, puis publie :
+    # en cas de coupure reseau, aucune release publique vide n'est visible.
     payload = {
         'tag_name': 'v' + version,
         'name': 'Convertisseur Clavier ' + version,
-        'draft': False,
+        'draft': True,
         'prerelease': False,
         'body': body,
     }
@@ -248,12 +267,20 @@ def publish(version, body, assets):
     try:
         with open(tmp, 'w', encoding='utf-8', newline='') as f:
             json.dump(payload, f, ensure_ascii=False)
-        run(['gh', 'api', '--method', 'POST',
-             'repos/%s/releases' % slug, '--input', tmp])
+        res = subprocess.run(
+            ['gh', 'api', '--method', 'POST', 'repos/%s/releases' % slug,
+             '--input', tmp, '--jq', '.id'],
+            cwd=ROOT, text=True, capture_output=True,
+            encoding='utf-8', errors='replace')
+        if res.returncode != 0:
+            raise SystemExit('ECHEC creation release : %s' % safe(res.stderr.strip()))
+        release_id = res.stdout.strip()
     finally:
         os.unlink(tmp)
     if assets:
         run(['gh', 'release', 'upload', 'v' + version] + assets + ['--clobber'])
+    run(['gh', 'api', '--method', 'PATCH',
+         'repos/%s/releases/%s' % (slug, release_id), '-F', 'draft=false'])
     print('OK : https://github.com/%s/releases/tag/v%s' % (slug, version))
 
 

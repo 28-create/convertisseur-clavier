@@ -55,10 +55,10 @@ $cmda = (Get-ItemProperty -LiteralPath "$shellRoot\*\shell\$shellName\command").
 $cmdt = (Get-ItemProperty -LiteralPath "$shellRoot\SystemFileAssociations\.txt\shell\$shellName.Convertir\command").'(Default)'
 $cmdd = (Get-ItemProperty -LiteralPath "$shellRoot\Directory\shell\$shellName\command").'(Default)'
 $cmdb = (Get-ItemProperty -LiteralPath "$shellRoot\Directory\Background\shell\$shellName\command").'(Default)'
-$ok = $ok -and ($cmda -eq ('"' + $exeAttendu + '" "%1"'))
-$ok = $ok -and ($cmdt -eq ('"' + $exeAttendu + '" --convert-file "%1"'))
-$ok = $ok -and ($cmdd -eq ('"' + $exeAttendu + '" "%1"'))
-$ok = $ok -and ($cmdb -eq ('"' + $exeAttendu + '" "%V"'))
+$ok = $ok -and ($cmda -eq ('"' + $exeAttendu + '" -- "%1"'))
+$ok = $ok -and ($cmdt -eq ('"' + $exeAttendu + '" --convert-file="%1"'))
+$ok = $ok -and ($cmdd -eq ('"' + $exeAttendu + '"'))
+$ok = $ok -and ($cmdb -eq ('"' + $exeAttendu + '"'))
 Write-Host ('clic-droit=' + $cmda + ' | ' + $cmdt)
 # Reinstallation sur ruche deja peuplee : le joker '*' ne doit PAS polluer Directory.
 & (Join-Path $tmp 'installer.ps1') -AppDir (Join-Path $tmp 'App') -MenuDir (Join-Path $tmp 'Menu') -RegName $reg -Nom $nom -LnkPressePapiers $lnkClipNom -RunName $runName -ShellRoot $shellRoot -ShellName $shellName -SansDemarrage

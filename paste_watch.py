@@ -349,14 +349,27 @@ def detect_text(text, models, fix_mod, default_layout=DEFAULT_LAYOUT):
     lat, heb = count_scripts(text)
     if lat + heb < MIN_LETTERS:
         return None
-    if lat and heb:  # texte mixte : trop ambigu
-        return None
     if SYMBOL_RE.search(text):  # URL, chemin, code, adresse...
         return None
-
-    direction = 'toHe' if lat else 'toFr'
-    source_score = (score_latin(models, text) if lat
-                    else score_hebrew(models, text))
+    if lat and heb:
+        # Sous Windows en clavier hebreu, Shift+lettre produit une majuscule
+        # ASCII attachee a un mot hebreu (ex. "Bםמחםור" = "Bonjour"). On
+        # accepte ce cas precis en toFr tout en rejetant tout texte mixte reel.
+        latin_chars = [ch for ch in text
+                       if ch.isalpha() and not ('\u0590' <= ch <= '\u05ff')]
+        all_upper_ascii = all('A' <= ch <= 'Z' for ch in latin_chars)
+        has_cap_he_token = any(
+            HEB_RE.search(tok) and any('A' <= ch <= 'Z' for ch in tok)
+            for tok in text.split()
+        )
+        if not (all_upper_ascii and has_cap_he_token and heb >= lat * 2):
+            return None
+        direction = 'toFr'
+        source_score = score_hebrew(models, text)
+    else:
+        direction = 'toHe' if lat else 'toFr'
+        source_score = (score_latin(models, text) if lat
+                        else score_hebrew(models, text))
     candidates = _layout_candidates(text, direction, models, fix_mod)
     if source_score is None or not candidates:
         return None
@@ -664,6 +677,8 @@ def _win32():
                                      ctypes.c_wchar_p]
         k32.OpenEventW.restype = vp
         k32.OpenEventW.argtypes = [ui, ctypes.c_int, ctypes.c_wchar_p]
+        k32.OpenProcess.restype = vp
+        k32.OpenProcess.argtypes = [ui, ctypes.c_int, ul]
         k32.SetEvent.restype = ctypes.c_int
         k32.SetEvent.argtypes = [vp]
         k32.WaitForSingleObject.restype = ui
@@ -855,9 +870,12 @@ class Watcher:
             self.listener_ok = bool(u32.AddClipboardFormatListener(self.hwnd))
             self._add_tray()
             self.stop_handle = k32.CreateEventW(None, False, False, STOP_EVENT)
+            stop_thread = None
             if self.stop_handle:
-                threading.Thread(target=self._wait_stop,
-                                 args=(self.stop_handle,), daemon=True).start()
+                stop_thread = threading.Thread(target=self._wait_stop,
+                                               args=(self.stop_handle,),
+                                               daemon=True)
+                stop_thread.start()
             self._hook_ref = HOOKPROC(self._hook)
             ctypes.set_last_error(0)
             self.hook = u32.SetWindowsHookExW(WH_KEYBOARD_LL, self._hook_ref,
@@ -892,6 +910,8 @@ class Watcher:
                         u32.UnregisterClassW(WINDOW_CLASS, hinst)
                 if k32 and self.stop_handle:
                     k32.SetEvent(self.stop_handle)
+                    if stop_thread is not None and stop_thread.is_alive():
+                        stop_thread.join(1.0)
                     k32.CloseHandle(self.stop_handle)
                     self.stop_handle = None
             except Exception:
@@ -994,13 +1014,23 @@ class Watcher:
 
     def _toggle_pause(self):
         self.paused = not self.paused
-        if self.paused:
-            self._set_tip(APP_NAME + ' - surveillance suspendue')
-            self._balloon(APP_NAME, 'Surveillance du presse-papiers suspendue. '
-                                    'Ctrl+V colle normalement.')
-        else:
-            self._set_tip(APP_NAME + ' - surveillance du presse-papiers')
-            self._balloon(APP_NAME, 'Surveillance du presse-papiers reprise.')
+        paused = self.paused
+
+        def _notify():
+            try:
+                if paused:
+                    self._set_tip(APP_NAME + ' - surveillance suspendue')
+                    self._balloon(APP_NAME,
+                                  'Surveillance du presse-papiers suspendue. '
+                                  'Ctrl+V colle normalement.')
+                else:
+                    self._set_tip(APP_NAME + ' - surveillance du presse-papiers')
+                    self._balloon(APP_NAME,
+                                  'Surveillance du presse-papiers reprise.')
+            except Exception:
+                pass
+
+        threading.Thread(target=_notify, daemon=True).start()
 
     def set_default_layout(self, layout):
         """Memorise le clavier utilise quand la detection est ambigue."""
@@ -1011,12 +1041,20 @@ class Watcher:
         return False
 
     def _change_default_layout(self, layout):
-        if self.set_default_layout(layout):
-            self._balloon(APP_NAME, 'Clavier par défaut si ambiguïté : %s.'
-                          % layout_label(layout))
-        else:
-            self._balloon(APP_NAME, 'Impossible d’enregistrer le clavier '
-                                    'par défaut.')
+        def _save_and_notify():
+            try:
+                if self.set_default_layout(layout):
+                    self._balloon(APP_NAME,
+                                  'Clavier par défaut si ambiguïté : %s.'
+                                  % layout_label(layout))
+                else:
+                    self._balloon(APP_NAME,
+                                  'Impossible d’enregistrer le clavier '
+                                  'par défaut.')
+            except Exception:
+                pass
+
+        threading.Thread(target=_save_and_notify, daemon=True).start()
 
     def _menu(self):
         u32, _ = _win32()
@@ -1054,11 +1092,18 @@ class Watcher:
             u32.DestroyWindow(self.hwnd)
 
     def _open_app(self):
-        if getattr(sys, 'frozen', False):
-            subprocess.Popen([sys.executable])
-        else:
-            here = os.path.dirname(os.path.abspath(__file__))
-            subprocess.Popen([sys.executable, os.path.join(here, 'app.py')])
+        def _launch():
+            try:
+                if getattr(sys, 'frozen', False):
+                    subprocess.Popen([sys.executable])
+                else:
+                    here = os.path.dirname(os.path.abspath(__file__))
+                    subprocess.Popen([sys.executable,
+                                      os.path.join(here, 'app.py')])
+            except Exception:
+                pass
+
+        threading.Thread(target=_launch, daemon=True).start()
 
     # -- crochet clavier --
 
@@ -1071,8 +1116,10 @@ class Watcher:
             if kb.dwExtraInfo == MAGIC:
                 return _U32.CallNextHookEx(None, ncode, wparam, lparam)
             # Pendant la proposition : Entree = convertir, Maj+Entree =
-            # coller tel quel, Echap = annuler.
-            if self.overlay_open and kb.vkCode in (VK_RETURN, VK_ESCAPE):
+            # coller tel quel, Echap = annuler (sans Ctrl/Alt/Win).
+            if (self.overlay_open and kb.vkCode in (VK_RETURN, VK_ESCAPE)
+                    and not _key_down(VK_CONTROL) and not _key_down(VK_MENU)
+                    and not _key_down(VK_LWIN) and not _key_down(VK_RWIN)):
                 if wparam in (WM_KEYDOWN, WM_SYSKEYDOWN):
                     if kb.vkCode == VK_ESCAPE:
                         choice = 'cancel'
@@ -1171,6 +1218,7 @@ class Watcher:
                     self._clip_set(prop['text'])
                     self.handled_seq = _U32.GetClipboardSequenceNumber()
                 except Exception as e:
+                    self.self_set_text = None
                     err = 'Ecriture du presse-papiers impossible : %s' % e
             elif choice in ('keep', 'cancel'):
                 self.handled_seq = self.pending_seq
@@ -1212,8 +1260,18 @@ class Watcher:
         except Exception:
             return False
 
+    def _wait_modifiers_up(self, timeout=0.25):
+        """Attend brievement le relachement de Maj/Ctrl/Alt/Win avant Ctrl+V."""
+        deadline = time.monotonic() + timeout
+        mods = (VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN)
+        while time.monotonic() < deadline:
+            if not any(_key_down(vk) for vk in mods):
+                return
+            time.sleep(0.01)
+
     def _send_ctrl_v(self):
         try:
+            self._wait_modifiers_up()
             u32, _ = _win32()
             events = (INPUT * 4)()
             for i, (vk, up) in enumerate(((VK_CONTROL, False), (VK_V, False),
@@ -1453,8 +1511,12 @@ def show_proposal(root, watcher, data, target, anchor, current):
         if manual:
             state['manual'] = True
         state['layout'] = layout
-        state['text'] = convert_for_layout(
-            data['source_text'], layout, data['direction'], watcher.fix)
+        if data['direction'] == 'toHe':
+            state['text'] = _convert_to_hebrew(
+                data['source_text'], layout, watcher.fix)
+        else:
+            state['text'] = convert_for_layout(
+                data['source_text'], layout, data['direction'], watcher.fix)
         preview_label.configure(text=truncate(state['text'], 220)
                                 or '(aucun texte)')
         selected_var.set(layout)
@@ -1768,25 +1830,49 @@ def run_stop():
     if sys.platform != 'win32':
         return 0
     signaled = False
+    hproc = None
     try:
         u32, k32 = _win32()
+        hwnd = u32.FindWindowW(WINDOW_CLASS, APP_NAME)
+        if hwnd:
+            pid = ctypes.c_ulong(0)
+            u32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            if pid.value:
+                SYNCHRONIZE = 0x00100000
+                hproc = k32.OpenProcess(SYNCHRONIZE, False, pid.value)
         h = k32.OpenEventW(0x0002, False, STOP_EVENT)
         if h:
             k32.SetEvent(h)
             k32.CloseHandle(h)
             signaled = True
     except Exception:
+        if hproc:
+            try:
+                _K32.CloseHandle(hproc)
+            except Exception:
+                pass
         return 0
     if not signaled:
+        if hproc:
+            try:
+                _K32.CloseHandle(hproc)
+            except Exception:
+                pass
         return 0
-    # L'installeur remplace ou supprime l'exe juste apres : on attend que la
-    # fenetre cachee du guetteur disparaisse (sinon fichier verrouille).
+    # L'installeur remplace ou supprime l'exe juste apres : on attend la
+    # terminaison reelle du processus (sinon l'exe reste verrouille).
     try:
-        u32, _ = _win32()
-        for _i in range(100):
-            if not u32.FindWindowW(WINDOW_CLASS, APP_NAME):
-                break
-            time.sleep(0.05)
+        u32, k32 = _win32()
+        if hproc:
+            try:
+                k32.WaitForSingleObject(hproc, 5000)
+            finally:
+                k32.CloseHandle(hproc)
+        else:
+            for _i in range(100):
+                if not u32.FindWindowW(WINDOW_CLASS, APP_NAME):
+                    break
+                time.sleep(0.05)
     except Exception:
         pass
     return 0

@@ -93,21 +93,27 @@ globalThis.chrome = {
   },
   contextMenus: {
     removeAll(cb) { cb(); },
-    create(o) { menus.push(o); },
+    create(o, cb) { menus.push(o); if (cb) cb(); },
     onClicked: { addListener: f => { handlers.click = f; } },
   },
   commands: { onCommand: { addListener: f => { handlers.command = f; } } },
   storage: {
     local: { get: async () => ({ settings: {
-      layout: "qwerty", mode: "hebrew", latinDir: "toAz" } }) },
+      layout: "qwerty", mode: "latin", latinDir: "toAz" } }) },
   },
   tabs: {
-    sendMessage(id, msg, cb) { sent.push({ id, msg }); if (cb) cb(); },
+    sendMessage(id, msg, optsOrCb, cb) {
+      let opts = null, done = cb;
+      if (typeof optsOrCb === "function") done = optsOrCb;
+      else opts = optsOrCb;
+      sent.push({ id, msg, opts });
+      if (done) done();
+    },
   },
 };
 vm.runInThisContext(fs.readFileSync("extension/background.js", "utf8"));
 handlers.installed();
-if (handlers.click) handlers.click({ menuItemId: "conv-he" }, { id: 7 });
+if (handlers.click) handlers.click({ menuItemId: "conv-he", frameId: 3 }, { id: 7 });
 if (handlers.command) handlers.command("convert-selection", { id: 8 });
 setTimeout(() => {
   console.log(JSON.stringify({ menus: menus.map(m => m.id), sent }));
@@ -282,15 +288,22 @@ def main():
         check('3 entrees de menu', bg.get('menus') ==
               ['conv-auto', 'conv-he', 'conv-fr'], str(bg.get('menus')))
         first = ((sent[0] if sent else {}).get('msg') or {}).get('opts') or {}
-        check('clic droit vers le champ actif',
+        check('clic droit vers le champ actif (frameId + mode hebrew force)',
               len(sent) == 2 and sent[0].get('id') == 7
+              and (sent[0].get('opts') or {}).get('frameId') == 3
               and sent[0]['msg'].get('type') == 'conv-selection'
+              and first.get('mode') == 'hebrew'
               and first.get('direction') == 'toHe'
               and first.get('layout') == 'qwerty', str(sent[:1]))
         second = ((sent[1] if len(sent) > 1 else {}).get('msg') or {}).get('opts') or {}
         check('raccourci = auto',
               len(sent) == 2 and sent[1].get('id') == 8
               and second.get('direction') == 'auto', str(sent[1:2]))
+        content_src = read(os.path.join(EXT, 'content.js'))
+        check('content.js : shadow closed + garde copyText + readOnly',
+              "mode: 'closed'" in content_src and 'internalCopy' in content_src
+              and 'el.readOnly || el.disabled' in content_src
+              and 'el.isConnected' in content_src)
 
     ok = all(results)
     print(('OK : extension (%d verifications)' % len(results)) if ok

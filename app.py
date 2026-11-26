@@ -75,13 +75,22 @@ def load_fix():
     return mod
 
 
-def read_text_file(path):
-    # Fichiers Windows : UTF-8 d'abord (avec ou sans BOM), sinon ANSI.
+def read_text_file(path, max_bytes=0):
+    # Fichiers Windows : UTF-16 BOM, puis UTF-8 (avec ou sans BOM), sinon ANSI.
     # ANSI : cp1255 (hebreu Windows) uniquement si le decodage donne un
-    # texte majoritairement hebreu, sinon un fichier cp1252 accentue
-    # serait pris a tort pour de l'hebreu ; repli cp1252 sans plantage.
+    # texte majoritairement hebreu sans melanger lettres hebraiques et
+    # minuscules ASCII dans un meme mot (sinon "ete"/"a cote" en cp1252
+    # serait pris a tort pour de l'hebreu) ; repli cp1252 sans plantage.
+    import re
+    if max_bytes and os.path.getsize(path) > max_bytes:
+        return ''
     with open(path, 'rb') as f:
         raw = f.read()
+    if raw.startswith((b'\xff\xfe', b'\xfe\xff')):
+        try:
+            return raw.decode('utf-16')
+        except (UnicodeDecodeError, ValueError):
+            pass
     for enc in ('utf-8-sig', 'utf-8'):
         try:
             return raw.decode(enc)
@@ -91,9 +100,11 @@ def read_text_file(path):
         he = raw.decode('cp1255')
     except (UnicodeDecodeError, ValueError):
         he = ''
-    heb = sum(1 for ch in he if '\u0590' <= ch <= '\u05ff')
+    heb = sum(1 for ch in he if '\u05d0' <= ch <= '\u05ea')
     lat = sum(1 for ch in he if ch.isascii() and ch.isalpha())
-    if heb and heb > lat:
+    mixed_word = bool(re.search(
+        r'(?:[\u05d0-\u05ea][a-z]|[a-z][\u05d0-\u05ea])', he))
+    if heb and heb > lat and not mixed_word:
         return he
     return raw.decode('cp1252', errors='replace')
 
@@ -182,10 +193,22 @@ def cmd_file(mod, args):
         dst_path = src_path
     else:
         dst_path = root + '.converti' + (ext or '.txt')
+    tmp_path = None
     try:
-        with open(dst_path, 'w', encoding='utf-8') as f:
+        import tempfile
+        dst_dir = os.path.dirname(os.path.abspath(dst_path)) or '.'
+        fd, tmp_path = tempfile.mkstemp(prefix='.conv-', suffix='.tmp',
+                                        dir=dst_dir)
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
             f.write(out)
+        os.replace(tmp_path, dst_path)
+        tmp_path = None
     except OSError as e:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
         show_msg('Ecriture impossible : %s' % e, error=True)
         return 1
     show_msg('Converti : %s' % dst_path)
@@ -292,6 +315,7 @@ def cmd_gui(preload_text=None):
     try:
         webview.start()
     except Exception as e:  # ex. WebView2 absent de la machine
+        close_splash(splash)
         show_msg('Demarrage impossible (WebView2 requis sur Windows) : %s' % e,
                  error=True)
         return 1
@@ -343,7 +367,7 @@ def main(argv=None):
     if args.fichier:
         if os.path.isfile(args.fichier):
             try:
-                text = read_text_file(args.fichier)
+                text = read_text_file(args.fichier, max_bytes=MAX_PRELOAD * 4)
             except OSError:
                 text = ''
             if text and len(text) <= MAX_PRELOAD:
